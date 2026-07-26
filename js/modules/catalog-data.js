@@ -84,6 +84,11 @@
       add(normalized);
     });
 
+    // Add local high quality fallback images if remote URLs return 404
+    add("ring.jpg");
+    add("necklace.jpg");
+    add("earring.jpg");
+
     return out;
   }
 
