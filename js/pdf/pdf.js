@@ -128,6 +128,8 @@
       textMuted: [110, 120, 135],
       border: [225, 212, 195]
     };
+  }
+
   function drawPageTexture(pdf, pageWidth, pageHeight) {
     const colors = getThemeColors();
     pdf.setFillColor(colors.bgOuter[0], colors.bgOuter[1], colors.bgOuter[2]);
@@ -419,7 +421,7 @@
     });
 
     const imageDataUrls = await Promise.all(
-      batch.map(blob => getCachedOrResizedDataUrl(blob))
+      batch.map(blob => blobToDataUrl(blob))
     );
 
     imageDataUrls.forEach((imageDataUrl, j) => {

@@ -1339,12 +1339,7 @@ async function rebuildPdfPreview() {
   }
 
   if (!window.JewelleryPdf || typeof window.JewelleryPdf.buildPdfBlob !== "function") {
-    console.warn("PDF builder not ready, waiting briefly...");
-    await new Promise(resolve => setTimeout(resolve, 300));
-  }
-
-  if (!window.JewelleryPdf || typeof window.JewelleryPdf.buildPdfBlob !== "function") {
-    throw new Error("PDF builder module failed to load");
+    throw new Error("PDF builder not loaded");
   }
 
   const pdfBlob = await window.JewelleryPdf.buildPdfBlob({
