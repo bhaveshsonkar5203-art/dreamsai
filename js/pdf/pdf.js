@@ -576,7 +576,8 @@
   buildCoverPdfBlob = wrapPdfFunctionIo("buildCoverPdfBlob", buildCoverPdfBlob);
 
   window.JewelleryPdf = {
-    buildPdfBlob: buildPdfBlob,
-    buildCoverPdfBlob: buildCoverPdfBlob
+    buildPdfBlob: function(...args) { return buildPdfBlob(...args); },
+    buildCoverPdfBlob: function(...args) { return buildCoverPdfBlob(...args); },
+    setPdfTheme: setPdfTheme
   };
 })();
