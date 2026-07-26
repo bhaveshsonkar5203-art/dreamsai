@@ -105,10 +105,13 @@
       return;
     }
 
+    const MAX_PREVIEW_ITEMS = 12;
+    const visibleItems = previewItems.slice(0, MAX_PREVIEW_ITEMS);
+
     const gridNode = document.createElement("div");
     gridNode.className = "mini-preview-grid";
 
-    previewItems.forEach(item => {
+    visibleItems.forEach(item => {
       const card = document.createElement("article");
       card.className = "mini-preview-card";
       // Ensure getPreviewImageUrl is in scope globally
@@ -128,6 +131,14 @@
     });
 
     preview.appendChild(gridNode);
+
+    if (previewItems.length > MAX_PREVIEW_ITEMS) {
+      const moreNode = document.createElement("div");
+      moreNode.className = "mini-preview-more";
+      moreNode.style.cssText = "grid-column: 1 / -1; text-align: center; font-size: 12px; font-weight: 600; color: #8a6d3b; padding: 8px 12px; background: rgba(191,150,95,0.12); border-radius: 8px; margin-top: 8px;";
+      moreNode.textContent = `+ ${previewItems.length - MAX_PREVIEW_ITEMS} more items will be included in the complete Lookbook`;
+      preview.appendChild(moreNode);
+    }
   }
 
   function updateMiniWebsiteModalPreview() {
@@ -566,6 +577,9 @@
 
   async function exportMiniWebsite(meta = null) {
     if (typeof showSpinner === 'function') showSpinner(true);
+
+    // Yield control to UI thread so spinner renders cleanly before heavy HTML generation
+    await new Promise(resolve => setTimeout(resolve, 60));
 
     try {
       if (!selected || !selected.length) {
