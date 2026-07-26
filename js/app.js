@@ -455,9 +455,7 @@ function render() {
     let isSelected = selected.includes(item["Serial No"]);
     const imageUrl = getPreviewImageUrl(item);
     const fallbackImageUrl = getPreviewFallbackImageUrl(item);
-    const onErrorAttr = fallbackImageUrl
-      ? `onerror=\"this.onerror=null;this.src='${fallbackImageUrl.replace(/'/g, "\\'")}';\"`
-      : "";
+    const onErrorAttr = `onerror="if(this.dataset.triedFallback){this.onerror=null;this.src='ring.jpg';}else{this.dataset.triedFallback='true';this.src='${(fallbackImageUrl || 'ring.jpg').replace(/'/g, "\\'")}';}"`;
 
     html += `
       <div class="card ${isSelected ? 'selected' : ''} ${status === "marked" ? "marked-card" : ""}" onclick='toggle("${item["Serial No"]}")'>
@@ -549,9 +547,7 @@ function renderSelected() {
     .map(item => {
       const primaryUrl = getPreviewImageUrl(item);
       const fallbackUrl = getPreviewFallbackImageUrl(item);
-      const onErrorAttr = fallbackUrl
-        ? `onerror=\"this.onerror=null;this.src='${fallbackUrl.replace(/'/g, "\\'")}';\"`
-        : "";
+      const onErrorAttr = `onerror="if(this.dataset.triedFallback){this.onerror=null;this.src='ring.jpg';}else{this.dataset.triedFallback='true';this.src='${(fallbackUrl || 'ring.jpg').replace(/'/g, "\\'")}';}"`;
 
       return `
       <div class="selection-card">
