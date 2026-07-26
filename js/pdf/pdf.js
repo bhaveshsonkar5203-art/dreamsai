@@ -73,6 +73,17 @@
     });
   }
 
+  const pdfImageCache = new Map();
+
+  async function getCachedOrResizedDataUrl(blob) {
+    if (pdfImageCache.has(blob)) {
+      return pdfImageCache.get(blob);
+    }
+    const dataUrl = await blobToDataUrl(blob);
+    pdfImageCache.set(blob, dataUrl);
+    return dataUrl;
+  }
+
   function formatDateLabel() {
     return new Date().toLocaleDateString(undefined, {
       year: "numeric",
@@ -90,58 +101,90 @@
     pdf.line(x, y + 2, x + width, y + 2);
   }
 
-  function drawPageTexture(pdf, pageWidth, pageHeight) {
-    pdf.setFillColor(241, 232, 219);
-    pdf.rect(0, 0, pageWidth, pageHeight, "F");
+  let pdfThemeMode = "noir"; // "noir" (Luxury Dark) or "atelier" (Cream/Gold Classic)
 
-    pdf.setFillColor(233, 221, 203);
-    pdf.roundedRect(16, 16, pageWidth - 32, pageHeight - 32, 34, 34, "F");
+  function setPdfTheme(theme) {
+    pdfThemeMode = theme === "atelier" ? "atelier" : "noir";
+  }
 
-    pdf.setFillColor(250, 245, 238);
-    pdf.roundedRect(28, 28, pageWidth - 56, pageHeight - 56, 28, 28, "F");
-
-    pdf.setFillColor(255, 251, 246);
-    pdf.roundedRect(42, 42, pageWidth - 84, pageHeight - 84, 22, 22, "F");
-
-    pdf.setDrawColor(214, 186, 149);
-    pdf.setLineWidth(1.2);
-    pdf.roundedRect(42, 42, pageWidth - 84, pageHeight - 84, 22, 22, "S");
-
-    pdf.setDrawColor(236, 223, 205);
-    pdf.setLineWidth(0.8);
-    pdf.roundedRect(50, 50, pageWidth - 100, pageHeight - 100, 18, 18, "S");
-
-    pdf.setDrawColor(233, 224, 213);
-    pdf.setLineWidth(0.35);
-    for (let y = 58; y < pageHeight - 50; y += 22) {
-      pdf.line(58, y, pageWidth - 58, y);
+  function getThemeColors() {
+    if (pdfThemeMode === "noir") {
+      return {
+        bgOuter: [18, 22, 32],
+        bgInner: [26, 32, 46],
+        cardBg: [32, 40, 56],
+        gold: [191, 150, 95],
+        textLight: [255, 255, 255],
+        textMuted: [160, 174, 192],
+        border: [52, 64, 88]
+      };
     }
+    return {
+      bgOuter: [248, 244, 238],
+      bgInner: [255, 251, 246],
+      cardBg: [255, 255, 255],
+      gold: [180, 140, 85],
+      textLight: [24, 29, 43],
+      textMuted: [110, 120, 135],
+      border: [225, 212, 195]
+    };
+  }
+
+  function drawQrCodePlaceholder(pdf, x, y, size, label = "SCAN FOR LOOKBOOK") {
+    pdf.setFillColor(255, 255, 255);
+    pdf.setDrawColor(191, 150, 95);
+    pdf.setLineWidth(1);
+    pdf.roundedRect(x, y, size, size, 4, 4, "FD");
+
+    // Corner QR anchors
+    pdf.setFillColor(18, 22, 32);
+    pdf.rect(x + 4, y + 4, 10, 10, "F");
+    pdf.rect(x + size - 14, y + 4, 10, 10, "F");
+    pdf.rect(x + 4, y + size - 14, 10, 10, "F");
+    pdf.setFillColor(191, 150, 95);
+    pdf.rect(x + 6, y + 6, 6, 6, "F");
+    pdf.rect(x + size - 12, y + 6, 6, 6, "F");
+    pdf.rect(x + 6, y + size - 12, 6, 6, "F");
+
+    // QR grid data simulation
+    pdf.setFillColor(40, 40, 40);
+    pdf.rect(x + 18, y + 6, 4, 4, "F");
+    pdf.rect(x + 6, y + 18, 4, 4, "F");
+    pdf.rect(x + 18, y + 18, 8, 8, "F");
+    pdf.rect(x + 14, y + 30, 6, 6, "F");
+    pdf.rect(x + 28, y + 14, 6, 6, "F");
+
+    pdf.setFontSize(6);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(191, 150, 95);
+    pdf.text(label, x + size / 2, y + size + 8, { align: "center" });
   }
 
   function drawCatalogueFrame(pdf, pageWidth, pageHeight, margin, pageNumber, totalPages, title) {
     drawPageTexture(pdf, pageWidth, pageHeight);
     drawOrnaments(pdf, pageWidth, pageHeight);
 
-    pdf.setFillColor(24, 29, 43);
-    pdf.roundedRect(margin, margin, pageWidth - margin * 2, 72, 18, 18, "F");
+    pdf.setFillColor(18, 22, 32);
+    pdf.roundedRect(margin, margin, pageWidth - margin * 2, 72, 14, 14, "F");
     drawGoldAccentLine(pdf, margin + 18, margin + 53, pageWidth - margin * 2 - 36);
 
     pdf.setFillColor(191, 150, 95);
-    pdf.roundedRect(margin + 18, margin + 14, 118, 22, 8, 8, "F");
-    pdf.setTextColor(42, 28, 14);
+    pdf.roundedRect(margin + 18, margin + 14, 155, 22, 6, 6, "F");
+    pdf.setTextColor(255, 255, 255);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9);
-    pdf.text("PRIVATE CLIENT PDF", margin + 29, margin + 29);
+    pdf.text("ASCEND COMMUNICATION", margin + 26, margin + 28);
 
     pdf.setTextColor(255, 255, 255);
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(20);
+    pdf.setFontSize(18);
     pdf.text(title, margin + 18, margin + 47);
 
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(10);
-    pdf.text("Curated tray presentation", margin + 18, margin + 64);
-    pdf.text(formatDateLabel(), pageWidth - margin - 18, margin + 29, { align: "right" });
+    pdf.setFontSize(9);
+    pdf.setTextColor(180, 190, 205);
+    pdf.text("Bespoke High Jewelry Tray Showcase", margin + 18, margin + 63);
+    pdf.text(formatDateLabel(), pageWidth - margin - 18, margin + 28, { align: "right" });
     pdf.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - margin - 18, margin + 47, { align: "right" });
 
     const panelX = margin + 12;
@@ -245,10 +288,10 @@
     pdf.setTextColor(89, 84, 78);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(9);
-    pdf.text("Prepared for premium client presentation and WhatsApp sharing", margin, pageHeight - margin + 4);
-    pdf.setTextColor(122, 97, 70);
+    pdf.text("Confidential Private Client Presentation • Formatted for WhatsApp & Print Handoff", margin, pageHeight - margin + 4);
+    pdf.setTextColor(191, 150, 95);
     pdf.setFont("helvetica", "bold");
-    pdf.text("Jewellery PDF Studio", pageWidth - margin, pageHeight - margin + 4, { align: "right" });
+    pdf.text("ASCEND COMMUNICATION", pageWidth - margin, pageHeight - margin + 4, { align: "right" });
   }
 
   async function drawCoverPage(pdf, pageWidth, pageHeight, margin, title, totalPages, firstBlob, itemCount) {
@@ -365,7 +408,7 @@
     });
 
     const imageDataUrls = await Promise.all(
-      batch.map(blob => blobToDataUrl(blob))
+      batch.map(blob => getCachedOrResizedDataUrl(blob))
     );
 
     imageDataUrls.forEach((imageDataUrl, j) => {
@@ -390,6 +433,9 @@
         undefined,
         "FAST"
       );
+
+      // Embed QR code on page footer corner
+      drawQrCodePlaceholder(pdf, margin + 14, pageHeight - margin - 52, 34, "LOOKBOOK");
 
       const badgeLabel = `${index + 1} / ${pageBlobs.length}`;
       pdf.setFillColor(191, 150, 95);

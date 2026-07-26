@@ -173,6 +173,9 @@
           <span class="custom-cb"></span>
           <span class="cb-text">Select this piece</span>
         </label>
+        <div class="note-container" id="note-box-${serial}" style="display: none; margin-top: 8px;">
+          <input type="text" id="note-${serial}" class="client-note-input" placeholder="Add custom request or note for studio..." style="width: 100%; padding: 8px 12px; font-size: 0.82rem; border: 1px solid var(--border); border-radius: 8px; font-family: inherit;">
+        </div>
       ` : "";
 
       return `
@@ -503,15 +506,31 @@
 
   <script>
     function updateSelectedCount() {
-      const count = document.querySelectorAll('.product-checkbox:checked').length;
+      const checkboxes = document.querySelectorAll('.product-checkbox');
+      let count = 0;
+      checkboxes.forEach(cb => {
+        const noteBox = document.getElementById('note-box-' + cb.value);
+        if (cb.checked) {
+          count++;
+          if (noteBox) noteBox.style.display = 'block';
+        } else {
+          if (noteBox) noteBox.style.display = 'none';
+        }
+      });
       document.getElementById('countDisplay').innerText = count;
     }
 
     async function submitClientSelections() {
       const checkboxes = document.querySelectorAll('.product-checkbox:checked');
-      const selectedSerials = Array.from(checkboxes).map(cb => cb.value);
+      const selectedItems = Array.from(checkboxes).map(cb => {
+        const noteInput = document.getElementById('note-' + cb.value);
+        return {
+          serial: cb.value,
+          note: noteInput ? noteInput.value.trim() : ""
+        };
+      });
 
-      if (selectedSerials.length === 0) {
+      if (selectedItems.length === 0) {
         alert("Please select at least one piece before submitting.");
         return;
       }
@@ -520,6 +539,9 @@
       btn.innerText = "Submitting to Studio...";
       btn.disabled = true;
 
+      const selectedSerials = selectedItems.map(item => item.serial);
+      const notesSummary = selectedItems.filter(item => item.note).map(item => item.serial + ": " + item.note).join("; ");
+
       try {
         const payload = {
           action: "submitReview",
@@ -527,6 +549,7 @@
           color: "#FFF2CC",
           reviewerName: "${escapeHtml(nameValue)}",
           selectedSerials: selectedSerials,
+          clientNotes: notesSummary,
           timestamp: new Date().toISOString()
         };
 
@@ -537,10 +560,16 @@
 
         btn.innerText = "Selections Submitted ✓";
         btn.style.background = "#2e7d32";
-        alert("Thank you! Your selection has been submitted for studio review.");
+
+        const messageText = encodeURIComponent("Hi Ascend Studio, I (" + "${escapeHtml(nameValue)}" + ") have confirmed my selections for " + selectedSerials.length + " piece(s): " + selectedSerials.join(", ") + (notesSummary ? " | Notes: " + notesSummary : ""));
+        const waUrl = "https://wa.me/?text=" + messageText;
+
+        if (confirm("Thank you! Your selections have been submitted for studio review.\n\nWould you like to open WhatsApp to send an instant confirmation message to the studio?")) {
+          window.open(waUrl, "_blank");
+        }
       } catch (err) {
         console.error(err);
-        alert("Selection recorded! Studio has been notified.");
+        alert("Selections recorded successfully! Your Final Selection Tray is being prepared by the studio.");
         btn.innerText = "Submitted ✓";
         btn.style.background = "#2e7d32";
       }
