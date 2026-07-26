@@ -128,6 +128,17 @@
       textMuted: [110, 120, 135],
       border: [225, 212, 195]
     };
+  function drawPageTexture(pdf, pageWidth, pageHeight) {
+    const colors = getThemeColors();
+    pdf.setFillColor(colors.bgOuter[0], colors.bgOuter[1], colors.bgOuter[2]);
+    pdf.rect(0, 0, pageWidth, pageHeight, "F");
+
+    pdf.setFillColor(colors.bgInner[0], colors.bgInner[1], colors.bgInner[2]);
+    pdf.roundedRect(16, 16, pageWidth - 32, pageHeight - 32, 24, 24, "F");
+
+    pdf.setDrawColor(colors.gold[0], colors.gold[1], colors.gold[2]);
+    pdf.setLineWidth(1.2);
+    pdf.roundedRect(24, 24, pageWidth - 48, pageHeight - 48, 18, 18, "S");
   }
 
   function drawQrCodePlaceholder(pdf, x, y, size, label = "SCAN FOR LOOKBOOK") {
