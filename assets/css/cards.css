@@ -1,0 +1,224 @@
+.grid,
+.selection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  align-items: start;
+}
+
+@media (min-width: 640px) {
+  .grid,
+  .selection-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .grid,
+  .selection-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1300px) {
+  .grid,
+  .selection-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1700px) {
+  .grid,
+  .selection-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 2200px) {
+  .grid,
+  .selection-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+.card,
+.selection-card,
+.selection-empty {
+  border-radius: var(--radius);
+}
+
+.card,
+.selection-card {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 12px rgba(21, 21, 21, 0.03);
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+  cursor: pointer;
+}
+
+.card:hover,
+.selection-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-local-accent-2);
+  box-shadow: var(--shadow-hover);
+}
+
+.card-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--color-local-accent-3);
+  border-radius: calc(var(--radius) - 1px);
+}
+
+.card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.card:hover .card-media img,
+.selection-card:hover .card-media img {
+  transform: scale(1.04);
+}
+
+.card-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20px 8px 8px;
+  background: linear-gradient(180deg, transparent, rgba(21, 21, 21, 0.8) 90%);
+  color: var(--color-text-2);
+  font-family: var(--font-mendes);
+  font-size: 0.84rem;
+  font-weight: 500;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.select-indicator {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sharp);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  transition: all var(--transition);
+  z-index: 2;
+}
+
+.select-indicator svg {
+  width: 12px;
+  height: 12px;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.card.selected .select-indicator {
+  background: var(--color-local-accent-2);
+  border-color: var(--color-local-accent-2);
+  transform: scale(1.05);
+}
+
+.card.selected .select-indicator svg {
+  opacity: 1;
+  stroke: var(--color-text-2);
+}
+
+.card.selected {
+  border-color: var(--color-local-accent-2);
+  box-shadow: 0 0 0 2px var(--color-local-accent-2);
+}
+
+.marked-card {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.marked-card::after {
+  content: "Marked";
+  position: absolute;
+  top: 12px;
+  right: -32px;
+  width: 120px;
+  padding: 3px 0;
+  background: var(--warning);
+  color: var(--color-text-2);
+  font-size: var(--font-type-1-size);
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(40deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  z-index: 2;
+}
+
+.marked-card .select-indicator {
+  display: none;
+}
+
+.marked-label {
+  display: none;
+}
+
+.selection-card .remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sharp);
+  background: var(--color-local-accent);
+  color: var(--color-text-2);
+  border: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: all var(--transition);
+  z-index: 3;
+}
+
+.selection-card:hover .remove-btn {
+  opacity: 1;
+}
+
+.selection-card .remove-btn:hover {
+  background: #c0392b;
+  transform: scale(1.08);
+}
+
+.selection-empty {
+  grid-column: 1 / -1;
+  padding: var(--space-5);
+  border: 1px dashed var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  text-align: center;
+  font-size: var(--font-type-2-size);
+}
+
+.animate-card {
+  opacity: 0;
+  animation: popIn 0.4s ease forwards;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

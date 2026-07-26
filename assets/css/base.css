@@ -1,0 +1,69 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-mendes);
+  font-size: 16px;
+  color: var(--color-text);
+  background: var(--color-local-accent-3);
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+h1, h2, h3, h4, .eyebrow {
+  letter-spacing: -0.01em;
+}
+
+h1, .vrai-heading {
+  font-family: var(--font-vrai);
+  font-weight: 500;
+}
+
+img,
+iframe {
+  display: block;
+  width: 100%;
+}
+
+button,
+select,
+textarea,
+input {
+  font-family: var(--font-mendes);
+  font-weight: 350;
+  font-size: var(--font-type-2-size);
+}
+
+button {
+  cursor: pointer;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.eyebrow {
+  font-family: var(--font-mendes);
+  font-size: var(--font-type-1-size);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin: 0;
+}
+
+.eyebrow.small {
+  font-size: var(--font-type-1-size);
+  letter-spacing: 0.1em;
+}
