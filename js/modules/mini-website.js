@@ -179,15 +179,17 @@
         : `<div class="image-placeholder"><span>No Image Available</span></div>`;
 
       const checkboxHtml = isReview ? `
-        <label class="checkbox-label" for="cb-${serial}">
+        <label class="checkbox-label" for="cb-${serial}" onclick="event.stopPropagation()">
           <input type="checkbox" id="cb-${serial}" class="product-checkbox" value="${serial}" onchange="updateSelectedCount()">
           <span class="custom-cb"></span>
           <span class="cb-text">Select this piece</span>
         </label>
       ` : "";
 
+      const cardOnClick = isReview ? `onclick="toggleCardCheckbox('${serial}', event)"` : "";
+
       return `
-        <article class="card" data-serial="${serial}">
+        <article class="card" data-serial="${serial}" ${cardOnClick}>
           <div class="card-media">
             ${imageTag}
             <span class="brand-tag">${brand}</span>
@@ -304,6 +306,18 @@
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 24px;
     }
+    @media (max-width: 640px) {
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .card-body {
+        padding: 14px;
+      }
+      .checkbox-label {
+        padding: 14px 16px;
+      }
+    }
     .card {
       background: var(--panel);
       border: 1px solid var(--border);
@@ -313,6 +327,11 @@
       transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
       display: flex;
       flex-direction: column;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card:active {
+      transform: scale(0.985);
     }
     .card:hover {
       transform: translateY(-4px);
@@ -513,6 +532,14 @@
   </div>
 
   <script>
+    function toggleCardCheckbox(serial, event) {
+      const cb = document.getElementById('cb-' + serial);
+      if (cb) {
+        cb.checked = !cb.checked;
+        updateSelectedCount();
+      }
+    }
+
     function updateSelectedCount() {
       const count = document.querySelectorAll('.product-checkbox:checked').length;
       document.getElementById('countDisplay').innerText = count;
