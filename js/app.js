@@ -1725,18 +1725,15 @@ function loadImage(url) {
 
 async function loadImageWithFallback(item) {
   const urls = buildImageSourceCandidates(item, true);
-  const errors = [];
 
   for (const url of urls) {
     try {
       return await loadImage(url);
-    } catch (err) {
-      errors.push(url);
+    } catch {
+      // Intentionally silent: tries next candidate url (including local ring.jpg/necklace.jpg)
     }
   }
 
-  // Only log once per item after all sources are exhausted
-  console.warn(`[${item["Serial No"]}] All image sources failed (${errors.length} tried):`, errors);
   throw new Error(`Image not found for ${item["Serial No"]}`);
 }
 
