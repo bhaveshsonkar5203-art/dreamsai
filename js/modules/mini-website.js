@@ -549,7 +549,7 @@
   ` : ""}
 
   <footer>
-    &copy; 2026 ASCEND High Jewelry Studio &bull; Private Client Digital Handoff
+    &copy; 2026 Ascend Communication &bull; Executive Client Digital Selection
   </footer>
 </body>
 </html>`;
