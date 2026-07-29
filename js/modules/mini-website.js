@@ -19,11 +19,25 @@
   }
 
   function getMiniWebsiteSelectionItems() {
+    let selectedArr = Array.isArray(window.selected) ? window.selected : [];
+    if (!selectedArr.length) {
+      try {
+        const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+        if (store && store.getActiveContext) {
+          const ctx = store.getActiveContext();
+          if (ctx && ctx.project && Array.isArray(ctx.project.selectedSerials) && ctx.project.selectedSerials.length) {
+            selectedArr = ctx.project.selectedSerials;
+          }
+        }
+      } catch (e) { }
+    }
+
+    const dataArr = Array.isArray(window.data) ? window.data : [];
     const selectedSerialSet = new Set(
-      (Array.isArray(selected) ? selected : []).map(normalizeSerialForMatching)
+      selectedArr.map(normalizeSerialForMatching)
     );
 
-    return data.filter(item => selectedSerialSet.has(normalizeSerialForMatching(item["Serial No"])));
+    return dataArr.filter(item => selectedSerialSet.has(normalizeSerialForMatching(item["Serial No"])));
   }
 
   function setMiniWebsiteMeta(name, purpose) {
@@ -53,16 +67,37 @@
 
   function openMiniWebsiteModal() {
     const modal = document.getElementById("miniWebsiteModal");
-    const nameInput = document.getElementById("miniWebsiteNameInput");
     const purposeSelect = document.getElementById("miniWebsitePurposeSelect");
+    const pill = document.getElementById("modalProjectContextPill");
 
-    if (!modal || !nameInput || !purposeSelect) {
+    if (!modal) {
       return;
     }
 
-    bindMiniWebsitePreviewInputs();
-    nameInput.value = miniWebsiteMeta.name || "";
-    purposeSelect.value = miniWebsiteMeta.purpose || "review";
+    let activeCtx = {};
+    try {
+      const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+      if (store && store.getActiveContext) {
+        activeCtx = store.getActiveContext();
+      }
+    } catch (e) { }
+
+    const celebName = activeCtx.celebrity ? activeCtx.celebrity.name : "Celebrity";
+    const stylistName = activeCtx.stylist ? activeCtx.stylist.name : "Stylist";
+    const projTitle = activeCtx.project ? activeCtx.project.title : "Lookbook Curation";
+
+    if (pill) {
+      pill.innerHTML = `<i class="fa-solid fa-user-tie"></i> Stylist: <strong>${escapeHtml(stylistName)}</strong> &bull; <i class="fa-solid fa-star"></i> Celebrity: <strong>${escapeHtml(celebName)}</strong> <span style="opacity:0.7">(${escapeHtml(projTitle)})</span>`;
+    }
+
+    if (purposeSelect) {
+      purposeSelect.value = miniWebsiteMeta.purpose || "review";
+      if (!purposeSelect.dataset.previewBound) {
+        purposeSelect.addEventListener("change", updateMiniWebsiteModalPreview);
+        purposeSelect.dataset.previewBound = "true";
+      }
+    }
+
     modal.classList.remove("hidden");
     updateMiniWebsiteModalPreview();
   }
@@ -80,13 +115,19 @@
       return;
     }
 
-    const nameInput = document.getElementById("miniWebsiteNameInput");
+    let activeCtx = {};
+    try {
+      const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+      if (store && store.getActiveContext) {
+        activeCtx = store.getActiveContext();
+      }
+    } catch (e) { }
+
+    const celebName = activeCtx.celebrity ? activeCtx.celebrity.name : "Celebrity";
     const purposeSelect = document.getElementById("miniWebsitePurposeSelect");
-    const hasModalInputs = Boolean(nameInput && purposeSelect);
-    const nameValue = (hasModalInputs ? nameInput.value : miniWebsiteMeta.name || "").trim() || "Guest";
-    const purpose = (hasModalInputs ? purposeSelect.value : miniWebsiteMeta.purpose || "review") === "final" ? "final" : "review";
+    const purpose = (purposeSelect ? purposeSelect.value : miniWebsiteMeta.purpose || "review") === "final" ? "final" : "review";
     const previewItems = getMiniWebsiteSelectionItems();
-    const selectedCount = Array.isArray(selected) ? selected.length : 0;
+    const selectedCount = previewItems.length;
     const selectionLabel = selectedCount ? `${selectedCount} selected product${selectedCount === 1 ? "" : "s"}` : "No products selected yet";
 
     preview.innerHTML = "";
@@ -94,13 +135,20 @@
 
     const statusNode = document.createElement("p");
     statusNode.className = "preview-sub";
-    statusNode.textContent = `${nameValue} · ${purpose === "final" ? "Final handoff" : "Review handoff"} • ${selectionLabel}`;
+    statusNode.style.cssText = "font-weight: 600; color: #444; margin-bottom: 8px;";
+    statusNode.textContent = `${celebName} · ${purpose === "final" ? "Showcase Lookbook" : "Interactive Review"} • ${selectionLabel}`;
     preview.appendChild(statusNode);
 
     if (!previewItems.length) {
       const emptyNode = document.createElement("div");
       emptyNode.className = "mini-preview-empty";
-      emptyNode.textContent = "Select products to populate the mini website preview.";
+      emptyNode.style.cssText = "padding: 18px 12px; text-align: center; border: 1px dashed #d4af37; border-radius: 8px; background: rgba(212,175,55,0.04); margin-top: 8px;";
+      emptyNode.innerHTML = `
+        <i class="fa-solid fa-gem" style="font-size: 1.4rem; color: #d4af37; margin-bottom: 6px; display: block;"></i>
+        <strong style="display: block; color: #1c1917; margin-bottom: 4px; font-size: 0.88rem;">No Products Selected for Preview</strong>
+        <span style="font-size: 0.8rem; color: #78716c; display: block; margin-bottom: 10px;">Select pieces from the catalogue grid to populate this live lookbook preview.</span>
+        <button class="btn btn-secondary btn-sm" onclick="switchTab('browse')" style="font-size: 0.78rem; padding: 4px 12px;"><i class="fa-solid fa-square-check"></i> Browse &amp; Select Items</button>
+      `;
       preview.appendChild(emptyNode);
       return;
     }
@@ -111,20 +159,21 @@
     const gridNode = document.createElement("div");
     gridNode.className = "mini-preview-grid";
 
+    const getImgFn = typeof window.getPreviewImageUrl === 'function' ? window.getPreviewImageUrl : (typeof getPreviewImageUrl === 'function' ? getPreviewImageUrl : null);
+
     visibleItems.forEach(item => {
       const card = document.createElement("article");
       card.className = "mini-preview-card";
-      // Ensure getPreviewImageUrl is in scope globally
-      const imageUrl = typeof getPreviewImageUrl === 'function' ? getPreviewImageUrl(item) : "";
+      const imageUrl = getImgFn ? getImgFn(item) : (item["Image URL"] || item.image || item.Image || "");
       const safeSerial = escapeHtml(item["Serial No"] || "");
       const safeBrand = escapeHtml(item["Brand Name"] || "");
       const safeType = escapeHtml(item["Type"] || "");
       card.innerHTML = `
-        ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${safeSerial}" loading="lazy">` : `<div class="mini-preview-placeholder">No image available</div>`}
-        <div class="mini-preview-body">
-          <p class="mini-preview-title">${safeSerial}</p>
-          <p class="mini-preview-sub">${safeBrand}</p>
-          <p class="mini-preview-sub">${safeType}</p>
+        ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${safeSerial}" loading="lazy" style="width:100%; aspect-ratio:1/1; object-fit:cover; display:block;">` : `<div class="mini-preview-placeholder">No image available</div>`}
+        <div class="mini-preview-body" style="padding: 6px 8px;">
+          <p class="mini-preview-title" style="font-weight: 700; margin: 0 0 2px; font-size: 0.82rem; color: #1c1917;">${safeSerial}</p>
+          <p class="mini-preview-sub" style="margin: 0; font-size: 0.75rem; color: #78716c;">${safeBrand}</p>
+          <p class="mini-preview-sub" style="margin: 0; font-size: 0.72rem; color: #a8a29e;">${safeType}</p>
         </div>
       `;
       gridNode.appendChild(card);
@@ -139,6 +188,16 @@
       moreNode.textContent = `+ ${previewItems.length - MAX_PREVIEW_ITEMS} more items will be included in the complete Lookbook`;
       preview.appendChild(moreNode);
     }
+
+    const actionTrayNode = document.createElement("div");
+    actionTrayNode.style.cssText = "margin-top: 12px; text-align: center;";
+    const serialListJson = JSON.stringify(previewItems.map(i => i["Serial No"]).filter(Boolean)).replace(/"/g, '&quot;');
+    actionTrayNode.innerHTML = `
+      <button class="btn btn-secondary btn-sm" onclick="if(window.importLookbookSelectionToFinalTray){ window.importLookbookSelectionToFinalTray(${serialListJson}); }" style="font-size: 0.82rem; background: #18181b; color: #d4af37; border: 1px solid #d4af37; border-radius: 6px; padding: 7px 16px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Add ${previewItems.length} Lookbook Piece${previewItems.length === 1 ? '' : 's'} to Final Tray
+      </button>
+    `;
+    preview.appendChild(actionTrayNode);
   }
 
   function updateMiniWebsiteModalPreview() {
@@ -148,10 +207,11 @@
 
   function buildMiniWebsiteHtml(inventoryItems, initialSelectedSerials = [], options = {}) {
     const selectedSerialSet = new Set(
-      (Array.isArray(initialSelectedSerials) ? initialSelectedSerials : []).map(normalizeSerialForMatching)
+      (Array.isArray(initialSelectedSerials) ? initialSelectedSerials : []).map(s => normalizeSerialForMatching(typeof s === 'object' ? (s["Serial No"] || s.id || s) : s))
     );
 
     const filteredInventory = inventoryItems.filter(item => {
+      if (!item) return false;
       const serial = normalizeSerialForMatching(item["Serial No"]);
       return selectedSerialSet.has(serial);
     });
@@ -162,18 +222,18 @@
     const isReview = purposeValue === "review";
     const currentApiUrl = (typeof API_URL !== "undefined") ? API_URL : "https://script.google.com/macros/s/AKfycby4RNwxBEfKWLWCT4Y6-LFLkObAE-j4LCDBUh5Lc3eG6zAcPN1WvUqXwOXMyWDH3nA/exec";
 
+    const getImgFn = typeof window.getPreviewImageUrl === 'function' ? window.getPreviewImageUrl : (typeof getPreviewImageUrl === 'function' ? getPreviewImageUrl : null);
+
     const cardsMarkup = filteredInventory.map(item => {
       const serial = escapeHtml(item["Serial No"] || "Unknown");
       const brand = escapeHtml(item["Brand Name"] || "Ascend High Jewelry");
       const type = escapeHtml(item["Type"] || "Bespoke Collection");
-      
-      let imageUrl = "";
-      if (typeof normalizeImageUrl === 'function') {
-         imageUrl = normalizeImageUrl(item["DisplayURL"] || item["CollageURL"] || "");
-      } else {
-         imageUrl = item["DisplayURL"] || item["CollageURL"] || "";
+
+      let imageUrl = getImgFn ? getImgFn(item) : (item["Image URL"] || item["DisplayURL"] || item["CollageURL"] || item.image || item.Image || "");
+      if (imageUrl && typeof normalizeImageUrl === 'function') {
+        imageUrl = normalizeImageUrl(imageUrl);
       }
-      
+
       const imageTag = imageUrl
         ? `<img src="${escapeHtml(imageUrl)}" alt="${serial}" loading="lazy">`
         : `<div class="image-placeholder"><span>No Image Available</span></div>`;
@@ -443,9 +503,29 @@
       color: var(--dark);
       font-weight: 700;
     }
+    .card.selected-card {
+      border: 2px solid var(--gold) !important;
+      background: #fffef2 !important;
+      box-shadow: 0 16px 40px rgba(191, 150, 95, 0.25) !important;
+    }
+    .selected-ribbon {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--gold);
+      color: #000000;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      z-index: 5;
+    }
     .cb-text {
       font-size: 0.88rem;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--text);
     }
     .floating-bar {
@@ -462,7 +542,7 @@
       align-items: center;
       gap: 24px;
       box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-      border: 1px solid rgba(191, 150, 95, 0.4);
+      border: 1px solid rgba(191, 150, 95, 0.5);
       z-index: 9999;
       width: min(90%, 540px);
       justify-content: space-between;
@@ -473,16 +553,16 @@
     }
     .selection-counter strong {
       color: var(--gold);
-      font-size: 16px;
+      font-size: 18px;
     }
     .submit-btn {
       background: linear-gradient(135deg, #bf965f 0%, #a67c48 100%);
-      color: #fff;
+      color: #000000;
       border: none;
       padding: 10px 24px;
       border-radius: 999px;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
       transition: all 0.2s ease;
       box-shadow: 0 4px 14px rgba(191, 150, 95, 0.4);
@@ -509,14 +589,14 @@
 </head>
 <body>
   <header class="header-banner">
-    <span class="brand-eyebrow">ASCEND HIGH JEWELRY</span>
-    <h1>Digital Client Lookbook</h1>
-    <p>Curated private presentation for ${escapeHtml(nameValue)}</p>
+    <span class="brand-eyebrow">ASCEND HIGH JEWELLERY</span>
+    <h1>Digital Celebrity Lookbook</h1>
+    <p>Curated Private Selection for ${escapeHtml(nameValue)}</p>
   </header>
 
   <main class="container">
     <div class="meta-bar">
-      <div class="client-pill">Prepared for: <span>${escapeHtml(nameValue)}</span></div>
+      <div class="client-pill">Celebrity / Muse: <span>${escapeHtml(nameValue)}</span></div>
       <div class="badge">${escapeHtml(purposeLabel)}</div>
     </div>
 
@@ -528,16 +608,39 @@
   ${isReview ? `
   <div class="floating-bar">
     <div class="selection-counter"><strong id="countDisplay">0</strong> pieces selected</div>
-    <button id="submitBtn" class="submit-btn" onclick="submitClientSelections()">Submit Selections for Review</button>
+    <button id="submitBtn" class="submit-btn" onclick="submitClientSelections()">Submit Selections to Studio →</button>
   </div>
 
   <script>
     function toggleCardCheckbox(serial, event) {
       const cb = document.getElementById('cb-' + serial);
-      if (cb) {
+      const card = document.querySelector('.card[data-serial="' + serial + '"]');
+      if (!cb) return;
+
+      if (event && event.target !== cb) {
         cb.checked = !cb.checked;
-        updateSelectedCount();
       }
+
+      if (card) {
+        if (cb.checked) {
+          card.classList.add('selected-card');
+          if (!card.querySelector('.selected-ribbon')) {
+            const media = card.querySelector('.card-media');
+            if (media) {
+              const ribbon = document.createElement('span');
+              ribbon.className = 'selected-ribbon';
+              ribbon.innerText = 'SELECTED ✓';
+              media.appendChild(ribbon);
+            }
+          }
+        } else {
+          card.classList.remove('selected-card');
+          const ribbon = card.querySelector('.selected-ribbon');
+          if (ribbon) ribbon.remove();
+        }
+      }
+
+      updateSelectedCount();
     }
 
     function updateSelectedCount() {
@@ -559,13 +662,24 @@
       btn.disabled = true;
 
       try {
+        try {
+          if (window.parent && typeof window.parent.importLookbookSelectionToFinalTray === 'function') {
+            window.parent.importLookbookSelectionToFinalTray(selectedSerials);
+          } else if (window.opener && typeof window.opener.importLookbookSelectionToFinalTray === 'function') {
+            window.opener.importLookbookSelectionToFinalTray(selectedSerials);
+          }
+        } catch(e) {
+          console.warn("Parent sync notice:", e);
+        }
+
         const payload = {
-          action: "submitReview",
-          status: "Under Review",
-          color: "#FFF2CC",
-          reviewerName: "${escapeHtml(nameValue)}",
-          selectedSerials: selectedSerials,
-          timestamp: new Date().toISOString()
+          action: "saveProject",
+          project: {
+            title: "${escapeHtml(nameValue)} Approved Selection",
+            status: "Celebrity Approved",
+            selectedSerials: selectedSerials,
+            updatedAt: new Date().toISOString()
+          }
         };
 
         await fetch("${currentApiUrl}", {
@@ -573,14 +687,14 @@
           body: JSON.stringify(payload)
         });
 
-        btn.innerText = "Selections Submitted ✓";
-        btn.style.background = "#2e7d32";
-        alert("Thank you! Your selection has been submitted for studio review.");
+        btn.innerText = "Selections Approved ✓";
+        btn.style.background = "#22c55e";
+        alert("Thank you! Your approved pieces (" + selectedSerials.length + ") have been marked as selected and added directly to your Studio Final Tray.");
       } catch (err) {
         console.error(err);
-        alert("Selection recorded! Studio has been notified.");
-        btn.innerText = "Submitted ✓";
-        btn.style.background = "#2e7d32";
+        btn.innerText = "Approved ✓";
+        btn.style.background = "#22c55e";
+        alert("Selection recorded! Approved pieces added to your Studio Final Tray.");
       }
     }
   </script>
@@ -594,12 +708,19 @@
   }
 
   function gatherMiniWebsiteMeta() {
-    const nameInput = document.getElementById("miniWebsiteNameInput");
+    let activeCtx = {};
+    try {
+      const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+      if (store && store.getActiveContext) {
+        activeCtx = store.getActiveContext();
+      }
+    } catch (e) { }
+
+    const celebName = activeCtx.celebrity ? activeCtx.celebrity.name : "Celebrity";
     const purposeSelect = document.getElementById("miniWebsitePurposeSelect");
-    const name = (nameInput ? nameInput.value : "").trim();
     const purpose = purposeSelect ? purposeSelect.value : "review";
-    setMiniWebsiteMeta(name, purpose);
-    return { name: miniWebsiteMeta.name, purpose: miniWebsiteMeta.purpose };
+    setMiniWebsiteMeta(celebName, purpose);
+    return { name: celebName, purpose: miniWebsiteMeta.purpose };
   }
 
   async function exportMiniWebsite(meta = null) {
@@ -609,30 +730,101 @@
     await new Promise(resolve => setTimeout(resolve, 60));
 
     try {
-      if (!selected || !selected.length) {
-        alert("Select products first, then share the Client Lookbook.");
+      let currentSelected = Array.isArray(window.selected) ? window.selected : [];
+      if (!currentSelected || !currentSelected.length) {
+        try {
+          const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+          if (store && store.getActiveContext) {
+            const ctx = store.getActiveContext();
+            if (ctx && ctx.project && Array.isArray(ctx.project.selectedSerials) && ctx.project.selectedSerials.length) {
+              currentSelected = ctx.project.selectedSerials;
+            }
+          }
+        } catch (e) { }
+      }
+
+      const currentData = Array.isArray(window.data) ? window.data : [];
+
+      if (!currentSelected || !currentSelected.length) {
+        alert("Select products from the catalogue first, then create the Client Lookbook.");
         return;
       }
 
       const resolvedMeta = meta || gatherMiniWebsiteMeta();
-      const inventoryItems = Array.isArray(data) && data.length
-        ? data
-        : (typeof getInventoryForExport === 'function' ? await getInventoryForExport() : []);
-      
-      const selectedSerials = Array.isArray(selected) ? selected.filter(Boolean) : [];
+      let inventoryItems = currentData.length ? currentData : [];
+      if (!inventoryItems.length && typeof window.getInventoryForExport === 'function') {
+        inventoryItems = await window.getInventoryForExport();
+      }
+
+      const selectedSerials = currentSelected.filter(Boolean);
 
       const html = buildMiniWebsiteHtml(inventoryItems, selectedSerials, resolvedMeta);
       const blob = new Blob([html], { type: "text/html;charset=utf-8" });
       const fileName = `ascend-client-lookbook-${Date.now()}.html`;
 
-      if (typeof openBlobPreview === 'function') openBlobPreview(blob, fileName);
-      if (typeof triggerBlobDownload === 'function') triggerBlobDownload(blob, fileName);
-      
+      if (typeof window.setHtmlLookbookPreview === 'function') {
+        window.setHtmlLookbookPreview(blob, fileName, resolvedMeta, selectedSerials.length);
+      } else if (typeof openBlobPreview === 'function') {
+        openBlobPreview(blob, fileName);
+      }
+
+      if (typeof triggerBlobDownload === 'function') {
+        triggerBlobDownload(blob, fileName);
+      }
+
       closeMiniWebsiteModal();
 
-      alert(`Client Lookbook generated for ${resolvedMeta.name || "Valued Client"} with ${selected.length} piece${selected.length === 1 ? "" : "s"}.`);
+      const shareBox = document.getElementById("postCreationShareContainer");
+      if (shareBox) {
+        shareBox.style.display = "block";
+      }
+
+      // Sync project status and dispatch backend API POST request
+      try {
+        const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+        let activeProject = null;
+        if (store && store.getActiveContext) {
+          const ctx = store.getActiveContext();
+          if (ctx && ctx.project) {
+            activeProject = ctx.project;
+          }
+        }
+
+        if (store && store.updateProjectStatus && activeProject) {
+          store.updateProjectStatus(activeProject.id, "Lookbook Sent");
+        }
+
+        const targetApiUrl = (typeof window !== 'undefined' && window.API_URL) ? window.API_URL : "https://script.google.com/macros/s/AKfycbx0eH7JARm9zfA7thFyCYt4LYUTcPzw0MdKFuVTAg-z6il9_r2YSJG00WiRwv2QJmQ/exec";
+
+        const apiPayload = {
+          action: "saveProject",
+          project: {
+            id: activeProject ? activeProject.id : ("proj_" + Date.now()),
+            title: activeProject ? activeProject.title : `${resolvedMeta.name} Lookbook`,
+            celebrityName: resolvedMeta.name || "Valued Client",
+            status: "Lookbook Sent",
+            selectedSerials: selectedSerials,
+            lookbookUrl: fileName,
+            itemCount: selectedSerials.length,
+            updatedAt: new Date().toISOString()
+          }
+        };
+
+        fetch(targetApiUrl, {
+          method: "POST",
+          body: JSON.stringify(apiPayload)
+        }).then(res => res.json()).then(resData => {
+          console.log("[Lookbook API] Project successfully synced to backend API:", resData);
+        }).catch(err => {
+          console.warn("[Lookbook API] Sync notice:", err);
+        });
+      } catch (apiErr) {
+        console.warn("[Lookbook API] Sync notice:", apiErr);
+      }
+
+      alert(`Client Lookbook generated for ${resolvedMeta.name || "Valued Client"} with ${selectedSerials.length} piece${selectedSerials.length === 1 ? "" : "s"}. Synced to backend & preview loaded!`);
     } catch (err) {
-      console.error(err);
+      console.error("Error creating Client Lookbook:", err);
       alert("Unable to create Client Lookbook. Please try again.");
     } finally {
       if (typeof showSpinner === 'function') showSpinner(false);
@@ -643,7 +835,35 @@
     exportMiniWebsite(gatherMiniWebsiteMeta());
   }
 
-  // Export both primary names and legacy aliases for backwards compatibility
+  async function checkUrlLookbookMode() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode") || params.get("lookbook");
+      if (mode === "lookbook" || mode === "true") {
+        const rawItems = params.get("items") || "";
+        const selectedSerials = rawItems.split(",").map(s => s.trim()).filter(Boolean);
+        const name = params.get("name") || "Valued Client";
+        const purpose = params.get("purpose") || "review";
+        const projId = params.get("project") || ("proj_" + Date.now());
+
+        let inventoryItems = Array.isArray(window.data) && window.data.length ? window.data : [];
+        if (!inventoryItems.length && typeof window.getInventoryForExport === 'function') {
+          inventoryItems = await window.getInventoryForExport();
+        }
+
+        const html = buildMiniWebsiteHtml(inventoryItems, selectedSerials, { name, purpose, projId });
+        document.open();
+        document.write(html);
+        document.close();
+        return true;
+      }
+    } catch (e) {
+      console.warn("[Lookbook URL] Error opening lookbook web view:", e);
+    }
+    return false;
+  }
+
+  // Export functions
   window.exportClientLookbook = exportMiniWebsite;
   window.openClientLookbookModal = openMiniWebsiteModal;
   window.closeClientLookbookModal = closeMiniWebsiteModal;
@@ -654,4 +874,11 @@
   window.closeMiniWebsiteModal = closeMiniWebsiteModal;
   window.createMiniWebsiteFromModal = createMiniWebsiteFromModal;
   window.updateMiniWebsiteModalPreview = updateMiniWebsiteModalPreview;
+  window.checkUrlLookbookMode = checkUrlLookbookMode;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", checkUrlLookbookMode);
+  } else {
+    checkUrlLookbookMode();
+  }
 })();

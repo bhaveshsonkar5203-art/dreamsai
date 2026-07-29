@@ -98,7 +98,10 @@
   }
 
   function rebuildDataIndex() {
-    dataBySerial = new Map(data.map(item => [item["Serial No"], item]));
+    const currentData = Array.isArray(window.data) ? window.data : [];
+    if (typeof window.dataBySerial !== 'undefined') {
+      window.dataBySerial = new Map(currentData.map(item => [item["Serial No"], item]));
+    }
   }
 
   window.normalizeStatus = normalizeStatus;

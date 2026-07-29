@@ -1,5 +1,20 @@
+import * as ProjectStore from './modules/project-store.js';
+import { initProjectUI, renderProjectBar } from './modules/project-ui.js';
+
 let data = [];
 let selected = [];
+
+Object.defineProperty(window, 'selected', {
+  get: () => selected,
+  set: (val) => { selected = val; },
+  configurable: true
+});
+
+Object.defineProperty(window, 'data', {
+  get: () => data,
+  set: (val) => { data = val; },
+  configurable: true
+});
 let lastBlob = null;
 let collageBlobs = [];
 let lastExportItems = [];
@@ -18,7 +33,7 @@ let finalTraySerials = [];
 let finalTraySuggestionIndex = -1;
 let dataBySerial = new Map();
 
-const API_URL = "https://script.google.com/macros/s/AKfycby4RNwxBEfKWLWCT4Y6-LFLkObAE-j4LCDBUh5Lc3eG6zAcPN1WvUqXwOXMyWDH3nA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx0eH7JARm9zfA7thFyCYt4LYUTcPzw0MdKFuVTAg-z6il9_r2YSJG00WiRwv2QJmQ/exec";
 const APP_BUILD_TAG = "script-20260410-guard-logs-1";
 
 function traceFinalTray(step, details) {
@@ -28,6 +43,35 @@ function traceFinalTray(step, details) {
     return;
   }
   console.log(`[FinalTray ${stamp}] ${step}`, details);
+}
+
+function syncCurrentSelectionToProject() {
+  const { project } = ProjectStore.getActiveContext();
+  if (project) {
+    ProjectStore.updateProjectItems(project.id, selected);
+    renderProjectBar();
+    if (typeof window.renderHomepageProjectsSection === 'function') {
+      window.renderHomepageProjectsSection();
+    }
+  }
+}
+
+// Initialize Project Bar & Workspace
+initProjectUI({
+  onProjectSwitch: (project) => {
+    selected = project && project.selectedSerials ? [...project.selectedSerials] : [];
+    updateTabBadge();
+    render();
+    if (typeof window.renderHomepageProjectsSection === 'function') {
+      window.renderHomepageProjectsSection();
+    }
+  }
+});
+
+// Load active project items into selection
+const { project: initialActiveProject } = ProjectStore.getActiveContext();
+if (initialActiveProject && Array.isArray(initialActiveProject.selectedSerials)) {
+  selected = [...initialActiveProject.selectedSerials];
 }
 
 /* FETCH DATA */
@@ -73,8 +117,11 @@ async function getInventoryForExport() {
   return Array.isArray(json) ? json : (json.data || []);
 }
 
+window.getInventoryForExport = getInventoryForExport;
+
 
 function updateTabBadge() {
+  renderFloatingSelectionBar();
   const badge = document.getElementById("browseTabBadge");
   if (badge) {
     if (selected.length > 0) {
@@ -86,30 +133,6 @@ function updateTabBadge() {
 }
 
 window.updateTabBadge = updateTabBadge;
-
-function switchTab(tabName) {
-  updateTabBadge();
-  const browseTab = document.getElementById("browseTab");
-  const selectedTab = document.getElementById("selectedTab");
-  const finalTrayTab = document.getElementById("finalTrayTab");
-  const browseBtn = document.getElementById("tabBrowseBtn");
-  const selectedBtn = document.getElementById("tabSelectedBtn");
-  const finalTrayBtn = document.getElementById("tabFinalTrayBtn");
-
-  const isBrowse = tabName === "browse";
-  const isSelected = tabName === "selected";
-  browseTab.classList.toggle("active", isBrowse);
-  selectedTab.classList.toggle("active", isSelected);
-  finalTrayTab.classList.toggle("active", tabName === "finalTray");
-  browseBtn.classList.toggle("active", isBrowse);
-  selectedBtn.classList.toggle("active", isSelected);
-  finalTrayBtn.classList.toggle("active", tabName === "finalTray");
-
-  const pageShell = document.querySelector(".page-shell");
-  if (pageShell) {
-    pageShell.classList.toggle("browse-active", isBrowse);
-  }
-}
 
 function toggleControlsCollapse() {
   const content = document.getElementById("controlsContent");
@@ -512,6 +535,7 @@ function toggle(id) {
   } else {
     selected.push(id);
   }
+  syncCurrentSelectionToProject();
   updateTabBadge();
   render();
 }
@@ -565,6 +589,10 @@ function renderSelected() {
     }).join("");
 
   renderSelectedPager(selectedItems.length);
+
+  if (typeof window.updateMiniWebsiteModalPreview === 'function') {
+    window.updateMiniWebsiteModalPreview();
+  }
 }
 
 function renderSelectedPager(totalItems) {
@@ -772,87 +800,69 @@ async function generateFinalTrayFromSerials() {
   let serials = [...finalTraySerials];
 
   if (!serials.length) {
-    const serialInput = document.getElementById("serialBulkInput");
-    const parsed = parseSerialInput(serialInput ? serialInput.value : "");
-    if (parsed.length) {
-      addSerialsToFinalTray(parsed);
-      serials = [...finalTraySerials];
+    const serialInput = document.getElementById("finalTraySearchInput") || document.getElementById("serialBulkInput");
+    if (serialInput && serialInput.value) {
+      const parsed = serialInput.value.split(/[\s,;\n]+/).map(s => s.trim()).filter(Boolean);
+      if (parsed.length) {
+        addSerialsToFinalTray(parsed);
+        serials = [...finalTraySerials];
+      }
     }
   }
 
+  if (!serials.length && Array.isArray(selected) && selected.length) {
+    addSerialsToFinalTray(selected);
+    serials = [...finalTraySerials];
+  }
+
   if (!serials.length) {
-    setSerialFeedback("Please enter at least one serial code.", true);
+    try {
+      const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+      if (store && store.getActiveContext) {
+        const activeCtx = store.getActiveContext();
+        if (activeCtx && activeCtx.project && Array.isArray(activeCtx.project.selectedSerials) && activeCtx.project.selectedSerials.length) {
+          addSerialsToFinalTray(activeCtx.project.selectedSerials);
+          serials = [...finalTraySerials];
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (!serials.length) {
+    alert("Please select items from the catalogue or add serial codes to the Final Tray list first.");
+    setSerialFeedback("Please select items or add serial codes first.", true);
     return;
   }
 
   if (serials.length > 300) {
-    setSerialFeedback("Large export detected. Compact PDF mode will be used for better stability.", false);
+    alert("Large export detected. Compact PDF mode will be used to keep generation stable.");
   }
 
   showSpinner(true);
-  setSerialFeedback("Preparing final tray PDF and updating marked status...", false);
+  setSerialFeedback(`Preparing Final Tray PDF for ${serials.length} item(s)...`, false);
 
   try {
-    const requestId = `ft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    traceFinalTray("generate:start", {
-      requestId,
-      build: APP_BUILD_TAG,
-      serialCount: serials.length,
-      serialPreview: serials.slice(0, 8)
-    });
-
     const exportItems = resolveItemsBySerials(serials);
-    traceFinalTray("generate:resolvedItems", {
-      requestId,
-      resolvedCount: exportItems.length
-    });
-
-    const exportIds = exportItems
-      .map(item => String(item["Serial No"] || "").trim())
-      .filter(Boolean);
-
-    if (!exportIds.length) {
-      throw new Error("No matching serials found in current data");
+    if (!exportItems.length) {
+      alert("No matching items found in inventory for the final tray serials.");
+      setSerialFeedback("No matching items found in inventory.", true);
+      return;
     }
 
-    let generatedBlobs;
-    try {
-      // Keep Final Tray visual output identical to Selection pipeline.
-      generatedBlobs = await buildAllCollagesOnServer(exportIds);
-    } catch (serverErr) {
-      console.warn("Final tray server collage failed, using browser fallback", serverErr);
-      const chunks = chunkArray(exportIds, 6);
-      generatedBlobs = [];
-      for (const chunkIds of chunks) {
-        const items = data.filter(d => chunkIds.includes(String(d["Serial No"] || "").trim()));
-        let blob = await buildCollageBlob(items);
-        if (chunkIds.length < 6) {
-          blob = await trimOuterWhitespaceOnly(blob);
-        }
-        generatedBlobs.push(blob);
+    const itemChunks = chunkArray(exportItems, 6);
+    const generatedBlobs = [];
+
+    for (const chunkItems of itemChunks) {
+      let blob = await buildCollageBlob(chunkItems);
+      if (chunkItems.length < 6) {
+        blob = await trimOuterWhitespaceOnly(blob);
       }
+      generatedBlobs.push(blob);
     }
 
-    if (!generatedBlobs || generatedBlobs.length === 0) {
-      throw new Error("Unable to prepare the final tray PDF pages");
+    if (!generatedBlobs.length) {
+      throw new Error("Unable to prepare final tray PDF pages");
     }
-
-    const markResult = await markFinalTrayOnlyOnServer(serials);
-    traceFinalTray("generate:serverResult", {
-      requestId,
-      ok: !!markResult?.ok,
-      pages: generatedBlobs.length,
-      updatedCount: Number(markResult?.updatedCount || 0),
-      missingCount: Array.isArray(markResult?.missingSerials) ? markResult.missingSerials.length : 0,
-      error: markResult?.error || ""
-    });
-
-    if (!markResult.ok) {
-      throw new Error(markResult.error || "Unable to update marked status");
-    }
-
-    const updatedCount = Number(markResult.updatedCount || 0);
-    const missing = markResult.missingSerials || [];
 
     collageBlobs = generatedBlobs;
     lastBlob = collageBlobs[0];
@@ -862,37 +872,28 @@ async function generateFinalTrayFromSerials() {
     lastPdfBlob = null;
 
     await rebuildPdfPreview();
-    await loadData();
 
-    const missingText = missing.length ? ` Missing: ${missing.join(", ")}.` : "";
-    const pageText = collageBlobs.length > 1 ? ` ${collageBlobs.length} PDF pages prepared.` : "";
+    setSerialFeedback(`Done. Final tray PDF generated for ${exportItems.length} item(s).`, false);
 
-    setSerialFeedback(`Done. Marked ${updatedCount} items in Excel.${missingText}${pageText}`, false);
-    traceFinalTray("generate:done", {
-      requestId,
-      pages: collageBlobs.length,
-      marked: updatedCount,
-      missing
-    });
-    alert(`Final tray PDF prepared. ${updatedCount} items marked in Excel.${pageText}`);
+    // Update active project status in background
+    try {
+      const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+      const activeCtx = store && store.getActiveContext ? store.getActiveContext() : {};
+      const activeProject = activeCtx.project;
+      if (store && store.updateProjectStatus && activeProject) {
+        store.updateProjectStatus(activeProject.id, "Sample Reserved");
+      }
+    } catch (e) {}
+
   } catch (err) {
-    console.error(err);
-    traceFinalTray("generate:error", {
-      message: err?.message || String(err),
-      stack: err?.stack || ""
-    });
-    const rawMessage = err && err.message ? String(err.message) : "Failed to prepare the final tray PDF";
-    const isSlidesRuntimeMismatch = /setPageWidth|setPageHeight/i.test(rawMessage);
-    const uiMessage = isSlidesRuntimeMismatch
-      ? "Final Tray failed on server: outdated Apps Script deployment. Redeploy Web App with New Version, then retry."
-      : rawMessage;
-
-    setSerialFeedback(uiMessage, true);
-    alert("Error preparing the final tray PDF. Please check serial codes and try again.");
+    console.error("Error creating final tray PDF:", err);
+    alert("Error preparing final tray PDF. Please try again.");
+    setSerialFeedback("Error preparing final tray PDF.", true);
   } finally {
     showSpinner(false);
   }
 }
+window.generateFinalTrayFromSerials = generateFinalTrayFromSerials;
 
 function parseSerialInput(rawText) {
   const chunks = String(rawText || "")
@@ -1035,6 +1036,36 @@ function addSerialsToFinalTray(values) {
 
   return addedCount;
 }
+
+function importLookbookSelectionToFinalTray(serials) {
+  const incoming = Array.isArray(serials) ? serials.filter(Boolean) : [];
+  if (!incoming.length) return 0;
+
+  incoming.forEach(id => {
+    const normalized = sanitizeSerialToken(id);
+    if (normalized && !selected.includes(normalized)) {
+      selected.push(normalized);
+    }
+  });
+
+  const added = addSerialsToFinalTray(incoming);
+
+  syncCurrentSelectionToProject();
+  updateTabBadge();
+  render();
+  renderFinalTraySerialManager();
+  updateMiniWebsiteModalPreview();
+
+  setSerialFeedback(`Imported ${incoming.length} lookbook item${incoming.length === 1 ? '' : 's'} into Final Tray!`, false);
+
+  const shareBox = document.getElementById("postCreationShareContainer");
+  if (shareBox) {
+    shareBox.style.display = "block";
+  }
+
+  return added;
+}
+window.importLookbookSelectionToFinalTray = importLookbookSelectionToFinalTray;
 
 function removeSerialFromFinalTray(serial) {
   const normalized = sanitizeSerialToken(serial);
@@ -1293,6 +1324,7 @@ function updatePdfMeta() {
 function clearPdfPreview() {
   const frame = document.getElementById("pdfPreviewFrame");
   const placeholder = document.getElementById("previewPlaceholder");
+  const shareBox = document.getElementById("postCreationShareContainer");
 
   if (lastPdfUrl) {
     URL.revokeObjectURL(lastPdfUrl);
@@ -1310,12 +1342,17 @@ function clearPdfPreview() {
     placeholder.classList.remove("hidden");
   }
 
+  if (shareBox) {
+    shareBox.style.display = "none";
+  }
+
   updatePdfMeta();
 }
 
 function setPdfPreview(blob) {
   const frame = document.getElementById("pdfPreviewFrame");
   const placeholder = document.getElementById("previewPlaceholder");
+  const shareBox = document.getElementById("postCreationShareContainer");
 
   if (lastPdfUrl) {
     URL.revokeObjectURL(lastPdfUrl);
@@ -1333,8 +1370,44 @@ function setPdfPreview(blob) {
     placeholder.classList.add("hidden");
   }
 
+  if (shareBox) {
+    shareBox.style.display = "block";
+  }
+
   updatePdfMeta();
 }
+
+function setHtmlLookbookPreview(blob, fileName, meta, itemCount) {
+  const frame = document.getElementById("pdfPreviewFrame");
+  const placeholder = document.getElementById("previewPlaceholder");
+  const shareBox = document.getElementById("postCreationShareContainer");
+  const metaNode = document.getElementById("pdfMeta");
+
+  if (lastPdfUrl) {
+    URL.revokeObjectURL(lastPdfUrl);
+  }
+
+  lastPdfBlob = blob;
+  lastPdfUrl = URL.createObjectURL(blob);
+
+  if (frame) {
+    frame.src = lastPdfUrl;
+    frame.classList.add("visible");
+  }
+
+  if (placeholder) {
+    placeholder.classList.add("hidden");
+  }
+
+  if (shareBox) {
+    shareBox.style.display = "block";
+  }
+
+  if (metaNode) {
+    metaNode.textContent = `Client Lookbook · ${meta.name || "Valued Client"} · ${itemCount} piece${itemCount === 1 ? "" : "s"}`;
+  }
+}
+window.setHtmlLookbookPreview = setHtmlLookbookPreview;
 
 async function rebuildPdfPreview() {
   if (!collageBlobs.length) {
@@ -1970,3 +2043,249 @@ async function trimOuterWhitespaceOnly(blob) {
     img.src = url;
   });
 }
+
+function renderFloatingSelectionBar() {
+  let bar = document.getElementById("floatingSelectionBar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "floatingSelectionBar";
+    bar.className = "floating-selection-bar";
+    document.body.appendChild(bar);
+  }
+
+  if (selected.length === 0) {
+    bar.style.display = "none";
+    return;
+  }
+
+  bar.style.display = "flex";
+  bar.innerHTML = `
+    <div class="fsb-info">
+      <i class="fa-solid fa-gem"></i> <strong>${selected.length}</strong> Piece${selected.length === 1 ? '' : 's'} Selected
+    </div>
+    <button class="fsb-btn-proceed" onclick="switchTab('selected')">
+      Proceed to Export &amp; Share <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  `;
+}
+
+async function shareSelectionToWhatsApp() {
+  if (selected.length === 0) {
+    alert("Please select at least 1 item to share.");
+    return;
+  }
+
+  const { celebrity, project, stylist } = ProjectStore.getActiveContext();
+  const selectedItems = data.filter(d => selected.includes(d["Serial No"]));
+
+  const celebName = celebrity ? celebrity.name : "Celebrity";
+  const stylistName = stylist ? stylist.name : "Stylist";
+  const projTitle = project ? project.title : "Curation Pull";
+  const safeFilename = `${celebName.replace(/[^a-zA-Z0-9]/g, '_')}_Curation.pdf`;
+
+  // 1. Native Web Share API (Directly attaches PDF File to WhatsApp on supported devices!)
+  if (lastPdfBlob && navigator.canShare) {
+    try {
+      const pdfFile = new File([lastPdfBlob], safeFilename, { type: "application/pdf" });
+      if (navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: `${celebName} Lookbook - ${projTitle}`,
+          text: `✨ ASCEND ATELIER CURATION\n📁 Project: ${projTitle}\n👑 Celebrity: ${celebName}\n👤 Stylist: ${stylistName}`
+        });
+        console.log("[WebShare] Direct PDF file shared successfully!");
+        return;
+      }
+    } catch (shareErr) {
+      if (shareErr.name !== "AbortError") {
+        console.warn("[WebShare] Native share failed, falling back to Web WhatsApp", shareErr);
+      } else {
+        return;
+      }
+    }
+  }
+
+  // 2. Desktop Browser Fallback
+  if (typeof downloadCurrentPdf === 'function' && lastPdfBlob) {
+    downloadCurrentPdf();
+  }
+
+  let msg = `✨ *ASCEND ATELIER CURATION PDF*\n`;
+  msg += `---------------------------\n`;
+  msg += `📁 *Project:* ${projTitle}\n`;
+  msg += `👑 *Celebrity:* ${celebName}\n`;
+  msg += `👤 *Stylist:* ${stylistName}\n`;
+  msg += `💎 *Total Selected Pieces:* ${selectedItems.length}\n\n`;
+  msg += `📄 *PDF Lookbook Document Downloaded (${safeFilename})*\n\n`;
+  msg += `*Curated Piece Serials:*\n`;
+
+  selectedItems.slice(0, 10).forEach((item, idx) => {
+    msg += `${idx + 1}. ${item["Serial No"]} (${item["Type"] || "Jewellery"})\n`;
+  });
+
+  if (selectedItems.length > 10) {
+    msg += `...and ${selectedItems.length - 10} more pieces.\n`;
+  }
+
+  msg += `\nAscend High Jewelry Studio`;
+
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, "_blank");
+}
+
+function switchTab(tabName) {
+  if (typeof window.unlockStudioWorkspace === 'function') {
+    window.unlockStudioWorkspace();
+  }
+
+  const tabs = {
+    browse: { btn: "tabBrowseBtn", section: "browseTab" },
+    selected: { btn: "tabSelectedBtn", section: "selectedTab" },
+    finalTray: { btn: "tabFinalTrayBtn", section: "finalTrayTab" }
+  };
+
+  Object.keys(tabs).forEach(key => {
+    const btn = document.getElementById(tabs[key].btn);
+    const section = document.getElementById(tabs[key].section);
+
+    if (key === tabName) {
+      if (btn) btn.classList.add("active");
+      if (section) section.classList.add("active");
+    } else {
+      if (btn) btn.classList.remove("active");
+      if (section) section.classList.remove("active");
+    }
+  });
+
+  const pageShell = document.querySelector(".page-shell");
+  if (pageShell) {
+    if (tabName === "browse") {
+      pageShell.classList.add("browse-active");
+    } else {
+      pageShell.classList.remove("browse-active");
+    }
+  }
+
+  if (tabName === "selected") {
+    renderSelected();
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function shareLookbookToWhatsApp() {
+  const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+  let activeCtx = {};
+  if (store && store.getActiveContext) {
+    activeCtx = store.getActiveContext();
+  }
+
+  const celebName = activeCtx.celebrity ? activeCtx.celebrity.name : "Celebrity";
+  const stylistName = activeCtx.stylist ? activeCtx.stylist.name : "Stylist";
+  const projTitle = activeCtx.project ? activeCtx.project.title : "Lookbook Selection";
+  const projId = activeCtx.project ? activeCtx.project.id : ("proj_" + Date.now());
+
+  let currentSelected = Array.isArray(window.selected) ? window.selected : [];
+  if (!currentSelected.length && activeCtx.project && Array.isArray(activeCtx.project.selectedSerials)) {
+    currentSelected = activeCtx.project.selectedSerials;
+  }
+
+  if (!currentSelected.length) {
+    alert("Select pieces from the catalogue first to create and share the Lookbook link.");
+    return;
+  }
+
+  const baseUrl = window.location.origin + window.location.pathname;
+  const lookbookWebUrl = `${baseUrl}?mode=lookbook&project=${encodeURIComponent(projId)}&name=${encodeURIComponent(celebName)}&items=${encodeURIComponent(currentSelected.join(','))}`;
+
+  let msg = `✨ *ASCEND ATELIER DIGITAL CLIENT LOOKBOOK*\n`;
+  msg += `---------------------------\n`;
+  msg += `📁 *Project:* ${projTitle}\n`;
+  msg += `👑 *Celebrity / Client:* ${celebName}\n`;
+  msg += `👤 *Stylist:* ${stylistName}\n`;
+  msg += `💎 *Curated Pieces:* ${currentSelected.length}\n\n`;
+  msg += `🔗 *Open Interactive Web Lookbook:*\n${lookbookWebUrl}\n\n`;
+  msg += `Please tap the link above to review your curated pieces, select your approved choices, and click *Approve Selections*.\n\n`;
+  msg += `Ascend High Jewelry Studio`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: `${celebName} Lookbook - ${projTitle}`,
+        text: msg,
+        url: lookbookWebUrl
+      });
+      return;
+    } catch (e) {
+      if (e.name === "AbortError") return;
+    }
+  }
+
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, "_blank");
+}
+
+function importApprovedProjectToFinalTray() {
+  const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+  let activeCtx = {};
+  if (store && store.getActiveContext) {
+    activeCtx = store.getActiveContext();
+  }
+
+  let serialsToImport = Array.isArray(window.selected) && window.selected.length ? [...window.selected] : [];
+
+  if (!serialsToImport.length && activeCtx.project && Array.isArray(activeCtx.project.selectedSerials)) {
+    serialsToImport = [...activeCtx.project.selectedSerials];
+  }
+
+  if (!serialsToImport.length) {
+    alert("No lookbook items found to import. Select pieces or load an active project first.");
+    return 0;
+  }
+
+  const addedCount = importLookbookSelectionToFinalTray(serialsToImport);
+
+  if (typeof switchTab === 'function') {
+    switchTab('finalTray');
+  }
+
+  return addedCount;
+}
+
+window.toggle = toggle;
+window.removeFromSelected = function(id) {
+  toggle(id);
+};
+window.syncCurrentSelectionToProject = syncCurrentSelectionToProject;
+window.shareSelectionToWhatsApp = shareSelectionToWhatsApp;
+window.shareLookbookToWhatsApp = shareLookbookToWhatsApp;
+window.importApprovedProjectToFinalTray = importApprovedProjectToFinalTray;
+window.renderFloatingSelectionBar = renderFloatingSelectionBar;
+window.switchTab = switchTab;
+window.generateSelectionPdf = generateSelectionPdf;
+window.downloadCurrentPdf = downloadCurrentPdf;
+window.downloadCoverPdf = downloadCoverPdf;
+window.shareCurrentPdf = shareCurrentPdf;
+window.openMiniWebsiteModal = openMiniWebsiteModal;
+window.createMiniWebsiteFromModal = createMiniWebsiteFromModal;
+window.closeMiniWebsiteModal = closeMiniWebsiteModal;
+window.addBulkSerialsToFinalTray = addBulkSerialsToFinalTray;
+window.generateFinalTrayFromSerials = generateFinalTrayFromSerials;
+window.shareFinalTrayPdf = shareFinalTrayPdf;
+window.clearAllSelected = clearAllSelected;
+window.removeMarkedFromSelected = removeMarkedFromSelected;
+window.selectAllByBrand = selectAllByBrand;
+window.toggleFilterMenu = toggleFilterMenu;
+window.toggleBreakdown = toggleBreakdown;
+window.onSearchInput = onSearchInput;
+window.onFilterChanged = onFilterChanged;
+window.goToPrevPage = goToPrevPage;
+window.goToNextPage = goToNextPage;
+window.changePageSize = changePageSize;
+window.goToPrevSelectedPage = goToPrevSelectedPage;
+window.goToNextSelectedPage = goToNextSelectedPage;
+window.changeSelectedPageSize = changeSelectedPageSize;
+
+
+
+

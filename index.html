@@ -23,6 +23,8 @@
   <link rel="stylesheet" href="assets/css/responsive.css">
   <link rel="stylesheet" href="assets/css/mini-website.css">
   <link rel="stylesheet" href="assets/css/vrai-homepage.css">
+  <link rel="stylesheet" href="assets/css/project-workspace.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
@@ -31,70 +33,23 @@
     <div class="studio-nav-container">
       <a href="#" class="studio-brand-logo">
         ASCEND
-        <span class="studio-brand-badge">COMMUNICATION</span>
+        <span class="studio-brand-badge">ATELIER STUDIO</span>
       </a>
 
       <div class="studio-nav-tabs">
-        <button id="tabBrowseBtn" class="studio-nav-tab active" onclick="switchTab('browse')" role="tab">Browse
-          Catalogue</button>
-        <button id="tabSelectedBtn" class="studio-nav-tab" onclick="switchTab('selected')" role="tab">Selected
-          Items</button>
-        <button id="tabFinalTrayBtn" class="studio-nav-tab" onclick="switchTab('finalTray')" role="tab">Final
-          Tray</button>
-      </div>
-
-      <div class="studio-nav-actions">
-        <button class="btn btn-secondary btn-sm" onclick="openMiniWebsiteModal()">Share Client Lookbook</button>
-        <button class="btn btn-primary btn-sm" onclick="generateSelectionPdf()">Export PDF</button>
+        <button id="tabBrowseBtn" class="studio-nav-tab active" onclick="switchTab('browse')" role="tab">
+          <i class="fa-solid fa-gem"></i> 1. Browse Inventory
+        </button>
+        <button id="tabSelectedBtn" class="studio-nav-tab" onclick="switchTab('selected')" role="tab">
+          <i class="fa-solid fa-paper-plane"></i> 2. Proceed &amp; Export
+          <span id="browseTabBadge" class="badge"></span>
+        </button>
+        <button id="tabFinalTrayBtn" class="studio-nav-tab" onclick="switchTab('finalTray')" role="tab">
+          <i class="fa-solid fa-list-check"></i> 3. Final Tray
+        </button>
       </div>
     </div>
   </header>
-
-  <section class="studio-hero">
-    <div class="studio-hero-container">
-      <div class="studio-hero-copy">
-        <span class="studio-brand-badge" style="margin-bottom: 14px; display: inline-block;">CATALOG STUDIO</span>
-        <h1 class="studio-hero-title">High Jewelry &amp; PDF Studio</h1>
-        <p class="studio-hero-description">Browse inventory, select client pieces, preview high-resolution PDF
-          catalogues, and generate publication-ready exports instantly.</p>
-
-        <div class="actions" style="margin-bottom: 32px;">
-          <button class="btn btn-primary" onclick="generateSelectionPdf()">Create Selection PDF</button>
-          <button class="btn btn-secondary" onclick="downloadCurrentPdf()">Download Sample</button>
-          <button class="btn btn-secondary" onclick="openMiniWebsiteModal()">Share Client Lookbook</button>
-        </div>
-
-        <div class="studio-hero-stats">
-          <div class="studio-stat-card accent">
-            <span id="statTotal">0</span>
-            <p>Total Items</p>
-          </div>
-          <div class="studio-stat-card">
-            <span id="statAvailable">0</span>
-            <p>Available</p>
-          </div>
-          <div class="studio-stat-card">
-            <span id="statSelected">0</span>
-            <p>Selected</p>
-          </div>
-          <div class="studio-stat-card accent">
-            <span id="statMarked">0</span>
-            <p>Marked</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="studio-hero-visual">
-        <div class="studio-hero-image-card">
-          <img src="diego-castaneda-aSApmmYaB0s-unsplash.jpg" alt="Ascend High Jewelry Showcase">
-          <div class="studio-hero-image-overlay">
-            <span class="studio-hero-badge">Featured Showcase</span>
-            <h4>Bespoke Masterpiece Collection</h4>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <div class="page-shell browse-active">
 
@@ -203,12 +158,18 @@
             </div>
           </div>
 
-          <div class="actions primary-actions floating-panel">
-            <button class="btn btn-primary" onclick="generateSelectionPdf()">Create selection PDF</button>
-            <button class="btn btn-secondary" onclick="downloadCurrentPdf()">Download selection PDF</button>
-            <button class="btn btn-secondary" onclick="downloadCoverPdf()">Download cover page</button>
-            <button class="btn btn-secondary" onclick="shareCurrentPdf()">Share via WhatsApp</button>
-            <button class="btn btn-secondary" onclick="openMiniWebsiteModal()">Share Client Lookbook</button>
+          <div class="export-options-grid" style="margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <div class="export-card" onclick="generateSelectionPdf()" style="background: #18181b; color: #fff; padding: 24px; border-radius: 12px; cursor: pointer; text-align: center; border: 1px solid #d4af37; transition: all 0.2s ease;">
+              <i class="fa-solid fa-file-pdf" style="font-size: 2.4rem; color: #d4af37; margin-bottom: 12px; display: block;"></i>
+              <strong style="display: block; font-size: 1.1rem; margin-bottom: 6px;">1. Export High-Res PDF</strong>
+              <span style="font-size: 0.85rem; color: #a1a1aa;">Generate publication-ready PDF catalogue or line sheet</span>
+            </div>
+
+            <div class="export-card" onclick="openMiniWebsiteModal()" style="background: #18181b; color: #fff; padding: 24px; border-radius: 12px; cursor: pointer; text-align: center; border: 1px solid #3b82f6; transition: all 0.2s ease;">
+              <i class="fa-solid fa-globe" style="font-size: 2.4rem; color: #60a5fa; margin-bottom: 12px; display: block;"></i>
+              <strong style="display: block; font-size: 1.1rem; margin-bottom: 6px;">2. Share Lookbook Website</strong>
+              <span style="font-size: 0.85rem; color: #a1a1aa;">Create interactive web lookbook for celebrity review</span>
+            </div>
           </div>
         </section>
 
@@ -240,10 +201,9 @@
             <div id="finalTrayList" class="final-tray-list"></div>
 
             <div class="actions primary-actions">
-              <button class="btn btn-primary" onclick="generateFinalTrayFromSerials()">Create final tray PDF</button>
-              <button class="btn btn-secondary" onclick="downloadCurrentPdf()">Download final tray PDF</button>
-              <button class="btn btn-secondary" onclick="downloadCoverPdf()">Download cover page</button>
-              <button class="btn btn-secondary" onclick="shareFinalTrayPdf()">Share final tray PDF</button>
+              <button class="btn btn-primary" onclick="if(typeof window.generateFinalTrayFromSerials==='function'){window.generateFinalTrayFromSerials();}else{alert('Studio workspace is initializing, please try again in a moment.');}">Create final tray PDF</button>
+              <button class="btn btn-secondary" onclick="if(typeof window.downloadCurrentPdf==='function'){window.downloadCurrentPdf();}else{alert('Please create a PDF first.');}">Download final tray PDF</button>
+              <button class="btn btn-secondary" onclick="if(typeof window.shareFinalTrayPdf==='function'){window.shareFinalTrayPdf();}else{alert('Please create a PDF first.');}">Share final tray PDF</button>
             </div>
             <div id="serialFeedback" class="feedback"></div>
           </div>
@@ -272,23 +232,31 @@
             <div class="panel-heading compact">
               <div>
                 <p class="eyebrow small">Digital Lookbook Preview</p>
-                <h3>Preview before sharing</h3>
+                <h3 style="margin: 0; font-size: 1.05rem;">Live Lookbook Showcase Preview</h3>
               </div>
             </div>
-            <div id="miniWebsitePreview" class="mini-website-preview">
-              <p class="panel-meta">Choose a client name and purpose, then preview the lookbook here before sharing.
-              </p>
-            </div>
+            <div id="miniWebsitePreview" class="mini-website-preview"></div>
             <div class="actions secondary-actions preview-actions"
               style="margin-top: 12px; justify-content: flex-start;">
-              <button class="btn btn-secondary" onclick="openMiniWebsiteModal()">Create lookbook preview</button>
+              <button class="btn btn-secondary" onclick="openMiniWebsiteModal()"><i class="fa-solid fa-sliders"></i> Customize &amp; Share Lookbook</button>
             </div>
           </div>
 
           <div class="actions secondary-actions preview-actions">
             <button class="btn btn-secondary" onclick="downloadCurrentPdf()">Download current PDF</button>
-            <button class="btn btn-secondary" onclick="downloadCoverPdf()">Download cover page</button>
-            <button class="btn btn-secondary" onclick="shareCurrentPdf()">Share current PDF</button>
+          </div>
+
+          <div id="postCreationShareContainer" class="post-share-card" style="display: none; margin-top: 16px; background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); color: #fff; padding: 18px; border-radius: 10px; border: 1px solid #22c55e; text-align: center;">
+            <h4 style="margin: 0 0 6px 0; color: #86efac; font-size: 1rem;"><i class="fa-solid fa-circle-check"></i> Lookbook Ready to Share!</h4>
+            <p style="margin: 0 0 12px 0; font-size: 0.82rem; color: #dcfce7;">Share lookbook with celebrity via WhatsApp first. Client approvals will auto-sync to your Final Tray.</p>
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+              <button onclick="shareLookbookToWhatsApp()" class="btn-whatsapp-share" style="background: #22c55e; color: #000; font-weight: 800; border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;">
+                <i class="fa-brands fa-whatsapp"></i> Share Lookbook to WhatsApp
+              </button>
+              <button onclick="importApprovedProjectToFinalTray()" class="btn-secondary" style="background: #ffffff; color: #064e3b; font-weight: 700; border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;">
+                <i class="fa-solid fa-arrow-down-short-wide"></i> Load Approved to Final Tray
+              </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -306,20 +274,22 @@
       <div class="panel-heading compact">
         <div>
           <p class="eyebrow small">Digital Lookbook Setup</p>
-          <h3 id="miniWebsiteModalTitle">Create a polished client handoff</h3>
+          <h3 id="miniWebsiteModalTitle">Digital Lookbook Showcase</h3>
         </div>
       </div>
 
-      <div class="mini-website-field">
-        <label for="miniWebsiteNameInput">Client or Stylist Name</label>
-        <input id="miniWebsiteNameInput" type="text" placeholder="Enter the client or stylist name">
+      <div class="mini-website-field" style="background: #fdfbf7; border: 1px solid #d4af37; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
+        <div style="font-size: 0.82rem; color: #78716c; margin-bottom: 4px;"><i class="fa-solid fa-layer-group"></i> Active Project Context:</div>
+        <div id="modalProjectContextPill" style="font-size: 0.95rem; font-weight: 700; color: #1c1917;">
+          <!-- Auto-filled from active Stylist & Celebrity context -->
+        </div>
       </div>
 
       <div class="mini-website-field">
         <label for="miniWebsitePurposeSelect">Lookbook Mode &amp; Audience</label>
         <select id="miniWebsitePurposeSelect">
-          <option value="review">User Client Interactive Selection (Client can select pieces &amp; submit to studio)</option>
-          <option value="final">Mini Website Showcase Lookbook (Clean read-only presentation for client)</option>
+          <option value="review">Interactive Celebrity Selection (Celebrity can review &amp; approve pieces for studio)</option>
+          <option value="final">Showcase Lookbook (Clean read-only presentation for Celebrity &amp; Red Carpet)</option>
         </select>
       </div>
 
@@ -342,7 +312,7 @@
       <script src="js/pdf/pdf.js" defer></script>
       <script src="js/modules/catalog-data.js" defer></script>
       <script src="js/modules/mini-website.js" defer></script>
-      <script src="js/app.js" defer></script>
+      <script type="module" src="js/app.js" defer></script>
 </body>
 
 </html>
