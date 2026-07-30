@@ -293,5 +293,5 @@
 }
 
 .page-shell.browse-active .workspace-side {
-  display: none;
+  display: none !important;
 }

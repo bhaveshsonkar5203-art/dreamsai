@@ -1375,14 +1375,6 @@ function setPdfPreview(blob) {
   }
 
   updatePdfMeta();
-
-  // On mobile / small screens, smooth scroll to the PDF preview section after generation
-  if (window.innerWidth <= 768) {
-    const previewPanel = document.querySelector(".preview-panel");
-    if (previewPanel) {
-      previewPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
 }
 
 function setHtmlLookbookPreview(blob, fileName, meta, itemCount) {
@@ -1545,21 +1537,24 @@ async function shareCurrentPdf() {
     }
   }
 
-  // 2. Fallback for desktop browsers or browsers without direct file Web Share:
-  // Trigger PDF download to user device
+  // 2. Fallback for desktop/browsers without file Web Share:
+  // Trigger PDF download to user device first
   triggerBlobDownload(pdfBlob, fileName);
 
-  // Open WhatsApp via universal api.whatsapp.com URL scheme
   const whatsappText = encodeURIComponent(
     `📄 *${(lastExportTitle || "ASCEND HIGH JEWELRY CURATION PDF").toUpperCase()}*\n` +
     `Document File: ${fileName}\n\n` +
-    `The PDF catalogue has been downloaded to your device. Please attach it to send.`
+    `The PDF catalogue has been downloaded to your device. Please attach it using the 📎 paperclip icon to send.`
   );
   
-  const waUrl = `https://api.whatsapp.com/send?text=${whatsappText}`;
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const waUrl = isMobile 
+    ? `https://api.whatsapp.com/send?text=${whatsappText}`
+    : `https://web.whatsapp.com/send?text=${whatsappText}`;
+
+  // Synchronous call inside user gesture handler so popups are never blocked
   const openedWin = window.open(waUrl, "_blank");
   if (!openedWin || openedWin.closed || typeof openedWin.closed === "undefined") {
-    // If popup blocker blocked popup window, open in current window tab as fallback
     window.location.href = waUrl;
   }
 }
@@ -2103,7 +2098,11 @@ function renderFloatingSelectionBar() {
     document.body.appendChild(bar);
   }
 
-  if (selected.length === 0) {
+  // Check if currently on the browse tab
+  const browseTab = document.getElementById("browseTab");
+  const isBrowseTabActive = browseTab && browseTab.classList.contains("active");
+
+  if (selected.length === 0 || !isBrowseTabActive) {
     bar.style.display = "none";
     return;
   }
@@ -2113,8 +2112,8 @@ function renderFloatingSelectionBar() {
     <div class="fsb-info">
       <i class="fa-solid fa-gem"></i> <strong>${selected.length}</strong> Piece${selected.length === 1 ? '' : 's'} Selected
     </div>
-    <button class="fsb-btn-proceed" onclick="if(typeof window.generateSelectionPdf==='function'){window.generateSelectionPdf();}else{alert('Studio workspace is initializing, please try again in a moment.');}">
-      Generate Selected Design PDF <i class="fa-solid fa-file-pdf"></i>
+    <button class="fsb-btn-proceed" onclick="switchTab('selected')">
+      Proceed to Export &amp; Share <i class="fa-solid fa-arrow-right"></i>
     </button>
   `;
 }
@@ -2222,6 +2221,7 @@ function switchTab(tabName) {
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  renderFloatingSelectionBar();
 }
 
 async function shareLookbookToWhatsApp() {

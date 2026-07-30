@@ -164,15 +164,27 @@
               <strong style="display: block; font-size: 1.1rem; margin-bottom: 6px;">Selected Design PDF</strong>
               <span style="font-size: 0.85rem; color: #a1a1aa;">Generate publication-ready PDF catalogue or line sheet</span>
             </div>
-          </div>
+            <div class="panel preview-panel floating-panel" style="margin-top: 20px;">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow small">Live preview</p>
+                  <h3>Preview generated PDF</h3>
+                </div>
+                <p id="pdfMeta" class="panel-meta">No PDF generated yet</p>
+              </div>
 
-            <!-- LOOKBOOK BUTTON (Commented for later use)
-            <div class="export-card" onclick="openMiniWebsiteModal()" style="background: #18181b; color: #fff; padding: 24px; border-radius: 12px; cursor: pointer; text-align: center; border: 1px solid #3b82f6; transition: all 0.2s ease;">
-              <i class="fa-solid fa-globe" style="font-size: 2.4rem; color: #60a5fa; margin-bottom: 12px; display: block;"></i>
-              <strong style="display: block; font-size: 1.1rem; margin-bottom: 6px;">Share Lookbook Website</strong>
-              <span style="font-size: 0.85rem; color: #a1a1aa;">Create interactive web lookbook for celebrity review</span>
+              <div class="pdf-preview-shell">
+                <div id="previewPlaceholder" class="preview-placeholder">
+                  <strong>Generate a PDF to preview it here.</strong>
+                  <span>The preview will update after a selection or final tray PDF is created.</span>
+                </div>
+                <iframe id="pdfPreviewFrame" title="Jewellery PDF Preview"></iframe>
+              </div>
+
+              <div class="actions secondary-actions preview-actions" style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+                <button class="btn btn-primary" style="background: #25D366; color: #000; border: none; font-weight: 700; width: 100%; cursor: pointer;" onclick="if(typeof window.shareCurrentPdf==='function'){window.shareCurrentPdf();}else{alert('Studio workspace is initializing, please try again in a moment.');}"><i class="fa-brands fa-whatsapp"></i> Share PDF via WhatsApp</button>
+              </div>
             </div>
-            -->
           </div>
         </section>
 
@@ -212,62 +224,6 @@
           </div>
         </section>
       </section>
-
-      <aside class="workspace-side">
-        <div class="panel preview-panel floating-panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow small">Live preview</p>
-              <h3>Preview generated PDF</h3>
-            </div>
-            <p id="pdfMeta" class="panel-meta">No PDF generated yet</p>
-          </div>
-
-          <div class="pdf-preview-shell">
-            <div id="previewPlaceholder" class="preview-placeholder">
-              <strong>Generate a PDF to preview it here.</strong>
-              <span>The preview will update after a selection or final tray PDF is created.</span>
-            </div>
-            <iframe id="pdfPreviewFrame" title="Jewellery PDF Preview"></iframe>
-          </div>
-
-          <!-- DIGITAL LOOKBOOK PREVIEW (Commented for later use)
-          <div class="panel mini-preview-panel floating-panel" style="margin-top: 12px;">
-            <div class="panel-heading compact">
-              <div>
-                <p class="eyebrow small">Digital Lookbook Preview</p>
-                <h3 style="margin: 0; font-size: 1.05rem;">Live Lookbook Showcase Preview</h3>
-              </div>
-            </div>
-            <div id="miniWebsitePreview" class="mini-website-preview"></div>
-            <div class="actions secondary-actions preview-actions"
-              style="margin-top: 12px; justify-content: flex-start;">
-              <button class="btn btn-secondary" onclick="openMiniWebsiteModal()"><i class="fa-solid fa-sliders"></i> Customize &amp; Share Lookbook</button>
-            </div>
-          </div>
-          -->
-
-          <div class="actions secondary-actions preview-actions" style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
-            <button class="btn btn-secondary" onclick="downloadCurrentPdf()"><i class="fa-solid fa-download"></i> Download current PDF</button>
-            <button class="btn btn-primary" style="background: #25D366; color: #000; border: none; font-weight: 700;" onclick="shareCurrentPdf()"><i class="fa-brands fa-whatsapp"></i> Share PDF via WhatsApp</button>
-          </div>
-
-          <!-- POST CREATION SHARE (Commented for later use)
-          <div id="postCreationShareContainer" class="post-share-card" style="display: none; margin-top: 16px; background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); color: #fff; padding: 18px; border-radius: 10px; border: 1px solid #22c55e; text-align: center;">
-            <h4 style="margin: 0 0 6px 0; color: #86efac; font-size: 1rem;"><i class="fa-solid fa-circle-check"></i> Lookbook Ready to Share!</h4>
-            <p style="margin: 0 0 12px 0; font-size: 0.82rem; color: #dcfce7;">Share lookbook with celebrity via WhatsApp first. Client approvals will auto-sync to your Final Tray.</p>
-            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-              <button onclick="shareLookbookToWhatsApp()" class="btn-whatsapp-share" style="background: #22c55e; color: #000; font-weight: 800; border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;">
-                <i class="fa-brands fa-whatsapp"></i> Share Lookbook to WhatsApp
-              </button>
-              <button onclick="importApprovedProjectToFinalTray()" class="btn-secondary" style="background: #ffffff; color: #064e3b; font-weight: 700; border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;">
-                <i class="fa-solid fa-arrow-down-short-wide"></i> Load Approved to Final Tray
-              </button>
-            </div>
-          </div>
-          -->
-        </div>
-      </aside>
     </main>
 
     <div id="spinner" class="spinner hidden">
