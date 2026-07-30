@@ -1509,9 +1509,8 @@ async function shareCurrentPdf() {
   } else {
     triggerBlobDownload(pdfBlob, fileName);
 
-    const whatsappText = encodeURIComponent(`📄 Here is the High Jewelry Curation PDF (${fileName}). Please find the PDF document attached below.`);
+    const whatsappText = encodeURIComponent(`📄 *ASCEND HIGH JEWELRY CURATION PDF*\nAttached document: ${fileName}`);
     window.open(`https://web.whatsapp.com/send?text=${whatsappText}`, "_blank");
-    alert(`✅ PDF downloaded as "${fileName}".\n\nWhatsApp Web has been opened in a new tab. Please click the 📎 (Paperclip / Attachment) icon in WhatsApp to attach and send the downloaded PDF file.`);
   }
 }
 
