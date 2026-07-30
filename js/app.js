@@ -1485,6 +1485,17 @@ async function exportAndSharePdfToWhatsApp() {
   }
 }
 
+function openWhatsAppComposer(waUrl) {
+  try {
+    const popup = window.open(waUrl, "_blank", "width=700,height=800,noopener,noreferrer");
+    if (!popup) {
+      window.location.href = waUrl;
+    }
+  } catch (err) {
+    window.location.href = waUrl;
+  }
+}
+
 /* SHARE CURRENT PDF TO WHATSAPP / NATIVE SHARE */
 async function shareCurrentPdf() {
   // Pre-open window synchronously to prevent browser popup blocker from blocking WhatsApp
@@ -1492,7 +1503,7 @@ async function shareCurrentPdf() {
   let pendingWin = null;
   
   if (!navigator.canShare) {
-    pendingWin = window.open("about:blank", "_blank");
+    pendingWin = window.open("about:blank", "_blank", "width=700,height=800,noopener,noreferrer");
   }
 
   let pdfBlob = lastPdfBlob;
@@ -1557,8 +1568,9 @@ async function shareCurrentPdf() {
 
   if (pendingWin && !pendingWin.closed) {
     pendingWin.location.href = waUrl;
+    pendingWin.focus();
   } else {
-    window.location.href = waUrl;
+    openWhatsAppComposer(waUrl);
   }
 }
 
@@ -2182,7 +2194,7 @@ async function shareSelectionToWhatsApp() {
   msg += `\nAscend High Jewelry Studio`;
 
   const waUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-  window.open(waUrl, "_blank");
+  openWhatsAppComposer(waUrl);
   alert(`✅ PDF downloaded as "${safeFilename}".\n\nWhatsApp Web has been opened. Please click the 📎 (Paperclip / Attachment) icon in WhatsApp to attach the downloaded PDF file.`);
 }
 
@@ -2297,7 +2309,7 @@ async function shareLookbookToWhatsApp() {
   msg += `Ascend High Jewelry Studio`;
 
   const waUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-  window.open(waUrl, "_blank");
+  openWhatsAppComposer(waUrl);
 }
 
 function importApprovedProjectToFinalTray() {
