@@ -142,9 +142,6 @@
                 <button class="btn btn-secondary btn-sm" onclick="clearAllSelected()">Clear all</button>
                 <button class="btn btn-secondary btn-sm" onclick="removeMarkedFromSelected()">Remove marked items</button>
               </div>
-              <button class="btn btn-primary btn-sm" onclick="if(typeof window.generateSelectionPdf==='function'){window.generateSelectionPdf();}else{alert('Studio workspace is initializing, please try again in a moment.');}" style="background: #d4af37; color: #000; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; font-size: 0.82rem;">
-                <i class="fa-solid fa-file-pdf"></i> Generate PDF
-              </button>
             </div>
 
             <div id="selectedArea" class="selection-grid"></div>
@@ -160,6 +157,12 @@
                 <option value="48">48 / page</option>
                 <option value="72">72 / page</option>
               </select>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+              <button class="btn btn-primary" onclick="if(typeof window.generateSelectionPdf==='function'){window.generateSelectionPdf();}else{alert('Studio workspace is initializing, please try again in a moment.');}" style="background: #d4af37; color: #000; border: none; font-weight: 700; padding: 10px 20px; border-radius: 6px; font-size: 0.9rem; width: 100%;">
+                <i class="fa-solid fa-file-pdf"></i> Generate PDF
+              </button>
             </div>
           </div>
 
