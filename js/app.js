@@ -1375,6 +1375,14 @@ function setPdfPreview(blob) {
   }
 
   updatePdfMeta();
+
+  // On mobile / small screens, smooth scroll to the PDF preview section after generation
+  if (window.innerWidth <= 768) {
+    const previewPanel = document.querySelector(".preview-panel");
+    if (previewPanel) {
+      previewPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
 }
 
 function setHtmlLookbookPreview(blob, fileName, meta, itemCount) {
