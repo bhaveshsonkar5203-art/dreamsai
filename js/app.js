@@ -1465,15 +1465,23 @@ async function downloadCurrentPdf() {
 
 /* EXPORT & SHARE PDF TO WHATSAPP */
 async function exportAndSharePdfToWhatsApp() {
-  if (!selected || selected.length === 0) {
-    alert("Please select items to prepare the PDF first.");
-    return;
-  }
   try {
-    await generateSelectionPdf();
+    if (!lastPdfBlob && (!collageBlobs || collageBlobs.length === 0)) {
+      if (Array.isArray(selected) && selected.length > 0) {
+        await generateSelectionPdf();
+      } else if (Array.isArray(finalTraySerials) && finalTraySerials.length > 0) {
+        if (typeof window.generateFinalTrayFromSerials === 'function') {
+          await window.generateFinalTrayFromSerials();
+        }
+      } else {
+        alert("Please select items from the catalogue grid first to export a PDF.");
+        return;
+      }
+    }
     await shareCurrentPdf();
   } catch (err) {
-    console.error("Error exporting and sharing PDF to WhatsApp:", err);
+    console.error("Error in exportAndSharePdfToWhatsApp:", err);
+    alert("Unable to export PDF: " + (err.message || err));
   }
 }
 
@@ -1504,7 +1512,7 @@ async function shareCurrentPdf() {
   }
 
   if (!pdfBlob) {
-    alert("Please select items and generate a PDF first before sharing.");
+    alert("Please select items from the catalogue grid first to generate a PDF.");
     return;
   }
 
@@ -1521,16 +1529,16 @@ async function shareCurrentPdf() {
       });
       return;
     } catch (err) {
-      console.log("Web Share API:", err);
+      console.log("Web Share API error/cancel:", err);
       if (err && err.name === "AbortError") {
-        // User closed/cancelled native share sheet
+        // User closed native share dialog
         return;
       }
     }
   }
 
-  // 2. Fallback for desktop browsers / browsers without direct file Web Share:
-  // Automatically trigger PDF file download
+  // 2. Fallback for desktop browsers or browsers without direct file Web Share:
+  // Trigger PDF download to user device
   triggerBlobDownload(pdfBlob, fileName);
 
   // Open WhatsApp via universal api.whatsapp.com URL scheme
@@ -1539,7 +1547,13 @@ async function shareCurrentPdf() {
     `Document File: ${fileName}\n\n` +
     `The PDF catalogue has been downloaded to your device. Please attach it to send.`
   );
-  window.open(`https://api.whatsapp.com/send?text=${whatsappText}`, "_blank");
+  
+  const waUrl = `https://api.whatsapp.com/send?text=${whatsappText}`;
+  const openedWin = window.open(waUrl, "_blank");
+  if (!openedWin || openedWin.closed || typeof openedWin.closed === "undefined") {
+    // If popup blocker blocked popup window, open in current window tab as fallback
+    window.location.href = waUrl;
+  }
 }
 
 async function shareFinalTrayPdf() {
