@@ -2113,8 +2113,8 @@ function renderFloatingSelectionBar() {
     <div class="fsb-info">
       <i class="fa-solid fa-gem"></i> <strong>${selected.length}</strong> Piece${selected.length === 1 ? '' : 's'} Selected
     </div>
-    <button class="fsb-btn-proceed" onclick="switchTab('selected')">
-      Proceed to Export &amp; Share <i class="fa-solid fa-arrow-right"></i>
+    <button class="fsb-btn-proceed" onclick="if(typeof window.generateSelectionPdf==='function'){window.generateSelectionPdf();}else{alert('Studio workspace is initializing, please try again in a moment.');}">
+      Generate Selected Design PDF <i class="fa-solid fa-file-pdf"></i>
     </button>
   `;
 }
