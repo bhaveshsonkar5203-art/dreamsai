@@ -247,13 +247,16 @@
           </div>
 
           <div id="postCreationShareContainer" class="post-share-card" style="display: none; margin-top: 16px; background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); color: #fff; padding: 18px; border-radius: 10px; border: 1px solid #22c55e; text-align: center;">
-            <h4 style="margin: 0 0 6px 0; color: #86efac; font-size: 1rem;"><i class="fa-solid fa-circle-check"></i> Lookbook Ready to Share!</h4>
-            <p style="margin: 0 0 12px 0; font-size: 0.82rem; color: #dcfce7;">Share lookbook with celebrity via WhatsApp first. Client approvals will auto-sync to your Final Tray.</p>
+            <h4 style="margin: 0 0 6px 0; color: #86efac; font-size: 1rem;"><i class="fa-solid fa-circle-check"></i> Lookbook &amp; PDF Ready!</h4>
+            <p style="margin: 0 0 12px 0; font-size: 0.82rem; color: #dcfce7;">Choose how you want to share with your client:</p>
             <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-              <button onclick="shareLookbookToWhatsApp()" class="btn-whatsapp-share" style="background: #22c55e; color: #000; font-weight: 800; border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;">
-                <i class="fa-brands fa-whatsapp"></i> Share Lookbook to WhatsApp
+              <button onclick="if(typeof window.shareCurrentPdf==='function'){window.shareCurrentPdf();}else if(typeof window.downloadCurrentPdf==='function'){window.downloadCurrentPdf();}else{alert('Please generate a PDF first.');}" class="btn-whatsapp-share" style="background: #22c55e; color: #000; font-weight: 800; border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;">
+                <i class="fa-solid fa-file-pdf"></i> Share PDF Document
               </button>
-              <button onclick="importApprovedProjectToFinalTray()" class="btn-secondary" style="background: #ffffff; color: #064e3b; font-weight: 700; border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;">
+              <button onclick="shareLookbookToWhatsApp()" class="btn-whatsapp-share" style="background: #0ea5e9; color: #fff; font-weight: 800; border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;">
+                <i class="fa-solid fa-link"></i> Share Interactive Web Link
+              </button>
+              <button onclick="importApprovedProjectToFinalTray()" class="btn-secondary" style="background: #ffffff; color: #064e3b; font-weight: 700; border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-top: 4px;">
                 <i class="fa-solid fa-arrow-down-short-wide"></i> Load Approved to Final Tray
               </button>
             </div>

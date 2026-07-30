@@ -1465,18 +1465,28 @@ async function downloadCurrentPdf() {
 
 /* SHARE CURRENT PDF */
 async function shareCurrentPdf() {
-  if (!collageBlobs.length) {
-    alert("Generate a PDF first.");
-    return;
+  let pdfBlob = lastPdfBlob;
+
+  if (!pdfBlob && collageBlobs.length) {
+    try {
+      pdfBlob = await ensurePdfBlob();
+    } catch (err) {
+      console.error(err);
+      alert("Unable to build PDF. Please try again.");
+      return;
+    }
   }
 
-  let pdfBlob;
-
-  try {
-    pdfBlob = await ensurePdfBlob();
-  } catch (err) {
-    console.error(err);
-    alert("Unable to build PDF. Please try again.");
+  if (!pdfBlob) {
+    if (typeof downloadCurrentPdf === 'function') {
+      try {
+        downloadCurrentPdf();
+        return;
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+    alert("Please generate a PDF first before sharing.");
     return;
   }
 
@@ -1499,9 +1509,9 @@ async function shareCurrentPdf() {
   } else {
     triggerBlobDownload(pdfBlob, fileName);
 
-    const whatsappText = encodeURIComponent("PDF downloaded. Please attach the jewellery PDF in this chat.");
+    const whatsappText = encodeURIComponent(`📄 Here is the High Jewelry Curation PDF (${fileName}). Please find the PDF document attached below.`);
     window.open(`https://web.whatsapp.com/send?text=${whatsappText}`, "_blank");
-    alert("This browser cannot directly share PDF files to WhatsApp. The PDF has been downloaded. Attach it in WhatsApp.");
+    alert(`✅ PDF downloaded as "${fileName}".\n\nWhatsApp Web has been opened in a new tab. Please click the 📎 (Paperclip / Attachment) icon in WhatsApp to attach and send the downloaded PDF file.`);
   }
 }
 
@@ -2116,7 +2126,7 @@ async function shareSelectionToWhatsApp() {
   msg += `👑 *Celebrity:* ${celebName}\n`;
   msg += `👤 *Stylist:* ${stylistName}\n`;
   msg += `💎 *Total Selected Pieces:* ${selectedItems.length}\n\n`;
-  msg += `📄 *PDF Lookbook Document Downloaded (${safeFilename})*\n\n`;
+  msg += `📄 *PDF Document:* Attached below (${safeFilename})\n\n`;
   msg += `*Curated Piece Serials:*\n`;
 
   selectedItems.slice(0, 10).forEach((item, idx) => {
@@ -2129,8 +2139,9 @@ async function shareSelectionToWhatsApp() {
 
   msg += `\nAscend High Jewelry Studio`;
 
-  const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  const waUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
   window.open(waUrl, "_blank");
+  alert(`✅ PDF downloaded as "${safeFilename}".\n\nWhatsApp Web has been opened. Please click the 📎 (Paperclip / Attachment) icon in WhatsApp to attach the downloaded PDF file.`);
 }
 
 function switchTab(tabName) {
