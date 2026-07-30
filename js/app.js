@@ -2201,12 +2201,47 @@ async function shareLookbookToWhatsApp() {
   }
 
   if (!currentSelected.length) {
-    alert("Select pieces from the catalogue first to create and share the Lookbook link.");
+    alert("Select pieces from the catalogue first to create and share the Lookbook.");
     return;
   }
 
   const baseUrl = window.location.origin + window.location.pathname;
   const lookbookWebUrl = `${baseUrl}?mode=lookbook&project=${encodeURIComponent(projId)}&name=${encodeURIComponent(celebName)}&items=${encodeURIComponent(currentSelected.join(','))}`;
+
+  const safeFilename = `${celebName.replace(/[^a-zA-Z0-9]/g, '_')}_Lookbook.pdf`;
+
+  // Try to build or get PDF Blob
+  let pdfBlob = lastPdfBlob;
+  if (!pdfBlob && typeof ensurePdfBlob === 'function' && collageBlobs.length) {
+    try {
+      pdfBlob = await ensurePdfBlob();
+    } catch (e) {
+      console.warn("Could not generate PDF blob for sharing:", e);
+    }
+  }
+
+  // 1. Try Native Web Share API with the PDF FILE attached
+  if (pdfBlob && navigator.canShare) {
+    try {
+      const pdfFile = new File([pdfBlob], safeFilename, { type: "application/pdf" });
+      if (navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: `${celebName} Lookbook - ${projTitle}`,
+          text: `✨ ASCEND ATELIER CURATION LOOKBOOK\n📁 Project: ${projTitle}\n👑 Celebrity: ${celebName}\n👤 Stylist: ${stylistName}\n🔗 Web Version: ${lookbookWebUrl}`
+        });
+        return;
+      }
+    } catch (shareErr) {
+      if (shareErr.name === "AbortError") return;
+      console.warn("[WebShare] Native file share failed, falling back", shareErr);
+    }
+  }
+
+  // 2. Fallback: Download PDF + open WhatsApp text
+  if (pdfBlob) {
+    triggerBlobDownload(pdfBlob, safeFilename);
+  }
 
   let msg = `✨ *ASCEND ATELIER DIGITAL CLIENT LOOKBOOK*\n`;
   msg += `---------------------------\n`;
@@ -2215,23 +2250,9 @@ async function shareLookbookToWhatsApp() {
   msg += `👤 *Stylist:* ${stylistName}\n`;
   msg += `💎 *Curated Pieces:* ${currentSelected.length}\n\n`;
   msg += `🔗 *Open Interactive Web Lookbook:*\n${lookbookWebUrl}\n\n`;
-  msg += `Please tap the link above to review your curated pieces, select your approved choices, and click *Approve Selections*.\n\n`;
   msg += `Ascend High Jewelry Studio`;
 
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: `${celebName} Lookbook - ${projTitle}`,
-        text: msg,
-        url: lookbookWebUrl
-      });
-      return;
-    } catch (e) {
-      if (e.name === "AbortError") return;
-    }
-  }
-
-  const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  const waUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
   window.open(waUrl, "_blank");
 }
 
