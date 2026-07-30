@@ -1321,9 +1321,27 @@ function updatePdfMeta() {
   node.textContent = `${lastExportTitle} · ${collageBlobs.length} page${collageBlobs.length === 1 ? "" : "s"} · ${lastExportItems.length} code${lastExportItems.length === 1 ? "" : "s"}`;
 }
 
+function isMobilePreviewDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent);
+}
+
+function openPdfPreviewInNewTab() {
+  if (!lastPdfUrl) {
+    alert("Generate a PDF first.");
+    return;
+  }
+
+  const previewWindow = window.open(lastPdfUrl, "_blank", "noopener,noreferrer");
+  if (!previewWindow) {
+    window.location.href = lastPdfUrl;
+  }
+}
+window.openPdfPreview = openPdfPreviewInNewTab;
+
 function clearPdfPreview() {
   const frame = document.getElementById("pdfPreviewFrame");
   const placeholder = document.getElementById("previewPlaceholder");
+  const mobileAction = document.getElementById("mobilePdfPreviewAction");
   const shareBox = document.getElementById("postCreationShareContainer");
 
   if (lastPdfUrl) {
@@ -1340,6 +1358,11 @@ function clearPdfPreview() {
 
   if (placeholder) {
     placeholder.classList.remove("hidden");
+    placeholder.innerHTML = '<strong>Generate a PDF to preview it here.</strong><span>The preview will update after a selection or final tray PDF is created.</span>';
+  }
+
+  if (mobileAction) {
+    mobileAction.classList.add("hidden");
   }
 
   if (shareBox) {
@@ -1352,7 +1375,9 @@ function clearPdfPreview() {
 function setPdfPreview(blob) {
   const frame = document.getElementById("pdfPreviewFrame");
   const placeholder = document.getElementById("previewPlaceholder");
+  const mobileAction = document.getElementById("mobilePdfPreviewAction");
   const shareBox = document.getElementById("postCreationShareContainer");
+  const isMobile = isMobilePreviewDevice();
 
   if (lastPdfUrl) {
     URL.revokeObjectURL(lastPdfUrl);
@@ -1362,12 +1387,26 @@ function setPdfPreview(blob) {
   lastPdfUrl = URL.createObjectURL(blob);
 
   if (frame) {
-    frame.src = lastPdfUrl;
-    frame.classList.add("visible");
+    if (isMobile) {
+      frame.removeAttribute("src");
+      frame.classList.remove("visible");
+    } else {
+      frame.src = lastPdfUrl;
+      frame.classList.add("visible");
+    }
   }
 
   if (placeholder) {
-    placeholder.classList.add("hidden");
+    if (isMobile) {
+      placeholder.classList.remove("hidden");
+      placeholder.innerHTML = '<strong>Mobile preview is not supported inline here.</strong><span>Tap the button below to open the PDF in a new tab.</span>';
+    } else {
+      placeholder.classList.add("hidden");
+    }
+  }
+
+  if (mobileAction) {
+    mobileAction.classList.toggle("hidden", !isMobile);
   }
 
   if (shareBox) {
@@ -1380,8 +1419,10 @@ function setPdfPreview(blob) {
 function setHtmlLookbookPreview(blob, fileName, meta, itemCount) {
   const frame = document.getElementById("pdfPreviewFrame");
   const placeholder = document.getElementById("previewPlaceholder");
+  const mobileAction = document.getElementById("mobilePdfPreviewAction");
   const shareBox = document.getElementById("postCreationShareContainer");
   const metaNode = document.getElementById("pdfMeta");
+  const isMobile = isMobilePreviewDevice();
 
   if (lastPdfUrl) {
     URL.revokeObjectURL(lastPdfUrl);
@@ -1391,12 +1432,26 @@ function setHtmlLookbookPreview(blob, fileName, meta, itemCount) {
   lastPdfUrl = URL.createObjectURL(blob);
 
   if (frame) {
-    frame.src = lastPdfUrl;
-    frame.classList.add("visible");
+    if (isMobile) {
+      frame.removeAttribute("src");
+      frame.classList.remove("visible");
+    } else {
+      frame.src = lastPdfUrl;
+      frame.classList.add("visible");
+    }
   }
 
   if (placeholder) {
-    placeholder.classList.add("hidden");
+    if (isMobile) {
+      placeholder.classList.remove("hidden");
+      placeholder.innerHTML = '<strong>Mobile preview is not supported inline here.</strong><span>Tap the button below to open the PDF in a new tab.</span>';
+    } else {
+      placeholder.classList.add("hidden");
+    }
+  }
+
+  if (mobileAction) {
+    mobileAction.classList.toggle("hidden", !isMobile);
   }
 
   if (shareBox) {
@@ -1513,11 +1568,13 @@ function openWhatsAppComposer(waUrl) {
 
 /* SHARE CURRENT PDF TO WHATSAPP / NATIVE SHARE */
 async function shareCurrentPdf() {
-  // Pre-open window synchronously to prevent browser popup blocker from blocking WhatsApp
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const shareLogPrefix = "[shareCurrentPdf]";
   let pendingWin = null;
+  console.log(shareLogPrefix, "start", { isMobile, hasCanShare: !!navigator.canShare, selectedCount: Array.isArray(selected) ? selected.length : 0, hasLastPdfBlob: !!lastPdfBlob, collageCount: Array.isArray(collageBlobs) ? collageBlobs.length : 0 });
   
   if (!navigator.canShare) {
+    console.log(shareLogPrefix, "opening fallback popup before share");
     pendingWin = window.open("about:blank", "_blank", "width=700,height=800,noopener,noreferrer");
   }
 
@@ -1525,10 +1582,12 @@ async function shareCurrentPdf() {
 
   if (!pdfBlob && collageBlobs && collageBlobs.length) {
     try {
+      console.log(shareLogPrefix, "rebuilding PDF blob from existing collage pages");
       showSpinner(true);
       pdfBlob = await ensurePdfBlob();
+      console.log(shareLogPrefix, "rebuild success", { hasPdfBlob: !!pdfBlob });
     } catch (err) {
-      console.error(err);
+      console.error(shareLogPrefix, "rebuild failed", err);
     } finally {
       showSpinner(false);
     }
@@ -1536,23 +1595,31 @@ async function shareCurrentPdf() {
 
   if (!pdfBlob && Array.isArray(selected) && selected.length > 0) {
     try {
+      console.log(shareLogPrefix, "generating selection PDF for sharing");
       await generateSelectionPdf();
       pdfBlob = lastPdfBlob;
+      console.log(shareLogPrefix, "selection PDF generation complete", { hasPdfBlob: !!pdfBlob });
     } catch (err) {
-      console.error(err);
+      console.error(shareLogPrefix, "selection PDF generation failed", err);
     }
   }
 
   if (!pdfBlob) {
     if (pendingWin) pendingWin.close();
-    alert("Please select items and generate a PDF first.");
+    if (Array.isArray(selected) && selected.length > 0) {
+      alert("The PDF is still being prepared. Please wait a moment and try again.");
+    } else {
+      alert("Please select items first, then tap Share PDF via WhatsApp again.");
+    }
     return;
   }
 
   const fileName = buildPdfFileName();
   const file = new File([pdfBlob], fileName, { type: "application/pdf" });
+  console.log(shareLogPrefix, "prepared file", { fileName, size: file.size, type: file.type });
 
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    console.log(shareLogPrefix, "attempting native Web Share API");
     if (pendingWin) pendingWin.close();
     try {
       await navigator.share({
@@ -1560,15 +1627,17 @@ async function shareCurrentPdf() {
         title: lastExportTitle || "Jewellery PDF Catalogue",
         text: `📄 ${lastExportTitle || "Jewellery PDF Catalogue"}`
       });
+      console.log(shareLogPrefix, "native share success");
       return;
     } catch (err) {
-      console.log("Web Share API error/cancel:", err);
+      console.log(shareLogPrefix, "native share aborted or failed", err);
       if (err && err.name === "AbortError") {
         return;
       }
     }
   }
 
+  console.log(shareLogPrefix, "falling back to download + WhatsApp composer");
   triggerBlobDownload(pdfBlob, fileName);
 
   const whatsappText = encodeURIComponent(
@@ -1580,6 +1649,7 @@ async function shareCurrentPdf() {
   const waUrl = isMobile
     ? `https://api.whatsapp.com/send?text=${whatsappText}`
     : `https://web.whatsapp.com/send?text=${whatsappText}`;
+  console.log(shareLogPrefix, "opening WhatsApp URL", { waUrl, isMobile });
 
   if (pendingWin && !pendingWin.closed) {
     pendingWin.location.href = waUrl;

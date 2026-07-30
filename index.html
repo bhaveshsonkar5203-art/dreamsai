@@ -180,6 +180,9 @@
                 <span>The preview will update after a selection or final tray PDF is created.</span>
               </div>
               <iframe id="pdfPreviewFrame" title="Jewellery PDF Preview"></iframe>
+              <div id="mobilePdfPreviewAction" class="preview-mobile-action hidden">
+                <button class="btn btn-secondary" type="button" onclick="if (typeof window.openPdfPreview === 'function') { window.openPdfPreview(); } else { alert('Preview is still loading. Please try again.'); }">Open PDF in new tab</button>
+              </div>
             </div>
 
             <div class="actions secondary-actions preview-actions" style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
