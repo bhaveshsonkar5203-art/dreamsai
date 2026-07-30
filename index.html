@@ -183,7 +183,7 @@
             </div>
 
             <div class="actions secondary-actions preview-actions" style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
-              <button class="btn btn-primary" style="background: #25D366; color: #000; border: none; font-weight: 700; width: 100%; cursor: pointer;" onclick="shareCurrentPdf()"><i class="fa-brands fa-whatsapp"></i> Share PDF via WhatsApp</button>
+              <button class="btn btn-primary" style="background: #25D366; color: #000; border: none; font-weight: 700; width: 100%; cursor: pointer;" onclick="if (typeof window.shareCurrentPdf === 'function') { window.shareCurrentPdf(); } else { alert('PDF share is still loading. Please refresh and try again.'); }"><i class="fa-brands fa-whatsapp"></i> Share PDF via WhatsApp</button>
             </div>
           </div>
         </section>

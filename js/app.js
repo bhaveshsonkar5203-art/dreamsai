@@ -1463,6 +1463,21 @@ async function downloadCurrentPdf() {
   }
 }
 
+function downloadCoverPdf() {
+  if (!lastPdfBlob && !collageBlobs.length) {
+    alert("Generate a PDF first.");
+    return;
+  }
+
+  const pdfBlob = lastPdfBlob || null;
+  if (pdfBlob) {
+    triggerBlobDownload(pdfBlob, buildPdfFileName());
+    return;
+  }
+
+  downloadCurrentPdf();
+}
+
 /* EXPORT & SHARE PDF TO WHATSAPP */
 async function exportAndSharePdfToWhatsApp() {
   try {
