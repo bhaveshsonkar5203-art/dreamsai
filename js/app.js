@@ -1487,16 +1487,22 @@ async function exportAndSharePdfToWhatsApp() {
 
 /* SHARE CURRENT PDF TO WHATSAPP / NATIVE SHARE */
 async function shareCurrentPdf() {
+  // Pre-open window synchronously to prevent browser popup blocker from blocking WhatsApp
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  let pendingWin = null;
+  
+  if (!navigator.canShare) {
+    pendingWin = window.open("about:blank", "_blank");
+  }
+
   let pdfBlob = lastPdfBlob;
 
-  if (!pdfBlob && collageBlobs.length) {
+  if (!pdfBlob && collageBlobs && collageBlobs.length) {
     try {
       showSpinner(true);
       pdfBlob = await ensurePdfBlob();
     } catch (err) {
       console.error(err);
-      alert("Unable to build PDF. Please try again.");
-      return;
     } finally {
       showSpinner(false);
     }
@@ -1512,15 +1518,16 @@ async function shareCurrentPdf() {
   }
 
   if (!pdfBlob) {
-    alert("Please select items from the catalogue grid first to generate a PDF.");
+    if (pendingWin) pendingWin.close();
+    alert("Please select items and generate a PDF first.");
     return;
   }
 
   const fileName = buildPdfFileName();
   const file = new File([pdfBlob], fileName, { type: "application/pdf" });
 
-  // 1. Try Native Web Share API with files array (mobile Chrome/Safari over HTTPS)
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    if (pendingWin) pendingWin.close();
     try {
       await navigator.share({
         files: [file],
@@ -1531,30 +1538,26 @@ async function shareCurrentPdf() {
     } catch (err) {
       console.log("Web Share API error/cancel:", err);
       if (err && err.name === "AbortError") {
-        // User closed native share dialog
         return;
       }
     }
   }
 
-  // 2. Fallback for desktop/browsers without file Web Share:
-  // Trigger PDF download to user device first
   triggerBlobDownload(pdfBlob, fileName);
 
   const whatsappText = encodeURIComponent(
     `📄 *${(lastExportTitle || "ASCEND HIGH JEWELRY CURATION PDF").toUpperCase()}*\n` +
     `Document File: ${fileName}\n\n` +
-    `The PDF catalogue has been downloaded to your device. Please attach it using the 📎 paperclip icon to send.`
+    `The PDF preview catalogue has been downloaded to your device. Please attach it using the 📎 paperclip icon to send.`
   );
-  
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const waUrl = isMobile 
+
+  const waUrl = isMobile
     ? `https://api.whatsapp.com/send?text=${whatsappText}`
     : `https://web.whatsapp.com/send?text=${whatsappText}`;
 
-  // Synchronous call inside user gesture handler so popups are never blocked
-  const openedWin = window.open(waUrl, "_blank");
-  if (!openedWin || openedWin.closed || typeof openedWin.closed === "undefined") {
+  if (pendingWin && !pendingWin.closed) {
+    pendingWin.location.href = waUrl;
+  } else {
     window.location.href = waUrl;
   }
 }
