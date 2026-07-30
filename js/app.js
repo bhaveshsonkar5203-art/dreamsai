@@ -1463,74 +1463,93 @@ async function downloadCurrentPdf() {
   }
 }
 
-/* SHARE CURRENT PDF */
+/* EXPORT & SHARE PDF TO WHATSAPP */
+async function exportAndSharePdfToWhatsApp() {
+  if (!selected || selected.length === 0) {
+    alert("Please select items to prepare the PDF first.");
+    return;
+  }
+  try {
+    await generateSelectionPdf();
+    await shareCurrentPdf();
+  } catch (err) {
+    console.error("Error exporting and sharing PDF to WhatsApp:", err);
+  }
+}
+
+/* SHARE CURRENT PDF TO WHATSAPP / NATIVE SHARE */
 async function shareCurrentPdf() {
   let pdfBlob = lastPdfBlob;
 
   if (!pdfBlob && collageBlobs.length) {
     try {
+      showSpinner(true);
       pdfBlob = await ensurePdfBlob();
     } catch (err) {
       console.error(err);
       alert("Unable to build PDF. Please try again.");
       return;
+    } finally {
+      showSpinner(false);
+    }
+  }
+
+  if (!pdfBlob && Array.isArray(selected) && selected.length > 0) {
+    try {
+      await generateSelectionPdf();
+      pdfBlob = lastPdfBlob;
+    } catch (err) {
+      console.error(err);
     }
   }
 
   if (!pdfBlob) {
-    if (typeof downloadCurrentPdf === 'function') {
-      try {
-        downloadCurrentPdf();
-        return;
-      } catch (e) {
-        console.warn(e);
-      }
-    }
-    alert("Please generate a PDF first before sharing.");
+    alert("Please select items and generate a PDF first before sharing.");
     return;
   }
 
   const fileName = buildPdfFileName();
-  const files = [new File([pdfBlob], fileName, { type: "application/pdf" })];
+  const file = new File([pdfBlob], fileName, { type: "application/pdf" });
 
-  if (navigator.canShare && navigator.canShare({ files })) {
+  // 1. Try Native Web Share API with files array (mobile Chrome/Safari over HTTPS)
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({
-        files,
-        title: lastExportTitle || "Jewellery PDF",
-        text: `${lastExportTitle || "Jewellery PDF"} ready to share.`
+        files: [file],
+        title: lastExportTitle || "Jewellery PDF Catalogue",
+        text: `📄 ${lastExportTitle || "Jewellery PDF Catalogue"}`
       });
+      return;
     } catch (err) {
-      console.log(err);
-      if (err && err.name !== "AbortError") {
-        alert("Sharing failed on this device. Please download the PDF and attach it manually in WhatsApp.");
+      console.log("Web Share API:", err);
+      if (err && err.name === "AbortError") {
+        // User closed/cancelled native share sheet
+        return;
       }
     }
-  } else {
-    triggerBlobDownload(pdfBlob, fileName);
-
-    const whatsappText = encodeURIComponent(`📄 *ASCEND HIGH JEWELRY CURATION PDF*\nAttached document: ${fileName}`);
-    window.open(`https://web.whatsapp.com/send?text=${whatsappText}`, "_blank");
   }
+
+  // 2. Fallback for desktop browsers / browsers without direct file Web Share:
+  // Automatically trigger PDF file download
+  triggerBlobDownload(pdfBlob, fileName);
+
+  // Open WhatsApp via universal api.whatsapp.com URL scheme
+  const whatsappText = encodeURIComponent(
+    `📄 *${(lastExportTitle || "ASCEND HIGH JEWELRY CURATION PDF").toUpperCase()}*\n` +
+    `Document File: ${fileName}\n\n` +
+    `The PDF catalogue has been downloaded to your device. Please attach it to send.`
+  );
+  window.open(`https://api.whatsapp.com/send?text=${whatsappText}`, "_blank");
 }
 
 async function shareFinalTrayPdf() {
-  if (lastExportKind !== "final-tray") {
-    const hint = lastExportTitle ? ` Current PDF: ${lastExportTitle}.` : "";
-    alert(`Generate Final Tray PDF first, then share from this button.${hint}`);
-    traceFinalTray("share:block-non-final", {
-      lastExportKind,
-      lastExportTitle,
-      hasPages: collageBlobs.length > 0
-    });
-    return;
+  if (!lastPdfBlob && !collageBlobs.length) {
+    if (typeof window.generateFinalTrayFromSerials === 'function' && finalTraySerials && finalTraySerials.length > 0) {
+      await window.generateFinalTrayFromSerials();
+    } else if (selected && selected.length > 0) {
+      await generateSelectionPdf();
+    }
   }
-
-  traceFinalTray("share:allowed", {
-    lastExportKind,
-    lastExportTitle,
-    pages: collageBlobs.length
-  });
   return shareCurrentPdf();
 }
 
@@ -2297,6 +2316,7 @@ window.generateSelectionPdf = generateSelectionPdf;
 window.downloadCurrentPdf = downloadCurrentPdf;
 window.downloadCoverPdf = downloadCoverPdf;
 window.shareCurrentPdf = shareCurrentPdf;
+window.exportAndSharePdfToWhatsApp = exportAndSharePdfToWhatsApp;
 window.openMiniWebsiteModal = openMiniWebsiteModal;
 window.createMiniWebsiteFromModal = createMiniWebsiteFromModal;
 window.closeMiniWebsiteModal = closeMiniWebsiteModal;
