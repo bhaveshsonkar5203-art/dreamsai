@@ -241,6 +241,8 @@ function updateFilterDropdowns(changedSource = "") {
   const filterBrandNode = document.getElementById("filterBrand");
   const filterTypeOptionsNode = document.getElementById("filterTypeOptions");
   const filterBrandOptionsNode = document.getElementById("filterBrandOptions");
+  const filterTypeTriggerText = document.getElementById("filterTypeTriggerText");
+  const filterBrandTriggerText = document.getElementById("filterBrandTriggerText");
   const filterStatusNode = document.getElementById("filterStatus");
   const hideMarkedNode = document.getElementById("hideMarked");
   const searchSerialNode = document.getElementById("searchSerial");
@@ -291,6 +293,10 @@ function updateFilterDropdowns(changedSource = "") {
 
   if (filterTypeOptionsNode) {
     const totalMatchingType = data.filter(i => matches(i, true, false)).length;
+    if (filterTypeTriggerText) {
+      const typeSummary = currentType.length ? currentType.join(', ') : 'All types';
+      filterTypeTriggerText.textContent = typeSummary;
+    }
     filterTypeOptionsNode.innerHTML = `
       <button type="button" class="filter-option-pill ${currentType.length === 0 ? 'active' : ''}" onclick="toggleCatalogueFilter('type','')">All Types (${totalMatchingType})</button>
       ${allTypes.map(t => {
@@ -303,6 +309,10 @@ function updateFilterDropdowns(changedSource = "") {
 
   if (filterBrandOptionsNode) {
     const totalMatchingBrand = data.filter(i => matches(i, false, true)).length;
+    if (filterBrandTriggerText) {
+      const brandSummary = currentBrand.length ? currentBrand.join(', ') : 'All brands';
+      filterBrandTriggerText.textContent = brandSummary;
+    }
     filterBrandOptionsNode.innerHTML = `
       <button type="button" class="filter-option-pill ${currentBrand.length === 0 ? 'active' : ''}" onclick="toggleCatalogueFilter('brand','')">All Brands (${totalMatchingBrand})</button>
       ${allBrands.map(b => {

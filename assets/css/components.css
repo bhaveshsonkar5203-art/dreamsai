@@ -165,15 +165,33 @@ textarea:focus {
 }
 
 .filter-menu-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   border: 1px solid var(--line);
-  background: var(--surface);
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
   color: var(--color-text-2);
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 10px;
+  padding: 10px 12px;
   font-size: 0.84rem;
   font-weight: 700;
   cursor: pointer;
   text-align: left;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+.filter-trigger-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.filter-trigger-value {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--color-text-2);
 }
 
 .filter-option-list {

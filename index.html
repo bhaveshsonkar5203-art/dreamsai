@@ -88,12 +88,18 @@
                         class="search-input">
                       <div class="filter-section">
                         <div class="filter-section-label">Filter by type</div>
-                        <button type="button" class="filter-menu-trigger" onclick="toggleFilterChoice('type')">Choose types</button>
+                        <button type="button" class="filter-menu-trigger" onclick="toggleFilterChoice('type')">
+                          <span class="filter-trigger-label">Choose types</span>
+                          <span id="filterTypeTriggerText" class="filter-trigger-value">All types</span>
+                        </button>
                         <div id="filterTypeOptions" class="filter-option-list filter-choice-panel hidden"></div>
                       </div>
                       <div class="filter-section">
                         <div class="filter-section-label">Filter by brand</div>
-                        <button type="button" class="filter-menu-trigger" onclick="toggleFilterChoice('brand')">Choose brands</button>
+                        <button type="button" class="filter-menu-trigger" onclick="toggleFilterChoice('brand')">
+                          <span class="filter-trigger-label">Choose brands</span>
+                          <span id="filterBrandTriggerText" class="filter-trigger-value">All brands</span>
+                        </button>
                         <div id="filterBrandOptions" class="filter-option-list filter-choice-panel hidden"></div>
                       </div>
                       <select id="sortBy" onchange="onFilterChanged()" aria-label="Sort items">
