@@ -166,6 +166,15 @@ function toggleFilterMenu(event) {
   }
 }
 
+function closeFilterMenu() {
+  const menu = document.getElementById("controlsContent");
+  if (menu) {
+    menu.classList.add("hidden");
+  }
+}
+
+window.closeFilterMenu = closeFilterMenu;
+
 function toggleBreakdown(event) {
   if (event) {
     event.stopPropagation();
@@ -216,7 +225,11 @@ document.addEventListener("click", (event) => {
   if (!menu || !wrap) {
     return;
   }
-  if (!menu.classList.contains("hidden") && !wrap.contains(event.target)) {
+
+  const clickedInsideMenu = menu.contains(event.target);
+  const clickedToggle = event.target.closest('#filterToggleBtn');
+
+  if (!menu.classList.contains("hidden") && !clickedInsideMenu && !clickedToggle && !wrap.contains(event.target)) {
     menu.classList.add("hidden");
   }
 });
