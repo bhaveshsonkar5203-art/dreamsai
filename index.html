@@ -86,8 +86,14 @@
                     <div class="controls">
                       <input id="searchSerial" type="text" placeholder="Search by serial" oninput="onSearchInput()"
                         class="search-input">
-                      <select id="filterType" onchange="onFilterChanged()" aria-label="Filter by type"></select>
-                      <select id="filterBrand" onchange="onFilterChanged()" aria-label="Filter by brand"></select>
+                      <div class="filter-section">
+                        <div class="filter-section-label">Types</div>
+                        <div id="filterTypeOptions" class="filter-option-list"></div>
+                      </div>
+                      <div class="filter-section">
+                        <div class="filter-section-label">Brands</div>
+                        <div id="filterBrandOptions" class="filter-option-list"></div>
+                      </div>
                       <select id="sortBy" onchange="onFilterChanged()" aria-label="Sort items">
                         <option value="">Sort by</option>
                         <option value="serial">Serial No.</option>
@@ -103,7 +109,10 @@
                         <input id="hideMarked" type="checkbox" checked onchange="onFilterChanged()">
                         Hide marked
                       </label>
-                      <button id="selectAllFilteredBtn" class="btn btn-secondary" onclick="selectAllByBrand()">Select matching items</button>
+                      <div class="filter-actions-row">
+                        <button type="button" id="clearFiltersBtn" class="btn btn-secondary btn-sm" onclick="clearCatalogueFilters()">Clear</button>
+                        <button id="selectAllFilteredBtn" class="btn btn-secondary" onclick="selectAllByBrand()">Select visible</button>
+                      </div>
                     </div>
                   </div>
                 </div>

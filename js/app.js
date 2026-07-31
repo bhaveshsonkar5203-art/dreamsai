@@ -226,12 +226,14 @@ window.toggleControlsCollapse = toggleControlsCollapse;
 function updateFilterDropdowns(changedSource = "") {
   const filterTypeNode = document.getElementById("filterType");
   const filterBrandNode = document.getElementById("filterBrand");
+  const filterTypeOptionsNode = document.getElementById("filterTypeOptions");
+  const filterBrandOptionsNode = document.getElementById("filterBrandOptions");
   const filterStatusNode = document.getElementById("filterStatus");
   const hideMarkedNode = document.getElementById("hideMarked");
   const searchSerialNode = document.getElementById("searchSerial");
 
-  const currentType = filterTypeNode ? filterTypeNode.value : "";
-  const currentBrand = filterBrandNode ? filterBrandNode.value : "";
+  const currentType = getActiveFilterSelections("type");
+  const currentBrand = getActiveFilterSelections("brand");
   const currentStatus = filterStatusNode ? filterStatusNode.value : "";
   const hideMarked = hideMarkedNode ? hideMarkedNode.checked : false;
   const searchQuery = searchSerialNode ? searchSerialNode.value.trim().toUpperCase() : "";
@@ -243,8 +245,8 @@ function updateFilterDropdowns(changedSource = "") {
     if (currentStatus === "unmarked" && status === "marked") return false;
     if (searchQuery && !String(item["Serial No"] || "").toUpperCase().includes(searchQuery)) return false;
 
-    if (!ignoreType && currentType && String(item["Type"] || "").trim() !== currentType) return false;
-    if (!ignoreBrand && currentBrand && String(item["Brand Name"] || "").trim() !== currentBrand) return false;
+    if (!ignoreType && currentType.length && !currentType.includes(String(item["Type"] || "").trim())) return false;
+    if (!ignoreBrand && currentBrand.length && !currentBrand.includes(String(item["Brand Name"] || "").trim())) return false;
 
     return true;
   }
@@ -271,34 +273,31 @@ function updateFilterDropdowns(changedSource = "") {
     }
   });
 
-  // Re-populate Type select options dynamically
-  if (filterTypeNode) {
-    const allTypes = Array.from(new Set(data.map(i => String(i["Type"] || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  const allTypes = Array.from(new Set(data.map(i => String(i["Type"] || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  const allBrands = Array.from(new Set(data.map(i => String(i["Brand Name"] || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+
+  if (filterTypeOptionsNode) {
     const totalMatchingType = data.filter(i => matches(i, true, false)).length;
-    let typeHtml = `<option value="">All Types (${totalMatchingType})</option>`;
-    allTypes.forEach(t => {
-      const count = typeCounts.get(t) || 0;
-      typeHtml += `<option value="${t}">${t} (${count})</option>`;
-    });
-    filterTypeNode.innerHTML = typeHtml;
-    if (currentType && allTypes.includes(currentType)) {
-      filterTypeNode.value = currentType;
-    }
+    filterTypeOptionsNode.innerHTML = `
+      <button type="button" class="filter-option-pill ${currentType.length === 0 ? 'active' : ''}" onclick="toggleCatalogueFilter('type','')">All Types (${totalMatchingType})</button>
+      ${allTypes.map(t => {
+        const count = typeCounts.get(t) || 0;
+        const active = currentType.includes(t);
+        return `<button type="button" class="filter-option-pill ${active ? 'active' : ''}" onclick="toggleCatalogueFilter('type','${t.replace(/'/g, "\\'")}' )">${t} (${count})</button>`;
+      }).join('')}
+    `;
   }
 
-  // Re-populate Brand select options dynamically
-  if (filterBrandNode) {
-    const allBrands = Array.from(new Set(data.map(i => String(i["Brand Name"] || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  if (filterBrandOptionsNode) {
     const totalMatchingBrand = data.filter(i => matches(i, false, true)).length;
-    let brandHtml = `<option value="">All Brands (${totalMatchingBrand})</option>`;
-    allBrands.forEach(b => {
-      const count = brandCounts.get(b) || 0;
-      brandHtml += `<option value="${b}">${b} (${count})</option>`;
-    });
-    filterBrandNode.innerHTML = brandHtml;
-    if (currentBrand && allBrands.includes(currentBrand)) {
-      filterBrandNode.value = currentBrand;
-    }
+    filterBrandOptionsNode.innerHTML = `
+      <button type="button" class="filter-option-pill ${currentBrand.length === 0 ? 'active' : ''}" onclick="toggleCatalogueFilter('brand','')">All Brands (${totalMatchingBrand})</button>
+      ${allBrands.map(b => {
+        const count = brandCounts.get(b) || 0;
+        const active = currentBrand.includes(b);
+        return `<button type="button" class="filter-option-pill ${active ? 'active' : ''}" onclick="toggleCatalogueFilter('brand','${b.replace(/'/g, "\\'")}' )">${b} (${count})</button>`;
+      }).join('')}
+    `;
   }
 
   renderCategoryBar(typeCounts);
@@ -307,15 +306,59 @@ function updateFilterDropdowns(changedSource = "") {
   updateSelectButtonLabel();
 }
 
+function getActiveFilterSelections(kind) {
+  const storageKey = kind === 'type' ? 'catalogueFilterTypes' : 'catalogueFilterBrands';
+  const raw = window.localStorage.getItem(storageKey);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function setActiveFilterSelections(kind, values) {
+  const storageKey = kind === 'type' ? 'catalogueFilterTypes' : 'catalogueFilterBrands';
+  window.localStorage.setItem(storageKey, JSON.stringify(values));
+}
+
+function toggleCatalogueFilter(kind, value) {
+  const current = getActiveFilterSelections(kind);
+  if (!value) {
+    setActiveFilterSelections(kind, []);
+  } else {
+    const next = current.includes(value) ? current.filter(v => v !== value) : [...current, value];
+    setActiveFilterSelections(kind, next);
+  }
+  onFilterChanged(kind);
+}
+
+window.toggleCatalogueFilter = toggleCatalogueFilter;
+
+function clearCatalogueFilters() {
+  setActiveFilterSelections('type', []);
+  setActiveFilterSelections('brand', []);
+  const filterStatusNode = document.getElementById('filterStatus');
+  const hideMarkedNode = document.getElementById('hideMarked');
+  const searchSerialNode = document.getElementById('searchSerial');
+  if (filterStatusNode) filterStatusNode.value = '';
+  if (hideMarkedNode) hideMarkedNode.checked = true;
+  if (searchSerialNode) searchSerialNode.value = '';
+  onFilterChanged('clear');
+}
+
+window.clearCatalogueFilters = clearCatalogueFilters;
+
 function updateFilterActiveBadge() {
-  const filterType = document.getElementById("filterType")?.value || "";
-  const filterBrand = document.getElementById("filterBrand")?.value || "";
+  const filterType = getActiveFilterSelections('type');
+  const filterBrand = getActiveFilterSelections('brand');
   const filterStatus = document.getElementById("filterStatus")?.value || "";
   const searchQuery = document.getElementById("searchSerial")?.value.trim() || "";
 
   let count = 0;
-  if (filterType) count++;
-  if (filterBrand) count++;
+  if (filterType.length) count++;
+  if (filterBrand.length) count++;
   if (filterStatus) count++;
   if (searchQuery) count++;
 
@@ -335,20 +378,20 @@ function updateSelectButtonLabel() {
   const btn = document.getElementById("selectAllFilteredBtn") || document.querySelector("button[onclick='selectAllByBrand()']");
   if (!btn) return;
 
-  const filterType = document.getElementById("filterType")?.value || "";
-  const filterBrand = document.getElementById("filterBrand")?.value || "";
+  const filterType = getActiveFilterSelections('type');
+  const filterBrand = getActiveFilterSelections('brand');
 
   const filtered = getFilteredItems();
   const unmarkedCount = filtered.filter(d => normalizeStatus(d["Status"]) !== "marked").length;
 
-  if (filterBrand && filterType) {
-    btn.textContent = `Select ${filterBrand} ${filterType}s (${unmarkedCount})`;
-  } else if (filterBrand) {
-    btn.textContent = `Select full ${filterBrand} (${unmarkedCount})`;
-  } else if (filterType) {
-    btn.textContent = `Select all ${filterType}s (${unmarkedCount})`;
+  if (filterBrand.length && filterType.length) {
+    btn.textContent = `Select ${filterBrand.join(', ')} + ${filterType.join(', ')} (${unmarkedCount})`;
+  } else if (filterBrand.length) {
+    btn.textContent = `Select ${filterBrand.join(', ')} (${unmarkedCount})`;
+  } else if (filterType.length) {
+    btn.textContent = `Select ${filterType.join(', ')} (${unmarkedCount})`;
   } else {
-    btn.textContent = `Select matching items (${unmarkedCount})`;
+    btn.textContent = `Select visible (${unmarkedCount})`;
   }
 }
 
@@ -676,20 +719,20 @@ function changeSelectedPageSize(value) {
 }
 
 function getFilteredItems() {
-  const filterTypeNode = document.getElementById("filterType");
-  const filterBrandNode = document.getElementById("filterBrand");
   const filterStatusNode = document.getElementById("filterStatus");
   const hideMarkedNode = document.getElementById("hideMarked");
 
-  const filterType = filterTypeNode ? filterTypeNode.value : "";
-  const filterBrand = filterBrandNode ? filterBrandNode.value : "";
+  const filterType = getActiveFilterSelections('type');
+  const filterBrand = getActiveFilterSelections('brand');
   const filterStatus = filterStatusNode ? filterStatusNode.value : "";
   const hideMarked = hideMarkedNode ? hideMarkedNode.checked : false;
 
   let filtered = data.filter(d => {
     const status = normalizeStatus(d["Status"]);
-    const typeMatch = !filterType || d["Type"] === filterType;
-    const brandMatch = !filterBrand || String(d["Brand Name"] || "").trim() === filterBrand;
+    const itemType = String(d["Type"] || "").trim();
+    const itemBrand = String(d["Brand Name"] || "").trim();
+    const typeMatch = !filterType.length || filterType.includes(itemType);
+    const brandMatch = !filterBrand.length || filterBrand.includes(itemBrand);
 
     if (!typeMatch || !brandMatch) {
       return false;

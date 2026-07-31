@@ -145,7 +145,53 @@ textarea:focus {
 }
 
 .filter-dropdown .controls {
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.filter-section-label {
+  font-size: var(--font-type-1-size);
+  font-weight: 700;
+  color: var(--color-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.filter-option-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-option-pill {
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--color-text-2);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-option-pill.active {
+  background: var(--color-local-accent);
+  border-color: var(--color-local-accent);
+  color: var(--color-text-2);
+}
+
+.filter-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .breakdown-toggle-btn {
