@@ -7,9 +7,140 @@
 
 import * as ProjectStore from './project-store.js';
 
+let homepageProjectSwitchCallback = null;
+const homepageProjectFilters = {
+  searchCelebrity: '',
+  searchStylist: '',
+  searchBrand: '',
+  projectStatus: '',
+  paymentStatus: '',
+  returnStatus: '',
+  socialStatus: ''
+};
+
+function getProjectDisplayStatus(project) {
+  return project.projectStatus || project.status || 'Active';
+}
+
+function getProjectStatusClass(status) {
+  const value = String(status || '').trim();
+  if (value === 'Completed') return 'proj-completed';
+  if (value === 'Waiting for Return') return 'proj-return';
+  if (value === 'Waiting for Deliverables') return 'proj-deliverables';
+  if (value === 'Waiting for Social Post') return 'proj-social';
+  if (value === 'Active' || value === 'Lookbook Sent') return 'proj-active';
+  return 'proj-upcoming';
+}
+
+function getPaymentStatus(project) {
+  return project.payment?.status || 'Pending';
+}
+
+function getPaymentStatusClass(status) {
+  const value = String(status || '').trim();
+  if (value === 'Paid') return 'pay-paid';
+  if (value === 'Partial') return 'pay-partial';
+  if (value === 'Overdue') return 'pay-overdue';
+  return 'pay-pending';
+}
+
+function getSocialStatus(project) {
+  return project.socialPosting?.status || 'Pending';
+}
+
+function getSocialStatusClass(status) {
+  const value = String(status || '').trim();
+  if (value === 'Posted') return 'soc-posted';
+  if (value === 'Verified') return 'soc-verified';
+  return 'soc-pending';
+}
+
+function getProductStats(project) {
+  const stats = project.productStats || {};
+  return {
+    sent: Number(stats.sent || 0),
+    returned: Number(stats.returned || 0),
+    pending: Number(stats.pending || 0),
+    missing: Number(stats.missing || 0)
+  };
+}
+
+function getDeliverables(project) {
+  const deliverables = project.deliverables || {};
+  const completed = Number(deliverables.completed || 0);
+  const total = Math.max(Number(deliverables.total || 0), 1);
+  return { completed, total, percent: total ? Math.round((completed / total) * 100) : 0 };
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(value || 0));
+}
+
+function isDateOverdue(dateValue) {
+  if (!dateValue) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateValue);
+  if (Number.isNaN(target.getTime())) return false;
+  target.setHours(0, 0, 0, 0);
+  return target < today;
+}
+
+function getHomepageSummaryStats(projects) {
+  return {
+    active: projects.filter(p => String(getProjectDisplayStatus(p)).toLowerCase() === 'active').length,
+    pendingReturns: projects.filter(p => {
+      const stats = getProductStats(p);
+      return stats.pending > 0 || stats.missing > 0;
+    }).length,
+    missingProducts: projects.filter(p => getProductStats(p).missing > 0).length,
+    pendingDeliverables: projects.filter(p => {
+      const deliv = getDeliverables(p);
+      return deliv.completed < deliv.total;
+    }).length,
+    pendingSocial: projects.filter(p => getSocialStatus(p) === 'Pending').length,
+    pendingPayments: projects.filter(p => getPaymentStatus(p) !== 'Paid').length,
+    revenueReceived: projects.reduce((sum, p) => sum + Number(p.payment?.amountReceived || 0), 0)
+  };
+}
+
+function getFilteredHomepageProjects(projects) {
+  const searchCelebrity = homepageProjectFilters.searchCelebrity.trim().toLowerCase();
+  const searchStylist = homepageProjectFilters.searchStylist.trim().toLowerCase();
+  const searchBrand = homepageProjectFilters.searchBrand.trim().toLowerCase();
+
+  return projects.filter(project => {
+    const celebrity = ProjectStore.getCelebrityById(project.celebrityId);
+    const stylist = ProjectStore.getStylistById(project.stylistId);
+    const celebrityName = celebrity ? celebrity.name : '';
+    const stylistName = stylist ? stylist.name : '';
+    const brand = project.jewelleryBrand || '';
+    const status = getProjectDisplayStatus(project);
+    const paymentStatus = getPaymentStatus(project);
+    const returnStatus = (() => {
+      const stats = getProductStats(project);
+      if (stats.missing > 0) return 'Missing';
+      if (stats.pending > 0) return 'Pending';
+      if (stats.returned > 0) return 'Returned';
+      return 'Completed';
+    })();
+    const socialStatus = getSocialStatus(project);
+
+    if (searchCelebrity && !celebrityName.toLowerCase().includes(searchCelebrity)) return false;
+    if (searchStylist && !stylistName.toLowerCase().includes(searchStylist)) return false;
+    if (searchBrand && !brand.toLowerCase().includes(searchBrand)) return false;
+    if (homepageProjectFilters.projectStatus && status !== homepageProjectFilters.projectStatus) return false;
+    if (homepageProjectFilters.paymentStatus && paymentStatus !== homepageProjectFilters.paymentStatus) return false;
+    if (homepageProjectFilters.returnStatus && returnStatus !== homepageProjectFilters.returnStatus) return false;
+    if (homepageProjectFilters.socialStatus && socialStatus !== homepageProjectFilters.socialStatus) return false;
+    return true;
+  });
+}
+
 export function initProjectUI({ onProjectSwitch }) {
+  homepageProjectSwitchCallback = onProjectSwitch || null;
   renderProjectBar();
-  renderHomepageProjectsGateway(onProjectSwitch);
+  renderHomepageProjectsGateway(homepageProjectSwitchCallback);
   injectProjectModal();
   injectNewProjectModal(onProjectSwitch);
 
@@ -30,7 +161,23 @@ export function initProjectUI({ onProjectSwitch }) {
   window.handleQuickNewProject = () => openNewProjectDialog();
   window.showHomepageGateway = showHomepageGateway;
   window.updateCurrentProjectStatus = updateCurrentProjectStatus;
-  window.renderHomepageProjectsGateway = () => renderHomepageProjectsGateway(onProjectSwitch);
+  window.renderHomepageProjectsGateway = () => renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+  window.handleHomepageProjectFilterChange = (field, value) => {
+    homepageProjectFilters[field] = value;
+    renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+  };
+  window.clearHomepageProjectFilters = () => {
+    Object.assign(homepageProjectFilters, {
+      searchCelebrity: '',
+      searchStylist: '',
+      searchBrand: '',
+      projectStatus: '',
+      paymentStatus: '',
+      returnStatus: '',
+      socialStatus: ''
+    });
+    renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+  };
 }
 
 export function renderProjectBar() {
@@ -91,7 +238,7 @@ export function renderProjectBar() {
 }
 
 /**
- * Renders the clean Homepage Project Gateway showing ONLY Project, Stylist & Celebrity names.
+ * Renders the homepage gateway as a polished campaign dashboard with project overviews, filters, and quick actions.
  */
 export function renderHomepageProjectsGateway(onProjectSwitch) {
   let container = document.getElementById("homepageProjectsGatewayContainer");
@@ -103,58 +250,226 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
   }
 
   const allProjects = ProjectStore.getProjects();
+  const filteredProjects = getFilteredHomepageProjects(allProjects);
   const { project: activeProject } = ProjectStore.getActiveContext();
+  const summary = getHomepageSummaryStats(allProjects);
 
   container.innerHTML = `
     <div class="hp-gateway-wrapper">
       <div class="hp-gateway-header">
         <div class="hp-gateway-title">
           <h2><i class="fa-solid fa-gem"></i> Projects &amp; Stylists Gateway</h2>
-          <p>Please select an existing project or create a new project to proceed to catalogue selection.</p>
+          <p>Monitor every campaign at a glance, from delivery progress to payments and social posting.</p>
         </div>
         <button class="btn-create-project-main" onclick="openNewProjectDialog()">
           <i class="fa-solid fa-plus"></i> + Create New Project
         </button>
       </div>
 
+      <div class="hp-summary-cards-grid">
+        <div class="hp-summary-card accent-card">
+          <div class="summary-icon icon-active"><i class="fa-solid fa-chart-line"></i></div>
+          <div class="summary-info">
+            <span class="summary-val">${summary.active}</span>
+            <span class="summary-lbl">Active Projects</span>
+          </div>
+        </div>
+        <div class="hp-summary-card">
+          <div class="summary-icon icon-pending-returns"><i class="fa-solid fa-rotate-left"></i></div>
+          <div class="summary-info">
+            <span class="summary-val">${summary.pendingReturns}</span>
+            <span class="summary-lbl">Pending Returns</span>
+          </div>
+        </div>
+        <div class="hp-summary-card">
+          <div class="summary-icon icon-missing"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div class="summary-info">
+            <span class="summary-val">${summary.missingProducts}</span>
+            <span class="summary-lbl">Missing Products</span>
+          </div>
+        </div>
+        <div class="hp-summary-card">
+          <div class="summary-icon icon-deliverables"><i class="fa-solid fa-list-check"></i></div>
+          <div class="summary-info">
+            <span class="summary-val">${summary.pendingDeliverables}</span>
+            <span class="summary-lbl">Pending Deliverables</span>
+          </div>
+        </div>
+        <div class="hp-summary-card">
+          <div class="summary-icon icon-social"><i class="fa-solid fa-share-nodes"></i></div>
+          <div class="summary-info">
+            <span class="summary-val">${summary.pendingSocial}</span>
+            <span class="summary-lbl">Pending Social Posts</span>
+          </div>
+        </div>
+        <div class="hp-summary-card">
+          <div class="summary-icon icon-payment"><i class="fa-solid fa-wallet"></i></div>
+          <div class="summary-info">
+            <span class="summary-val">${summary.pendingPayments}</span>
+            <span class="summary-lbl">Pending Payments</span>
+          </div>
+        </div>
+        <div class="hp-summary-card">
+          <div class="summary-icon icon-revenue"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+          <div class="summary-info">
+            <span class="summary-val">${formatCurrency(summary.revenueReceived)}</span>
+            <span class="summary-lbl">Revenue Received</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-filter-toolbar">
+        <div class="filter-inputs-row">
+          <div class="input-with-icon">
+            <i class="fa-solid fa-user"></i>
+            <input type="text" placeholder="Search by Celebrity" value="${escapeHtml(homepageProjectFilters.searchCelebrity)}" oninput="window.handleHomepageProjectFilterChange('searchCelebrity', this.value)">
+          </div>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-user-tie"></i>
+            <input type="text" placeholder="Search by Stylist" value="${escapeHtml(homepageProjectFilters.searchStylist)}" oninput="window.handleHomepageProjectFilterChange('searchStylist', this.value)">
+          </div>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-gem"></i>
+            <input type="text" placeholder="Search by Jewellery Brand" value="${escapeHtml(homepageProjectFilters.searchBrand)}" oninput="window.handleHomepageProjectFilterChange('searchBrand', this.value)">
+          </div>
+        </div>
+        <div class="filter-selects-row">
+          <select value="${escapeHtml(homepageProjectFilters.projectStatus)}" onchange="window.handleHomepageProjectFilterChange('projectStatus', this.value)">
+            <option value="">Project Status</option>
+            <option value="Upcoming" ${homepageProjectFilters.projectStatus === 'Upcoming' ? 'selected' : ''}>Upcoming</option>
+            <option value="Active" ${homepageProjectFilters.projectStatus === 'Active' ? 'selected' : ''}>Active</option>
+            <option value="Waiting for Return" ${homepageProjectFilters.projectStatus === 'Waiting for Return' ? 'selected' : ''}>Waiting for Return</option>
+            <option value="Waiting for Deliverables" ${homepageProjectFilters.projectStatus === 'Waiting for Deliverables' ? 'selected' : ''}>Waiting for Deliverables</option>
+            <option value="Waiting for Social Post" ${homepageProjectFilters.projectStatus === 'Waiting for Social Post' ? 'selected' : ''}>Waiting for Social Post</option>
+            <option value="Completed" ${homepageProjectFilters.projectStatus === 'Completed' ? 'selected' : ''}>Completed</option>
+          </select>
+          <select onchange="window.handleHomepageProjectFilterChange('paymentStatus', this.value)">
+            <option value="">Payment Status</option>
+            <option value="Paid" ${homepageProjectFilters.paymentStatus === 'Paid' ? 'selected' : ''}>Paid</option>
+            <option value="Partial" ${homepageProjectFilters.paymentStatus === 'Partial' ? 'selected' : ''}>Partial</option>
+            <option value="Pending" ${homepageProjectFilters.paymentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+            <option value="Overdue" ${homepageProjectFilters.paymentStatus === 'Overdue' ? 'selected' : ''}>Overdue</option>
+          </select>
+          <select onchange="window.handleHomepageProjectFilterChange('returnStatus', this.value)">
+            <option value="">Return Status</option>
+            <option value="Returned" ${homepageProjectFilters.returnStatus === 'Returned' ? 'selected' : ''}>Returned</option>
+            <option value="Pending" ${homepageProjectFilters.returnStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+            <option value="Missing" ${homepageProjectFilters.returnStatus === 'Missing' ? 'selected' : ''}>Missing</option>
+            <option value="Completed" ${homepageProjectFilters.returnStatus === 'Completed' ? 'selected' : ''}>Completed</option>
+          </select>
+          <select onchange="window.handleHomepageProjectFilterChange('socialStatus', this.value)">
+            <option value="">Social Posting</option>
+            <option value="Pending" ${homepageProjectFilters.socialStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+            <option value="Posted" ${homepageProjectFilters.socialStatus === 'Posted' ? 'selected' : ''}>Posted</option>
+            <option value="Verified" ${homepageProjectFilters.socialStatus === 'Verified' ? 'selected' : ''}>Verified</option>
+          </select>
+          <button class="btn-clear-filters" onclick="window.clearHomepageProjectFilters()">Clear Filters</button>
+        </div>
+      </div>
+
       <div class="hp-projects-cards-grid">
-        <!-- New Project Card Button -->
         <div class="hp-project-card new-project-card" onclick="openNewProjectDialog()">
           <div class="new-card-icon"><i class="fa-solid fa-plus"></i></div>
           <strong>+ Create New Project</strong>
           <span>Select saved Stylist or add new</span>
         </div>
 
-        ${allProjects.map(p => {
+        ${filteredProjects.length === 0 ? '<div class="hp-project-card"><strong>No projects match the selected filters.</strong></div>' : filteredProjects.map(p => {
     const isActive = activeProject && p.id === activeProject.id;
     const celebrity = ProjectStore.getCelebrityById(p.celebrityId);
     const stylist = ProjectStore.getStylistById(p.stylistId);
-    const celebrityName = celebrity ? celebrity.name : "Celebrity";
-    const stylistName = stylist ? stylist.name : "Unassigned Stylist";
-
-    let badgeClass = "badge-curating";
-    if (p.status === "Lookbook Sent") badgeClass = "badge-sent";
-    if (p.status === "Celebrity Approved") badgeClass = "badge-approved";
-    if (p.status === "Sample Reserved") badgeClass = "badge-reserved";
-    if (p.status === "Order Placed") badgeClass = "badge-order";
+    const celebrityName = celebrity ? celebrity.name : 'Celebrity';
+    const stylistName = stylist ? stylist.name : 'Unassigned Stylist';
+    const projectStatus = getProjectDisplayStatus(p);
+    const paymentStatus = getPaymentStatus(p);
+    const socialStatus = getSocialStatus(p);
+    const productStats = getProductStats(p);
+    const deliverables = getDeliverables(p);
+    const returnStatus = productStats.missing > 0 ? 'Missing' : productStats.pending > 0 ? 'Pending' : productStats.returned > 0 ? 'Returned' : 'Completed';
+    const sharedDate = p.finalTraySharedDate || '';
+    const followUpDate = p.followUpDate || '';
+    const returnDueDate = p.returnDueDate || '';
 
     return `
-            <div class="hp-project-card ${isActive ? 'active-project' : ''}" onclick="handleProjectChange('${p.id}')">
+            <div class="hp-project-card ${isActive ? 'active-project' : ''}" onclick="window.handleProjectChange('${p.id}')">
               ${isActive ? '<div class="active-ribbon">Selected Project</div>' : ''}
-              
-              <div class="hp-card-stylist-banner">
-                <i class="fa-solid fa-user-tie"></i> Stylist: <strong>${escapeHtml(stylistName)}</strong>
+              <div class="hp-card-header">
+                <div>
+                  <h3 class="hp-card-project-name">${escapeHtml(p.title)}</h3>
+                  <span class="hp-brand-tag">${escapeHtml(p.jewelleryBrand || 'Jewellery Brand')}</span>
+                </div>
+                <span class="proj-status-badge ${getProjectStatusClass(projectStatus)}">${escapeHtml(projectStatus)}</span>
               </div>
 
-              <h3 class="hp-card-project-name">${escapeHtml(p.title)}</h3>
-              
-              <div class="hp-card-info-simple">
-                <span><i class="fa-solid fa-star"></i> Celebrity: <strong>${escapeHtml(celebrityName)}</strong></span>
-                <span class="status-badge ${badgeClass}">${escapeHtml(p.status)}</span>
+              <div class="hp-card-basic-grid">
+                <div class="basic-item"><i class="fa-solid fa-star"></i> ${escapeHtml(celebrityName)}</div>
+                <div class="basic-item"><i class="fa-solid fa-user-tie"></i> ${escapeHtml(stylistName)}</div>
+                <div class="basic-item"><i class="fa-solid fa-user-secret"></i> ${escapeHtml(p.headStylist || 'Head Stylist')}</div>
+                <div class="basic-item"><i class="fa-solid fa-gem"></i> ${escapeHtml(p.jewelleryBrand || 'Brand')}</div>
               </div>
 
-              <div class="hp-card-proceed-footer">
-                <span class="btn-proceed-action"><i class="fa-solid fa-circle-play"></i> Click to Proceed &amp; Select</span>
+              <hr class="hp-card-divider" />
+
+              <div class="hp-card-section">
+                <div class="hp-section-label-flex">
+                  <span>Important Dates</span>
+                  <span class="deliv-summary-text">${sharedDate ? 'Shared' : 'No dates'}</span>
+                </div>
+                <div class="hp-dates-row">
+                  <div class="date-chip ${isDateOverdue(sharedDate) ? 'date-overdue' : ''}">
+                    <span class="d-label">Final Tray</span>
+                    <span class="d-val">${escapeHtml(sharedDate || '—')}</span>
+                  </div>
+                  <div class="date-chip ${isDateOverdue(followUpDate) ? 'date-overdue' : ''}">
+                    <span class="d-label">Follow-up</span>
+                    <span class="d-val">${escapeHtml(followUpDate || '—')}</span>
+                  </div>
+                  <div class="date-chip ${isDateOverdue(returnDueDate) ? 'date-overdue' : ''}">
+                    <span class="d-label">Return Due</span>
+                    <span class="d-val">${escapeHtml(returnDueDate || '—')}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hp-card-section">
+                <div class="hp-section-label">Product Status</div>
+                <div class="hp-prod-badges-row">
+                  <span class="prod-badge badge-returned">Returned ${productStats.returned}</span>
+                  <span class="prod-badge badge-pending">Pending ${productStats.pending}</span>
+                  <span class="prod-badge badge-missing">Missing ${productStats.missing}</span>
+                </div>
+              </div>
+
+              <div class="hp-card-section">
+                <div class="hp-section-label-flex">
+                  <span>Deliverables</span>
+                  <span class="deliv-summary-text">${deliverables.completed}/${deliverables.total} Complete</span>
+                </div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill" style="width: ${deliverables.percent}%;"></div>
+                </div>
+                <div class="soc-date" style="margin-top: 6px;">${deliverables.percent}% complete</div>
+              </div>
+
+              <div class="hp-card-dual-grid">
+                <div class="soc-badge-wrap">
+                  <div class="hp-section-label">Social</div>
+                  <span class="soc-badge ${getSocialStatusClass(socialStatus)}">${escapeHtml(socialStatus)}</span>
+                  <div class="soc-date">${escapeHtml(socialStatus === 'Pending' ? 'No posting date yet' : (p.socialPosting?.postingDate || '—'))}</div>
+                </div>
+                <div class="pay-badge-wrap">
+                  <div class="hp-section-label">Payment</div>
+                  <span class="soc-badge ${getPaymentStatusClass(paymentStatus)}">${escapeHtml(paymentStatus)}</span>
+                  <div class="pay-details">Invoice ${formatCurrency(p.payment?.invoiceAmount || 0)} · Received ${formatCurrency(p.payment?.amountReceived || 0)}</div>
+                </div>
+              </div>
+
+              <div class="hp-card-quick-actions">
+                <button class="btn-qa btn-qa-primary" onclick="event.stopPropagation(); window.handleProjectChange('${p.id}')"><i class="fa-solid fa-arrow-up-right-from-square"></i> View Project</button>
+                <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickEditProjectModal('${p.id}')"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickUpdateReturnModal('${p.id}')"><i class="fa-solid fa-rotate-left"></i> Update Return</button>
+                <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickUpdateDeliverablesModal('${p.id}')"><i class="fa-solid fa-list-check"></i> Deliverables</button>
+                <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.quickToggleSocialPosted('${p.id}')"><i class="fa-solid fa-share-nodes"></i> Social</button>
               </div>
             </div>
           `;
