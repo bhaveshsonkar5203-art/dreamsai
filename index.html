@@ -47,6 +47,9 @@
         <button id="tabFinalTrayBtn" class="studio-nav-tab" onclick="switchTab('finalTray')" role="tab">
           <i class="fa-solid fa-list-check"></i> 3. Final Tray
         </button>
+        <button id="tabReturnProductsBtn" class="studio-nav-tab" onclick="switchTab('returnProducts')" role="tab">
+          <i class="fa-solid fa-box-open"></i> 4. Return Products
+        </button>
       </div>
     </div>
   </header>
@@ -244,6 +247,26 @@
               <button class="btn btn-secondary" onclick="if(typeof window.shareFinalTrayPdf==='function'){window.shareFinalTrayPdf();}else{alert('Please create a PDF first.');}">Share final tray PDF</button>
             </div>
             <div id="serialFeedback" class="feedback"></div>
+          </div>
+        </section>
+
+        <section id="returnProductsTab" class="tab-section">
+          <div class="panel floating-panel return-products-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow small">Return Products</p>
+                <h3>Process incoming returns with quick verification</h3>
+              </div>
+              <p class="panel-meta">Items are loaded from the current final tray and updated instantly as you verify them.</p>
+            </div>
+
+            <div class="return-products-toolbar">
+              <input id="returnProductsSearch" type="text" placeholder="Search by product code or serial" oninput="window.handleReturnProductsSearch(this.value)">
+              <button class="btn btn-secondary" type="button" onclick="window.loadReturnProductsFromFinalTray(true)">Reload from Final Tray</button>
+            </div>
+
+            <div id="returnSummaryCards" class="return-summary-grid"></div>
+            <div id="returnProductsList" class="return-products-list"></div>
           </div>
         </section>
       </section>

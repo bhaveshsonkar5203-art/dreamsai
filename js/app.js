@@ -32,6 +32,8 @@ let controlsCollapsed = false;
 let finalTraySerials = [];
 let finalTraySuggestionIndex = -1;
 let dataBySerial = new Map();
+let returnProductsState = [];
+let returnProductsFilter = "";
 
 const API_URL = "https://script.google.com/macros/s/AKfycbx0eH7JARm9zfA7thFyCYt4LYUTcPzw0MdKFuVTAg-z6il9_r2YSJG00WiRwv2QJmQ/exec";
 const APP_BUILD_TAG = "script-20260410-guard-logs-1";
@@ -766,10 +768,17 @@ function getFilteredItems() {
     const status = normalizeStatus(d["Status"]);
     const itemType = String(d["Type"] || "").trim();
     const itemBrand = String(d["Brand Name"] || "").trim();
+    const serial = String(d["Serial No"] || "").trim();
     const typeMatch = !filterType.length || filterType.includes(itemType);
     const brandMatch = !filterBrand.length || filterBrand.includes(itemBrand);
+    const returnEntry = returnProductsState.find(entry => entry.serial === serial);
+    const isDamaged = !!(returnEntry && returnEntry.condition === "damaged");
 
     if (!typeMatch || !brandMatch) {
+      return false;
+    }
+
+    if (isDamaged) {
       return false;
     }
 
@@ -1646,6 +1655,80 @@ function downloadCoverPdf() {
   downloadCurrentPdf();
 }
 
+async function markCurrentFinalTrayAsDelivered(serials = []) {
+  const normalizedSerials = (serials && serials.length ? serials : [...finalTraySerials])
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  if (!normalizedSerials.length) {
+    return { ok: false, updatedCount: 0, missingSerials: [], skipped: true };
+  }
+
+  try {
+    const serverResult = await markFinalTrayOnlyOnServer(normalizedSerials);
+    const updatedCount = Number(serverResult && serverResult.updatedCount ? serverResult.updatedCount : 0);
+    const missingSerials = Array.isArray(serverResult && serverResult.missingSerials) ? serverResult.missingSerials : [];
+
+    const matchedItems = resolveItemsBySerials(normalizedSerials);
+    matchedItems.forEach((item) => {
+      const serialNo = String(item["Serial No"] || "").trim();
+      if (!serialNo) return;
+      item["Status"] = "Marked & Delivered";
+      const cachedItem = dataBySerial.get(serialNo);
+      if (cachedItem) {
+        cachedItem["Status"] = "Marked & Delivered";
+      }
+    });
+
+    selected = selected.filter((id) => {
+      const item = dataBySerial.get(id);
+      return item && normalizeStatus(item["Status"]) !== "marked";
+    });
+
+    try {
+      const store = ProjectStore;
+      const activeCtx = store && store.getActiveContext ? store.getActiveContext() : {};
+      const activeProject = activeCtx.project;
+      if (store && store.updateProject && activeProject) {
+        const today = new Date().toISOString().split('T')[0];
+        const deliveredProject = store.updateProject(activeProject.id, {
+          status: "Delivered",
+          projectStatus: "Delivered",
+          finalTraySharedDate: today,
+          followUpDate: today,
+          returnDueDate: today,
+          productStats: {
+            sent: matchedItems.length,
+            returned: matchedItems.length,
+            pending: 0,
+            missing: missingSerials.length
+          },
+          deliverables: {
+            completed: 5,
+            total: 5
+          }
+        });
+
+        if (deliveredProject && typeof window.renderHomepageProjectsGateway === 'function') {
+          window.renderHomepageProjectsGateway();
+        }
+      }
+    } catch (projectErr) {
+      console.warn("Could not update project state after final-tray share", projectErr);
+    }
+
+    render();
+    renderFinalTraySerialManager();
+    updateTabBadge();
+    updateMiniWebsiteModalPreview();
+
+    return { ok: true, updatedCount, missingSerials };
+  } catch (err) {
+    console.warn("Could not mark final tray items as delivered", err);
+    return { ok: false, updatedCount: 0, missingSerials: [], error: err && err.message ? err.message : String(err) };
+  }
+}
+
 /* EXPORT & SHARE PDF TO WHATSAPP */
 async function exportAndSharePdfToWhatsApp() {
   try {
@@ -1725,6 +1808,16 @@ async function shareCurrentPdf() {
       alert("Please select items first, then tap Share PDF via WhatsApp again.");
     }
     return;
+  }
+
+  const isFinalTrayShare = lastExportKind === "final-tray" || (Array.isArray(finalTraySerials) && finalTraySerials.length > 0 && String(lastExportTitle || "").toLowerCase().includes("final tray"));
+
+  if (isFinalTrayShare) {
+    console.log(shareLogPrefix, "marking final tray items as delivered before WhatsApp share");
+    const markResult = await markCurrentFinalTrayAsDelivered();
+    if (markResult && markResult.ok) {
+      setSerialFeedback(`Marked ${markResult.updatedCount || finalTraySerials.length} item(s) as delivered.`, false);
+    }
   }
 
   const fileName = buildPdfFileName();
@@ -2396,6 +2489,177 @@ async function shareSelectionToWhatsApp() {
   alert(`✅ PDF downloaded as "${safeFilename}".\n\nWhatsApp Web has been opened. Please click the 📎 (Paperclip / Attachment) icon in WhatsApp to attach the downloaded PDF file.`);
 }
 
+function getReturnProductStatus(item) {
+  if (!item) return "Pending Return";
+  if (item.returnStatus === "received") return "Received";
+  if (item.returnStatus === "missing") return "Missing";
+  return "Pending Return";
+}
+
+function getReturnConditionLabel(item) {
+  return item && item.condition === "damaged" ? "Damaged" : "Good";
+}
+
+function getReturnProductSummary() {
+  const total = returnProductsState.length;
+  const received = returnProductsState.filter(item => item.returnStatus === "received").length;
+  const pending = returnProductsState.filter(item => item.returnStatus === "pending").length;
+  const missing = returnProductsState.filter(item => item.returnStatus === "missing").length;
+  const damaged = returnProductsState.filter(item => item.condition === "damaged").length;
+  return { total, received, pending, missing, damaged };
+}
+
+function renderReturnProductsSummary() {
+  const summaryNode = document.getElementById("returnSummaryCards");
+  if (!summaryNode) return;
+  const summary = getReturnProductSummary();
+  summaryNode.innerHTML = [
+    { label: "Total Sent", value: summary.total },
+    { label: "Received", value: summary.received },
+    { label: "Pending", value: summary.pending },
+    { label: "Missing", value: summary.missing },
+    { label: "Damaged", value: summary.damaged }
+  ].map((card) => `
+    <div class="return-summary-card">
+      <strong>${card.value}</strong>
+      <span>${card.label}</span>
+    </div>
+  `).join("");
+}
+
+function renderReturnProductsList() {
+  const listNode = document.getElementById("returnProductsList");
+  if (!listNode) return;
+
+  const filtered = returnProductsState.filter((item) => {
+    const query = (returnProductsFilter || "").trim().toUpperCase();
+    if (!query) return true;
+    return [item.serial, item.name, item.code, item.category].some((value) => String(value || "").toUpperCase().includes(query));
+  });
+
+  if (!filtered.length) {
+    listNode.innerHTML = '<div class="selection-empty">No return products loaded yet. Load from the Final Tray to begin.</div>';
+    return;
+  }
+
+  listNode.innerHTML = filtered.map((item) => {
+    const statusLabel = getReturnProductStatus(item);
+    const conditionLabel = getReturnConditionLabel(item);
+    const statusClass = item.returnStatus === "received" ? "received" : item.returnStatus === "missing" ? "missing" : "pending";
+    const conditionClass = item.condition === "damaged" ? "damaged" : "good";
+    const imageUrl = item.image || "";
+    return `
+      <div class="return-product-card ${item.returnStatus === "received" ? "is-received" : ""} ${item.condition === "damaged" ? "is-damaged" : ""}">
+        <img src="${imageUrl}" alt="${item.name || item.serial}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=400&q=80';">
+        <div class="return-product-meta">
+          <div class="return-product-title">${item.name || item.serial}</div>
+          <div class="return-product-subtext">Code: ${item.code || item.serial}</div>
+          <div class="return-product-subtext">Category: ${item.category || "—"}</div>
+          <div class="return-product-subtext">Quantity Sent: ${item.quantity || 1}</div>
+          <div class="return-product-badges">
+            <span class="return-status-pill ${statusClass}">${statusLabel}</span>
+            <span class="return-condition-pill ${conditionClass}">${conditionLabel}</span>
+          </div>
+        </div>
+        <div class="return-product-actions">
+          <select data-serial="${item.serial}" onchange="window.updateReturnProductStatus('${item.serial}', this.value)">
+            <option value="pending" ${item.returnStatus === "pending" ? "selected" : ""}>Pending Return</option>
+            <option value="received" ${item.returnStatus === "received" ? "selected" : ""}>Received</option>
+            <option value="missing" ${item.returnStatus === "missing" ? "selected" : ""}>Missing</option>
+          </select>
+          <select data-serial="${item.serial}" onchange="window.updateReturnProductCondition('${item.serial}', this.value)">
+            <option value="good" ${item.condition === "good" ? "selected" : ""}>Good</option>
+            <option value="damaged" ${item.condition === "damaged" ? "selected" : ""}>Damaged</option>
+          </select>
+          <button type="button" class="secondary" onclick="window.markReturnProductReceived('${item.serial}')">Mark Received</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  renderReturnProductsSummary();
+}
+
+function refreshReturnProductsUi() {
+  renderReturnProductsSummary();
+  renderReturnProductsList();
+}
+
+function applyReturnProductInventoryRules() {
+  if (!Array.isArray(data)) return;
+
+  data.forEach((item) => {
+    const serial = String(item["Serial No"] || "").trim();
+    const matched = returnProductsState.find((entry) => entry.serial === serial);
+    if (!matched) return;
+    const isDamaged = matched.condition === "damaged";
+    const isUnavailable = isDamaged || matched.returnStatus === "missing";
+    item["Status"] = isUnavailable ? "Marked & Delivered" : item["Status"];
+    if (isDamaged) {
+      item["Status"] = "Marked & Delivered";
+      item["Notes"] = item["Notes"] || "";
+      item["Notes"] += (item["Notes"] ? " | " : "") + "Damaged on return";
+    }
+  });
+
+  if (typeof render === "function") {
+    render();
+  }
+}
+
+function buildReturnProductsStateFromFinalTray() {
+  const serials = [...new Set(finalTraySerials.filter(Boolean))];
+  const items = resolveItemsBySerials(serials);
+  returnProductsState = items.map((item) => {
+    const serial = String(item["Serial No"] || "").trim();
+    return {
+      serial,
+      name: String(item["Description"] || item["Name"] || item["Type"] || serial),
+      code: serial,
+      category: String(item["Type"] || "Jewellery"),
+      quantity: 1,
+      image: getPreviewImageUrl(item),
+      returnStatus: "pending",
+      condition: "good"
+    };
+  });
+  refreshReturnProductsUi();
+  applyReturnProductInventoryRules();
+}
+
+function loadReturnProductsFromFinalTray(force = false) {
+  if (!force && returnProductsState.length) {
+    refreshReturnProductsUi();
+    return;
+  }
+  buildReturnProductsStateFromFinalTray();
+}
+
+function handleReturnProductsSearch(value) {
+  returnProductsFilter = value || "";
+  renderReturnProductsList();
+}
+
+function updateReturnProductStatus(serial, status) {
+  const entry = returnProductsState.find((item) => item.serial === serial);
+  if (!entry) return;
+  entry.returnStatus = status;
+  refreshReturnProductsUi();
+  applyReturnProductInventoryRules();
+}
+
+function updateReturnProductCondition(serial, condition) {
+  const entry = returnProductsState.find((item) => item.serial === serial);
+  if (!entry) return;
+  entry.condition = condition;
+  refreshReturnProductsUi();
+  applyReturnProductInventoryRules();
+}
+
+function markReturnProductReceived(serial) {
+  updateReturnProductStatus(serial, "received");
+}
+
 function switchTab(tabName) {
   if (typeof window.unlockStudioWorkspace === 'function') {
     window.unlockStudioWorkspace();
@@ -2404,7 +2668,8 @@ function switchTab(tabName) {
   const tabs = {
     browse: { btn: "tabBrowseBtn", section: "browseTab" },
     selected: { btn: "tabSelectedBtn", section: "selectedTab" },
-    finalTray: { btn: "tabFinalTrayBtn", section: "finalTrayTab" }
+    finalTray: { btn: "tabFinalTrayBtn", section: "finalTrayTab" },
+    returnProducts: { btn: "tabReturnProductsBtn", section: "returnProductsTab" }
   };
 
   Object.keys(tabs).forEach(key => {
@@ -2431,6 +2696,10 @@ function switchTab(tabName) {
 
   if (tabName === "selected") {
     renderSelected();
+  }
+
+  if (tabName === "returnProducts") {
+    loadReturnProductsFromFinalTray();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2547,6 +2816,11 @@ window.shareLookbookToWhatsApp = shareLookbookToWhatsApp;
 window.importApprovedProjectToFinalTray = importApprovedProjectToFinalTray;
 window.renderFloatingSelectionBar = renderFloatingSelectionBar;
 window.switchTab = switchTab;
+window.loadReturnProductsFromFinalTray = loadReturnProductsFromFinalTray;
+window.handleReturnProductsSearch = handleReturnProductsSearch;
+window.updateReturnProductStatus = updateReturnProductStatus;
+window.updateReturnProductCondition = updateReturnProductCondition;
+window.markReturnProductReceived = markReturnProductReceived;
 window.generateSelectionPdf = generateSelectionPdf;
 window.downloadCurrentPdf = downloadCurrentPdf;
 window.downloadCoverPdf = downloadCoverPdf;

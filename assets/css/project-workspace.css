@@ -553,6 +553,166 @@ body.gateway-active .homepage-gateway-overlay {
 .pay-partial { background: #fef9c3; color: #a16207; }
 .pay-pending, .pay-overdue { background: #fee2e2; color: #b91c1c; }
 
+/* RETURN PRODUCTS WORKFLOW */
+.return-products-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.return-products-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.return-products-toolbar input {
+  flex: 1;
+  min-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid #d6d3d1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.return-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.return-summary-card {
+  border: 1px solid #e7e5e4;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #fffdf8 0%, #fcfaf5 100%);
+}
+
+.return-summary-card strong {
+  display: block;
+  font-size: 1.2rem;
+  color: #1c1917;
+  margin-bottom: 4px;
+}
+
+.return-summary-card span {
+  font-size: 0.78rem;
+  color: #78716c;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.return-products-list {
+  display: grid;
+  gap: 10px;
+}
+
+.return-product-card {
+  display: grid;
+  grid-template-columns: 88px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid #eee7d6;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.return-product-card.is-received {
+  border-color: #86efac;
+  background: #f8fff9;
+}
+
+.return-product-card.is-damaged {
+  border-color: #fca5a5;
+  background: #fff7f7;
+}
+
+.return-product-card img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #f0e7d8;
+  background: #f9f6ef;
+}
+
+.return-product-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.return-product-title {
+  font-weight: 800;
+  color: #1c1917;
+}
+
+.return-product-subtext {
+  font-size: 0.84rem;
+  color: #57534e;
+}
+
+.return-product-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.return-status-pill,
+.return-condition-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.return-status-pill.pending { background: #fef3c7; color: #92400e; }
+.return-status-pill.received { background: #dcfce7; color: #166534; }
+.return-status-pill.missing { background: #fee2e2; color: #991b1b; }
+.return-condition-pill.good { background: #e0f2fe; color: #075985; }
+.return-condition-pill.damaged { background: #fee2e2; color: #991b1b; }
+
+.return-product-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 180px;
+}
+
+.return-product-actions select,
+.return-product-actions button {
+  border-radius: 8px;
+  border: 1px solid #d6d3d1;
+  padding: 8px 10px;
+  font-size: 0.84rem;
+}
+
+.return-product-actions button {
+  background: #18181b;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.return-product-actions button:hover {
+  background: #d4af37;
+  color: #000;
+}
+
+.return-product-actions button.secondary {
+  background: #f5f5f4;
+  color: #1c1917;
+}
+
+.return-product-actions button.secondary:hover {
+  background: #e7e5e4;
+}
+
 /* QUICK ACTIONS TOOLBAR */
 .hp-card-quick-actions {
   display: flex;
