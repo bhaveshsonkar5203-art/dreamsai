@@ -277,7 +277,7 @@ export function submitNewProjectDialog(e, callback) {
     }
     const newStylist = ProjectStore.saveStylist({
       name: newStylistInput.value.trim(),
-      title: "Personal Stylist"
+      title: "Stylist"
     });
     stylistId = newStylist.id;
   }
@@ -546,11 +546,286 @@ function handleCreateProjectSubmit(e, callback) {
 }
 
 function updateCurrentProjectStatus(projectId, newStatus) {
-  ProjectStore.updateProject(projectId, { status: newStatus });
+  ProjectStore.updateProject(projectId, { status: newStatus, projectStatus: newStatus });
   ProjectStore.logProjectActivity(projectId, "Stage Updated", `Curation stage updated to "${newStatus}".`);
   renderProjectBar();
   refreshProjectModalContent();
+  renderHomepageProjectsGateway();
 }
+
+window.openQuickEditProjectModal = function (projectId) {
+  const p = ProjectStore.getProjectById(projectId);
+  if (!p) return;
+
+  let modal = document.getElementById("quickEditProjectModal");
+  if (!modal) {
+    const modalHtml = `
+      <div id="quickEditProjectModal" class="project-modal-overlay" style="display: none;">
+        <div class="project-modal-card fashion-theme" style="max-width: 560px;">
+          <div class="project-modal-header">
+            <h3><i class="fa-solid fa-pen-to-square"></i> Edit Project Details</h3>
+            <button class="btn-close-modal" onclick="document.getElementById('quickEditProjectModal').style.display='none'">&times;</button>
+          </div>
+          <form id="quickEditProjectForm" onsubmit="handleQuickEditProjectSubmit(event)" style="padding: 24px;">
+            <input type="hidden" id="qeProjectId" />
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-weight:700; font-size:0.85rem;">Project Title:</label>
+              <input type="text" id="qeTitle" class="pm-select" required />
+            </div>
+            <div class="form-group" style="margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="font-weight:700; font-size:0.85rem;">Head Stylist:</label>
+                <input type="text" id="qeHeadStylist" class="pm-select" required />
+              </div>
+              <div>
+                <label style="font-weight:700; font-size:0.85rem;">Jewellery Brand:</label>
+                <input type="text" id="qeBrand" class="pm-select" required />
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="font-weight:700; font-size:0.82rem;">Shared Date:</label>
+                <input type="date" id="qeSharedDate" class="pm-select" />
+              </div>
+              <div>
+                <label style="font-weight:700; font-size:0.82rem;">Follow-up Date:</label>
+                <input type="date" id="qeFollowUpDate" class="pm-select" />
+              </div>
+              <div>
+                <label style="font-weight:700; font-size:0.82rem;">Return Due Date:</label>
+                <input type="date" id="qeReturnDueDate" class="pm-select" />
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="font-weight:700; font-size:0.85rem;">Project Status:</label>
+                <select id="qeProjectStatus" class="pm-select">
+                  <option value="Upcoming">Upcoming</option>
+                  <option value="Active">Active</option>
+                  <option value="Waiting for Return">Waiting for Return</option>
+                  <option value="Waiting for Deliverables">Waiting for Deliverables</option>
+                  <option value="Waiting for Social Post">Waiting for Social Post</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-weight:700; font-size:0.85rem;">Payment Status:</label>
+                <select id="qePaymentStatus" class="pm-select">
+                  <option value="Pending">🔴 Pending</option>
+                  <option value="Partial">🟡 Partial</option>
+                  <option value="Paid">🟢 Paid</option>
+                  <option value="Overdue">🔴 Overdue</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="font-weight:700; font-size:0.85rem;">Invoice Amount (₹):</label>
+                <input type="number" id="qeInvoiceAmt" class="pm-select" />
+              </div>
+              <div>
+                <label style="font-weight:700; font-size:0.85rem;">Amount Received (₹):</label>
+                <input type="number" id="qeAmtReceived" class="pm-select" />
+              </div>
+            </div>
+            <button type="submit" class="btn-proceed-large" style="margin-top:0;">Save Project Details</button>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
+    modal = document.getElementById("quickEditProjectModal");
+  }
+
+  document.getElementById("qeProjectId").value = p.id;
+  document.getElementById("qeTitle").value = p.title;
+  document.getElementById("qeHeadStylist").value = p.headStylist || "Natasha K";
+  document.getElementById("qeBrand").value = p.jewelleryBrand || "Ascend Fine Jewellery";
+  document.getElementById("qeSharedDate").value = p.finalTraySharedDate || "";
+  document.getElementById("qeFollowUpDate").value = p.followUpDate || "";
+  document.getElementById("qeReturnDueDate").value = p.returnDueDate || "";
+  document.getElementById("qeProjectStatus").value = p.projectStatus || p.status || "Active";
+
+  const pay = p.payment || { invoiceAmount: 150000, amountReceived: 100000, status: "Partial" };
+  document.getElementById("qePaymentStatus").value = pay.status || "Pending";
+  document.getElementById("qeInvoiceAmt").value = pay.invoiceAmount || 0;
+  document.getElementById("qeAmtReceived").value = pay.amountReceived || 0;
+
+  modal.style.display = "flex";
+};
+
+window.handleQuickEditProjectSubmit = function (e) {
+  e.preventDefault();
+  const pid = document.getElementById("qeProjectId").value;
+  if (!pid) return;
+
+  const updates = {
+    title: document.getElementById("qeTitle").value.trim(),
+    headStylist: document.getElementById("qeHeadStylist").value.trim(),
+    jewelleryBrand: document.getElementById("qeBrand").value.trim(),
+    finalTraySharedDate: document.getElementById("qeSharedDate").value,
+    followUpDate: document.getElementById("qeFollowUpDate").value,
+    returnDueDate: document.getElementById("qeReturnDueDate").value,
+    projectStatus: document.getElementById("qeProjectStatus").value,
+    status: document.getElementById("qeProjectStatus").value,
+    payment: {
+      invoiceAmount: parseFloat(document.getElementById("qeInvoiceAmt").value) || 0,
+      amountReceived: parseFloat(document.getElementById("qeAmtReceived").value) || 0,
+      status: document.getElementById("qePaymentStatus").value
+    }
+  };
+
+  ProjectStore.updateProject(pid, updates);
+  document.getElementById("quickEditProjectModal").style.display = "none";
+  renderHomepageProjectsGateway();
+  renderProjectBar();
+};
+
+window.openQuickUpdateReturnModal = function (projectId) {
+  const p = ProjectStore.getProjectById(projectId);
+  if (!p) return;
+  const prod = p.productStats || { sent: 18, returned: 14, pending: 3, missing: 1 };
+
+  let modal = document.getElementById("quickReturnModal");
+  if (!modal) {
+    const modalHtml = `
+      <div id="quickReturnModal" class="project-modal-overlay" style="display: none;">
+        <div class="project-modal-card fashion-theme" style="max-width: 440px;">
+          <div class="project-modal-header">
+            <h3><i class="fa-solid fa-rotate-left"></i> Update Product Return Status</h3>
+            <button class="btn-close-modal" onclick="document.getElementById('quickReturnModal').style.display='none'">&times;</button>
+          </div>
+          <form onsubmit="handleQuickReturnSubmit(event)" style="padding: 24px;">
+            <input type="hidden" id="qrProjectId" />
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-weight:700; font-size:0.85rem;">Total Products Sent:</label>
+              <input type="number" id="qrSent" class="pm-select" required />
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-weight:700; font-size:0.85rem;">🟢 Products Returned:</label>
+              <input type="number" id="qrReturned" class="pm-select" required />
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-weight:700; font-size:0.85rem;">🟡 Pending Returns:</label>
+              <input type="number" id="qrPending" class="pm-select" required />
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label style="font-weight:700; font-size:0.85rem;">🔴 Missing Products:</label>
+              <input type="number" id="qrMissing" class="pm-select" required />
+            </div>
+            <button type="submit" class="btn-proceed-large" style="margin-top:0;">Save Product Status</button>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
+    modal = document.getElementById("quickReturnModal");
+  }
+
+  document.getElementById("qrProjectId").value = p.id;
+  document.getElementById("qrSent").value = prod.sent || 0;
+  document.getElementById("qrReturned").value = prod.returned || 0;
+  document.getElementById("qrPending").value = prod.pending || 0;
+  document.getElementById("qrMissing").value = prod.missing || 0;
+
+  modal.style.display = "flex";
+};
+
+window.handleQuickReturnSubmit = function (e) {
+  e.preventDefault();
+  const pid = document.getElementById("qrProjectId").value;
+  if (!pid) return;
+
+  const productStats = {
+    sent: parseInt(document.getElementById("qrSent").value) || 0,
+    returned: parseInt(document.getElementById("qrReturned").value) || 0,
+    pending: parseInt(document.getElementById("qrPending").value) || 0,
+    missing: parseInt(document.getElementById("qrMissing").value) || 0
+  };
+
+  ProjectStore.updateProject(pid, { productStats });
+  document.getElementById("quickReturnModal").style.display = "none";
+  renderHomepageProjectsGateway();
+};
+
+window.openQuickUpdateDeliverablesModal = function (projectId) {
+  const p = ProjectStore.getProjectById(projectId);
+  if (!p) return;
+  const deliv = p.deliverables || { completed: 3, total: 5 };
+
+  let modal = document.getElementById("quickDeliverablesModal");
+  if (!modal) {
+    const modalHtml = `
+      <div id="quickDeliverablesModal" class="project-modal-overlay" style="display: none;">
+        <div class="project-modal-card fashion-theme" style="max-width: 440px;">
+          <div class="project-modal-header">
+            <h3><i class="fa-solid fa-list-check"></i> Update Deliverables</h3>
+            <button class="btn-close-modal" onclick="document.getElementById('quickDeliverablesModal').style.display='none'">&times;</button>
+          </div>
+          <form onsubmit="handleQuickDeliverablesSubmit(event)" style="padding: 24px;">
+            <input type="hidden" id="qdProjectId" />
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label style="font-weight:700; font-size:0.85rem;">Completed Deliverables:</label>
+              <input type="number" id="qdCompleted" class="pm-select" required />
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label style="font-weight:700; font-size:0.85rem;">Total Deliverables Agreed:</label>
+              <input type="number" id="qdTotal" class="pm-select" required />
+            </div>
+            <button type="submit" class="btn-proceed-large" style="margin-top:0;">Save Deliverables Progress</button>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
+    modal = document.getElementById("quickDeliverablesModal");
+  }
+
+  document.getElementById("qdProjectId").value = p.id;
+  document.getElementById("qdCompleted").value = deliv.completed || 0;
+  document.getElementById("qdTotal").value = deliv.total || 0;
+
+  modal.style.display = "flex";
+};
+
+window.handleQuickDeliverablesSubmit = function (e) {
+  e.preventDefault();
+  const pid = document.getElementById("qdProjectId").value;
+  if (!pid) return;
+
+  const deliverables = {
+    completed: parseInt(document.getElementById("qdCompleted").value) || 0,
+    total: parseInt(document.getElementById("qdTotal").value) || 0
+  };
+
+  ProjectStore.updateProject(pid, { deliverables });
+  document.getElementById("quickDeliverablesModal").style.display = "none";
+  renderHomepageProjectsGateway();
+};
+
+window.quickToggleSocialPosted = function (projectId) {
+  const p = ProjectStore.getProjectById(projectId);
+  if (!p) return;
+
+  const social = p.socialPosting || { status: "Pending", postingDate: "" };
+  let newStatus = "Posted";
+  let newDate = new Date().toISOString().split('T')[0];
+
+  if (social.status === "Pending") {
+    newStatus = "Posted";
+  } else if (social.status === "Posted") {
+    newStatus = "Verified";
+  } else {
+    newStatus = "Pending";
+    newDate = "";
+  }
+
+  ProjectStore.updateProject(projectId, {
+    socialPosting: { status: newStatus, postingDate: newDate }
+  });
+
+  renderHomepageProjectsGateway();
+};
 
 window.toggleNewCelebrityForm = function () {
   const form = document.getElementById("newCelebrityForm");

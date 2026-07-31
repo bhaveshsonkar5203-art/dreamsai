@@ -82,12 +82,12 @@ body.gateway-active .homepage-gateway-overlay {
 }
 
 .hp-gateway-wrapper {
-  max-width: 1200px;
-  margin: 40px auto;
+  max-width: 1380px;
+  margin: 20px auto;
   background: #ffffff;
   border: 1px solid #e7e5e4;
   border-radius: 16px;
-  padding: 36px;
+  padding: 32px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
 }
 
@@ -97,15 +97,15 @@ body.gateway-active .homepage-gateway-overlay {
   align-items: center;
   flex-wrap: wrap;
   gap: 18px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   border-bottom: 2px solid #f5f5f4;
-  padding-bottom: 22px;
+  padding-bottom: 18px;
 }
 
 .hp-gateway-title h2 {
   margin: 0 0 6px 0;
   font-family: 'Cormorant Garamond', serif;
-  font-size: 2.1rem;
+  font-size: 2.2rem;
   color: #1c1917;
 }
 
@@ -132,86 +132,435 @@ body.gateway-active .homepage-gateway-overlay {
   color: #000000;
 }
 
+/* HOMEPAGE SUMMARY CARDS (DASHBOARD STATS) */
+.hp-summary-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.hp-summary-card {
+  background: #fafaf9;
+  border: 1px solid #e7e5e4;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.hp-summary-card:hover {
+  border-color: #d4af37;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+
+.hp-summary-card.accent-card {
+  background: linear-gradient(135deg, #1c1917 0%, #292524 100%);
+  color: #ffffff;
+  border-color: #d4af37;
+}
+
+.summary-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.icon-active { background: #e0f2fe; color: #0284c7; }
+.icon-pending-returns { background: #fef3c7; color: #d97706; }
+.icon-missing { background: #fee2e2; color: #dc2626; }
+.icon-deliverables { background: #f3e8ff; color: #9333ea; }
+.icon-social { background: #fce7f3; color: #db2777; }
+.icon-payment { background: #ffedd5; color: #ea580c; }
+.icon-revenue { background: rgba(212, 175, 55, 0.2); color: #d4af37; border: 1px solid #d4af37; }
+
+.summary-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #1c1917;
+}
+
+.accent-card .summary-val {
+  color: #fef08a;
+}
+
+.summary-lbl {
+  font-size: 0.74rem;
+  color: #78716c;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.accent-card .summary-lbl {
+  color: #a8a29e;
+}
+
+/* SEARCH & FILTERS TOOLBAR */
+.hp-filter-toolbar {
+  background: #f5f5f4;
+  border: 1px solid #e7e5e4;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-inputs-row, .filter-selects-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.input-with-icon {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.input-with-icon i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a8a29e;
+  font-size: 0.85rem;
+}
+
+.input-with-icon input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border: 1px solid #d6d3d1;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  background: #ffffff;
+}
+
+.filter-selects-row select {
+  padding: 8px 12px;
+  border: 1px solid #d6d3d1;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  background: #ffffff;
+  color: #1c1917;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-clear-filters {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* RICH PROJECTS CARDS GRID */
 .hp-projects-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
 }
 
 .hp-project-card {
-  background: #fafaf9;
+  background: #ffffff;
   border: 1px solid #e7e5e4;
   border-radius: 14px;
   padding: 22px;
-  cursor: pointer;
   position: relative;
   transition: all 0.25s ease;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 
 .hp-project-card:hover {
   border-color: #d4af37;
-  background: #ffffff;
-  box-shadow: 0 12px 28px rgba(212, 175, 55, 0.25);
-  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(212, 175, 55, 0.2);
+  transform: translateY(-3px);
 }
 
 .hp-project-card.active-project {
   border: 2px solid #d4af37;
-  background: #fffef0;
+  background: #fffdf5;
 }
 
-.active-ribbon {
-  position: absolute;
-  top: -10px;
-  right: 14px;
-  background: #d4af37;
-  color: #000;
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.hp-card-stylist-banner {
-  background: #fef08a;
-  color: #713f12;
-  font-size: 0.85rem;
-  padding: 5px 12px;
-  border-radius: 6px;
-  margin-bottom: 14px;
+.hp-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .hp-card-project-name {
-  margin: 0 0 12px 0;
-  font-size: 1.25rem;
+  margin: 0 0 4px 0;
+  font-size: 1.35rem;
   color: #1c1917;
   font-family: 'Cormorant Garamond', serif;
   font-weight: 700;
+  line-height: 1.2;
 }
 
-.hp-card-info-simple {
+.hp-brand-tag {
+  font-size: 0.78rem;
+  color: #854d0e;
+  background: #fef9c3;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.proj-status-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.proj-upcoming { background: #e0f2fe; color: #0369a1; }
+.proj-active { background: #dcfce7; color: #15803d; }
+.proj-return { background: #fef3c7; color: #b45309; }
+.proj-deliverables { background: #f3e8ff; color: #7e22ce; }
+.proj-social { background: #fce7f3; color: #be185d; }
+.proj-completed { background: #f1f5f9; color: #475569; }
+
+.hp-card-basic-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: #57534e;
+  margin-top: 4px;
+}
+
+.basic-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.basic-item i {
+  color: #d4af37;
+  font-size: 0.8rem;
+}
+
+.hp-card-divider {
+  border: 0;
+  border-top: 1px solid #f5f5f4;
+  margin: 14px 0;
+}
+
+.hp-card-section {
+  margin-bottom: 12px;
+}
+
+.hp-section-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #78716c;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.hp-section-label-flex {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.88rem;
-  color: #57534e;
-  margin-bottom: 18px;
-}
-
-.hp-card-proceed-footer {
-  border-top: 1px solid #f5f5f4;
-  padding-top: 14px;
-  text-align: right;
-}
-
-.btn-proceed-action {
-  color: #d4af37;
+  font-size: 0.78rem;
   font-weight: 700;
-  font-size: 0.88rem;
+  color: #78716c;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.deliv-summary-text {
+  color: #1c1917;
+  font-weight: 800;
+}
+
+/* DATES & OVERDUE HIGHLIGHT */
+.hp-dates-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.date-chip {
+  background: #f5f5f4;
+  border: 1px solid #e7e5e4;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.d-label {
+  font-size: 0.68rem;
+  color: #78716c;
+}
+
+.d-val {
+  font-weight: 700;
+  color: #1c1917;
+}
+
+.date-chip.date-overdue {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.date-chip.date-overdue .d-val {
+  color: #dc2626 !important;
+  font-weight: 900;
+}
+
+/* PRODUCT STATUS BADGES */
+.hp-prod-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.prod-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.badge-returned { background: #dcfce7; color: #166534; }
+.badge-pending { background: #fef9c3; color: #854d0e; }
+.badge-missing { background: #fee2e2; color: #991b1b; }
+
+/* PROGRESS BAR */
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #e7e5e4;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #d4af37 0%, #16a34a 100%);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+/* DUAL COLUMNS FOR SOCIAL & PAYMENT */
+.hp-card-dual-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+  margin-bottom: 16px;
+  background: #fafaf9;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #f5f5f4;
+}
+
+.soc-badge-wrap, .pay-badge-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.soc-badge, .pay-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.soc-pending { background: #fef3c7; color: #b45309; }
+.soc-posted { background: #dbeafe; color: #1d4ed8; }
+.soc-verified { background: #dcfce7; color: #15803d; }
+
+.soc-date, .pay-details {
+  font-size: 0.75rem;
+  color: #78716c;
+  font-weight: 600;
+}
+
+.pay-paid { background: #dcfce7; color: #15803d; }
+.pay-partial { background: #fef9c3; color: #a16207; }
+.pay-pending, .pay-overdue { background: #fee2e2; color: #b91c1c; }
+
+/* QUICK ACTIONS TOOLBAR */
+.hp-card-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #f5f5f4;
+}
+
+.btn-qa {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-qa-primary {
+  background: #18181b;
+  color: #ffffff;
+  flex: 1;
+  justify-content: center;
+}
+
+.btn-qa-primary:hover {
+  background: #d4af37;
+  color: #000000;
+}
+
+.btn-qa-secondary {
+  background: #f5f5f4;
+  color: #292524;
+  border: 1px solid #e7e5e4;
+}
+
+.btn-qa-secondary:hover {
+  background: #e7e5e4;
+  border-color: #d6d3d1;
 }
 
 .new-project-card {
