@@ -87,12 +87,14 @@
                       <input id="searchSerial" type="text" placeholder="Search by serial" oninput="onSearchInput()"
                         class="search-input">
                       <div class="filter-section">
-                        <div class="filter-section-label">Types</div>
-                        <div id="filterTypeOptions" class="filter-option-list"></div>
+                        <div class="filter-section-label">Filter by type</div>
+                        <button type="button" class="filter-menu-trigger" onclick="toggleFilterChoice('type')">Choose types</button>
+                        <div id="filterTypeOptions" class="filter-option-list filter-choice-panel hidden"></div>
                       </div>
                       <div class="filter-section">
-                        <div class="filter-section-label">Brands</div>
-                        <div id="filterBrandOptions" class="filter-option-list"></div>
+                        <div class="filter-section-label">Filter by brand</div>
+                        <button type="button" class="filter-menu-trigger" onclick="toggleFilterChoice('brand')">Choose brands</button>
+                        <div id="filterBrandOptions" class="filter-option-list filter-choice-panel hidden"></div>
                       </div>
                       <select id="sortBy" onchange="onFilterChanged()" aria-label="Sort items">
                         <option value="">Sort by</option>

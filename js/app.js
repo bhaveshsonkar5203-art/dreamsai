@@ -336,6 +336,18 @@ function setActiveFilterSelections(kind, values) {
   window.localStorage.setItem(storageKey, JSON.stringify(values));
 }
 
+function toggleFilterChoice(kind) {
+  const currentPanel = kind === 'type' ? document.getElementById('filterTypeOptions') : document.getElementById('filterBrandOptions');
+  if (!currentPanel) return;
+  const otherPanel = kind === 'type' ? document.getElementById('filterBrandOptions') : document.getElementById('filterTypeOptions');
+  currentPanel.classList.toggle('hidden');
+  if (otherPanel) {
+    otherPanel.classList.add('hidden');
+  }
+}
+
+window.toggleFilterChoice = toggleFilterChoice;
+
 function toggleCatalogueFilter(kind, value) {
   const current = getActiveFilterSelections(kind);
   if (!value) {
