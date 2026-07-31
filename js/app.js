@@ -875,15 +875,50 @@ async function generateFinalTrayFromSerials() {
 
     setSerialFeedback(`Done. Final tray PDF generated for ${exportItems.length} item(s).`, false);
 
-    // Update active project status in background
+    // Persist final-tray summary onto the active project so the homepage dashboard reflects it
     try {
       const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
       const activeCtx = store && store.getActiveContext ? store.getActiveContext() : {};
       const activeProject = activeCtx.project;
-      if (store && store.updateProjectStatus && activeProject) {
-        store.updateProjectStatus(activeProject.id, "Sample Reserved");
+      if (store && store.updateProject && activeProject) {
+        const today = new Date().toISOString().split('T')[0];
+        const followUpDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const returnDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const finalTrayStatus = "Waiting for Return";
+        const updatedProject = store.updateProject(activeProject.id, {
+          status: finalTrayStatus,
+          projectStatus: finalTrayStatus,
+          finalTraySharedDate: today,
+          followUpDate,
+          returnDueDate,
+          productStats: {
+            sent: exportItems.length,
+            returned: 0,
+            pending: exportItems.length,
+            missing: 0
+          },
+          deliverables: {
+            completed: 0,
+            total: 5
+          },
+          socialPosting: {
+            status: "Pending",
+            postingDate: ""
+          },
+          payment: {
+            invoiceAmount: activeProject.payment?.invoiceAmount || 0,
+            amountReceived: activeProject.payment?.amountReceived || 0,
+            status: activeProject.payment?.status || "Pending"
+          }
+        });
+
+        if (updatedProject && typeof window.renderHomepageProjectsGateway === 'function') {
+          window.renderHomepageProjectsGateway();
+        }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn("Could not persist final tray project summary", e);
+    }
 
   } catch (err) {
     console.error("Error creating final tray PDF:", err);

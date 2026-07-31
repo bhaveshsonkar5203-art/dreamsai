@@ -8,6 +8,11 @@
 import * as ProjectStore from './project-store.js';
 
 let homepageProjectSwitchCallback = null;
+let homepageProjectFilterRenderTimer = null;
+const homepageProjectMenuState = {
+  summaryOpen: false,
+  filtersOpen: false
+};
 const homepageProjectFilters = {
   searchCelebrity: '',
   searchStylist: '',
@@ -137,6 +142,22 @@ function getFilteredHomepageProjects(projects) {
   });
 }
 
+function scheduleHomepageProjectRender() {
+  clearTimeout(homepageProjectFilterRenderTimer);
+  homepageProjectFilterRenderTimer = window.setTimeout(() => {
+    renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+  }, 160);
+}
+
+function toggleHomepageProjectMenu(section) {
+  if (section === 'summary') {
+    homepageProjectMenuState.summaryOpen = !homepageProjectMenuState.summaryOpen;
+  } else if (section === 'filters') {
+    homepageProjectMenuState.filtersOpen = !homepageProjectMenuState.filtersOpen;
+  }
+  renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+}
+
 export function initProjectUI({ onProjectSwitch }) {
   homepageProjectSwitchCallback = onProjectSwitch || null;
   renderProjectBar();
@@ -162,9 +183,15 @@ export function initProjectUI({ onProjectSwitch }) {
   window.showHomepageGateway = showHomepageGateway;
   window.updateCurrentProjectStatus = updateCurrentProjectStatus;
   window.renderHomepageProjectsGateway = () => renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+  window.toggleHomepageProjectMenu = toggleHomepageProjectMenu;
   window.handleHomepageProjectFilterChange = (field, value) => {
     homepageProjectFilters[field] = value;
-    renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+    const isTextFilter = ['searchCelebrity', 'searchStylist', 'searchBrand'].includes(field);
+    if (isTextFilter) {
+      scheduleHomepageProjectRender();
+    } else {
+      renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+    }
   };
   window.clearHomepageProjectFilters = () => {
     Object.assign(homepageProjectFilters, {
@@ -249,6 +276,11 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
     document.body.prepend(container);
   }
 
+  const activeElement = document.activeElement;
+  const activePlaceholder = activeElement && activeElement.tagName === 'INPUT' ? activeElement.getAttribute('placeholder') : '';
+  const selectionStart = activeElement && typeof activeElement.selectionStart === 'number' ? activeElement.selectionStart : null;
+  const selectionEnd = activeElement && typeof activeElement.selectionEnd === 'number' ? activeElement.selectionEnd : null;
+
   const allProjects = ProjectStore.getProjects();
   const filteredProjects = getFilteredHomepageProjects(allProjects);
   const { project: activeProject } = ProjectStore.getActiveContext();
@@ -266,7 +298,16 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
         </button>
       </div>
 
-      <div class="hp-summary-cards-grid">
+      <div class="hp-menu-buttons">
+        <button class="hp-menu-btn ${homepageProjectMenuState.summaryOpen ? 'is-active' : ''}" onclick="event.stopPropagation(); window.toggleHomepageProjectMenu('summary')">
+          <i class="fa-solid fa-layer-group"></i> Overview Menu
+        </button>
+        <button class="hp-menu-btn ${homepageProjectMenuState.filtersOpen ? 'is-active' : ''}" onclick="event.stopPropagation(); window.toggleHomepageProjectMenu('filters')">
+          <i class="fa-solid fa-sliders"></i> Filters Menu
+        </button>
+      </div>
+
+      <div class="hp-summary-cards-grid ${homepageProjectMenuState.summaryOpen ? 'is-open' : 'is-collapsed'}">
         <div class="hp-summary-card accent-card">
           <div class="summary-icon icon-active"><i class="fa-solid fa-chart-line"></i></div>
           <div class="summary-info">
@@ -333,7 +374,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
             <input type="text" placeholder="Search by Jewellery Brand" value="${escapeHtml(homepageProjectFilters.searchBrand)}" oninput="window.handleHomepageProjectFilterChange('searchBrand', this.value)">
           </div>
         </div>
-        <div class="filter-selects-row">
+        <div class="filter-selects-row ${homepageProjectMenuState.filtersOpen ? 'is-open' : 'is-collapsed'}">
           <select value="${escapeHtml(homepageProjectFilters.projectStatus)}" onchange="window.handleHomepageProjectFilterChange('projectStatus', this.value)">
             <option value="">Project Status</option>
             <option value="Upcoming" ${homepageProjectFilters.projectStatus === 'Upcoming' ? 'selected' : ''}>Upcoming</option>
@@ -477,6 +518,20 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
       </div>
     </div>
   `;
+
+  if (activePlaceholder) {
+    const restoredInput = container.querySelector(`input[placeholder="${activePlaceholder}"]`);
+    if (restoredInput) {
+      window.requestAnimationFrame(() => {
+        restoredInput.focus();
+        if (selectionStart !== null && selectionEnd !== null) {
+          const start = Math.min(selectionStart, restoredInput.value.length);
+          const end = Math.min(selectionEnd, restoredInput.value.length);
+          restoredInput.setSelectionRange(start, end);
+        }
+      });
+    }
+  }
 }
 
 /**
