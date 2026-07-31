@@ -1721,6 +1721,7 @@ async function markCurrentFinalTrayAsDelivered(serials = []) {
     renderFinalTraySerialManager();
     updateTabBadge();
     updateMiniWebsiteModalPreview();
+    buildReturnProductsStateFromFinalTray();
 
     return { ok: true, updatedCount, missingSerials };
   } catch (err) {
@@ -1810,7 +1811,7 @@ async function shareCurrentPdf() {
     return;
   }
 
-  const isFinalTrayShare = lastExportKind === "final-tray" || (Array.isArray(finalTraySerials) && finalTraySerials.length > 0 && String(lastExportTitle || "").toLowerCase().includes("final tray"));
+  const isFinalTrayShare = lastExportKind === "final-tray" || (Array.isArray(finalTraySerials) && finalTraySerials.length > 0);
 
   if (isFinalTrayShare) {
     console.log(shareLogPrefix, "marking final tray items as delivered before WhatsApp share");
@@ -2592,13 +2593,16 @@ function applyReturnProductInventoryRules() {
     const serial = String(item["Serial No"] || "").trim();
     const matched = returnProductsState.find((entry) => entry.serial === serial);
     if (!matched) return;
-    const isDamaged = matched.condition === "damaged";
-    const isUnavailable = isDamaged || matched.returnStatus === "missing";
-    item["Status"] = isUnavailable ? "Marked & Delivered" : item["Status"];
-    if (isDamaged) {
+
+    const isReturnedAndGood = matched.returnStatus === "received" && matched.condition === "good";
+
+    if (isReturnedAndGood) {
+      item["Status"] = "Unmarked";
+    } else {
       item["Status"] = "Marked & Delivered";
-      item["Notes"] = item["Notes"] || "";
-      item["Notes"] += (item["Notes"] ? " | " : "") + "Damaged on return";
+      if (matched.condition === "damaged" && !String(item["Notes"] || "").includes("Damaged on return")) {
+        item["Notes"] = (item["Notes"] || "") + (item["Notes"] ? " | " : "") + "Damaged on return";
+      }
     }
   });
 
