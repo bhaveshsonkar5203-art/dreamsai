@@ -10,8 +10,13 @@ import * as ProjectStore from './project-store.js';
 let homepageProjectSwitchCallback = null;
 let homepageProjectFilterRenderTimer = null;
 const homepageProjectMenuState = {
-  summaryOpen: false,
+  menuOpen: false,
+  activeSection: '',
   filtersOpen: false
+};
+const homepageProjectPagination = {
+  currentPage: 1,
+  pageSize: 10
 };
 const homepageProjectFilters = {
   searchCelebrity: '',
@@ -149,12 +154,54 @@ function scheduleHomepageProjectRender() {
   }, 160);
 }
 
-function toggleHomepageProjectMenu(section) {
-  if (section === 'summary') {
-    homepageProjectMenuState.summaryOpen = !homepageProjectMenuState.summaryOpen;
-  } else if (section === 'filters') {
-    homepageProjectMenuState.filtersOpen = !homepageProjectMenuState.filtersOpen;
+let isHomepageMenuOutsideClickAttached = false;
+
+function setupHomepageMenuOutsideClick() {
+  if (isHomepageMenuOutsideClickAttached) return;
+  isHomepageMenuOutsideClickAttached = true;
+  document.addEventListener('click', (e) => {
+    if (homepageProjectMenuState.menuOpen) {
+      const container = document.querySelector('.hp-menu-container');
+      if (container && !container.contains(e.target)) {
+        homepageProjectMenuState.menuOpen = false;
+        renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+      }
+    }
+  });
+}
+
+function toggleHomepageProjectMenu(action) {
+  if (action === 'toggleMenu' || !action) {
+    homepageProjectMenuState.menuOpen = !homepageProjectMenuState.menuOpen;
+  } else if (action === 'closeMenu') {
+    homepageProjectMenuState.menuOpen = false;
   }
+  renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+}
+
+function selectHomepageMenuSection(section) {
+  if (section === 'overview') {
+    homepageProjectMenuState.activeSection = homepageProjectMenuState.activeSection === 'overview' ? 'none' : 'overview';
+  }
+  homepageProjectMenuState.menuOpen = false;
+  renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+}
+
+function toggleHomepageProjectFilters() {
+  homepageProjectMenuState.filtersOpen = !homepageProjectMenuState.filtersOpen;
+  renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+}
+
+function changeHomepageProjectPage(page) {
+  const allProjects = ProjectStore.getProjects();
+  const filteredProjects = getFilteredHomepageProjects(allProjects);
+  const totalPages = Math.ceil(filteredProjects.length / homepageProjectPagination.pageSize);
+
+  if (page < 1 || (totalPages > 0 && page > totalPages)) {
+    return;
+  }
+
+  homepageProjectPagination.currentPage = page;
   renderHomepageProjectsGateway(homepageProjectSwitchCallback);
 }
 
@@ -164,6 +211,7 @@ export function initProjectUI({ onProjectSwitch }) {
   renderHomepageProjectsGateway(homepageProjectSwitchCallback);
   injectProjectModal();
   injectNewProjectModal(onProjectSwitch);
+  setupHomepageMenuOutsideClick();
 
   // Show gateway if user has not proceeded yet
   showHomepageGateway();
@@ -184,8 +232,12 @@ export function initProjectUI({ onProjectSwitch }) {
   window.updateCurrentProjectStatus = updateCurrentProjectStatus;
   window.renderHomepageProjectsGateway = () => renderHomepageProjectsGateway(homepageProjectSwitchCallback);
   window.toggleHomepageProjectMenu = toggleHomepageProjectMenu;
+  window.selectHomepageMenuSection = selectHomepageMenuSection;
+  window.toggleHomepageProjectFilters = toggleHomepageProjectFilters;
+  window.changeHomepageProjectPage = changeHomepageProjectPage;
   window.handleHomepageProjectFilterChange = (field, value) => {
     homepageProjectFilters[field] = value;
+    homepageProjectPagination.currentPage = 1;
     const isTextFilter = ['searchCelebrity', 'searchStylist', 'searchBrand'].includes(field);
     if (isTextFilter) {
       scheduleHomepageProjectRender();
@@ -203,6 +255,7 @@ export function initProjectUI({ onProjectSwitch }) {
       returnStatus: '',
       socialStatus: ''
     });
+    homepageProjectPagination.currentPage = 1;
     renderHomepageProjectsGateway(homepageProjectSwitchCallback);
   };
 }
@@ -286,6 +339,80 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
   const { project: activeProject } = ProjectStore.getActiveContext();
   const summary = getHomepageSummaryStats(allProjects);
 
+  const totalProjects = filteredProjects.length;
+  const totalPages = Math.ceil(totalProjects / homepageProjectPagination.pageSize);
+  homepageProjectPagination.currentPage = Math.min(
+    homepageProjectPagination.currentPage,
+    Math.max(totalPages, 1)
+  );
+  const currentPage = homepageProjectPagination.currentPage;
+  const startIndex = (currentPage - 1) * homepageProjectPagination.pageSize;
+  const endIndex = startIndex + homepageProjectPagination.pageSize;
+  const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
+
+  const displayStart = totalProjects === 0 ? 0 : startIndex + 1;
+  const displayEnd = Math.min(endIndex, totalProjects);
+
+  let paginationHtml = '';
+  if (totalProjects > 0) {
+    let pagesToDisplay = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pagesToDisplay.push(i);
+    } else {
+      pagesToDisplay.push(1);
+      if (currentPage > 3) pagesToDisplay.push('...');
+      const startPage = Math.max(2, currentPage - 1);
+      const endPage = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = startPage; i <= endPage; i++) {
+        if (!pagesToDisplay.includes(i)) pagesToDisplay.push(i);
+      }
+      if (currentPage < totalPages - 2) pagesToDisplay.push('...');
+      pagesToDisplay.push(totalPages);
+    }
+
+    const pageButtonsHtml = pagesToDisplay.map(p => {
+      if (p === '...') {
+        return `<span class="hp-pagination-ellipsis">...</span>`;
+      }
+      const isActive = p === currentPage;
+      return `<button class="hp-pagination-page ${isActive ? 'is-active' : ''}"
+                      onclick="window.changeHomepageProjectPage(${p})"
+                      aria-label="Page ${p}">
+                ${p}
+              </button>`;
+    }).join('');
+
+    const isPrevDisabled = currentPage <= 1;
+    const isNextDisabled = currentPage >= totalPages;
+
+    paginationHtml = `
+      <div class="hp-pagination-container">
+        <div class="hp-pagination-info">
+          Showing <strong>${displayStart}–${displayEnd}</strong> of <strong>${totalProjects}</strong> projects
+        </div>
+        ${totalPages > 1 ? `
+        <div class="hp-pagination-controls" role="navigation" aria-label="Projects Pagination">
+          <button class="hp-pagination-btn"
+                  onclick="window.changeHomepageProjectPage(${currentPage - 1})"
+                  ${isPrevDisabled ? 'disabled aria-disabled="true"' : ''}>
+            <i class="fa-solid fa-arrow-left"></i> Previous
+          </button>
+
+          <div class="hp-pagination-pages">
+            ${pageButtonsHtml}
+          </div>
+
+          <button class="hp-pagination-btn"
+                  onclick="window.changeHomepageProjectPage(${currentPage + 1})"
+                  ${isNextDisabled ? 'disabled aria-disabled="true"' : ''}>
+            Next <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
   container.innerHTML = `
     <div class="hp-gateway-wrapper">
       <div class="hp-gateway-header">
@@ -293,21 +420,69 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
           <h2><i class="fa-solid fa-gem"></i> Projects &amp; Stylists Gateway</h2>
           <p>Monitor every campaign at a glance, from delivery progress to payments and social posting.</p>
         </div>
-        <!--<button class="btn-create-project-main" onclick="openNewProjectDialog()">
-          <i class="fa-solid fa-plus"></i>  Create New Project
-        </button>-->:
       </div>
- 
-      <div class="hp-menu-buttons">
-        <button class="hp-menu-btn ${homepageProjectMenuState.summaryOpen ? 'is-active' : ''}" onclick="event.stopPropagation(); window.toggleHomepageProjectMenu('summary')">
-          <i class="fa-solid fa-layer-group"></i> Overview Menu
-        </button>
-        <button class="hp-menu-btn ${homepageProjectMenuState.filtersOpen ? 'is-active' : ''}" onclick="event.stopPropagation(); window.toggleHomepageProjectMenu('filters')">
-          <i class="fa-solid fa-sliders"></i> Filters Menu
+
+      <div class="hp-toolbar-actions">
+        <div class="hp-menu-container">
+          <button class="hp-menu-btn ${homepageProjectMenuState.menuOpen ? 'is-active' : ''}"
+                  onclick="event.stopPropagation(); window.toggleHomepageProjectMenu('toggleMenu')"
+                  aria-haspopup="menu"
+                  aria-expanded="${homepageProjectMenuState.menuOpen}"
+                  aria-controls="homepageProjectDropdownMenu"
+                  aria-label="Toggle Project Menu">
+            <i class="fa-solid fa-bars"></i> Menu
+          </button>
+
+          <div id="homepageProjectDropdownMenu" class="hp-dropdown-menu ${homepageProjectMenuState.menuOpen ? 'is-open' : ''}" role="menu" aria-label="Project Menu">
+            <div class="hp-dropdown-header">Project Menu</div>
+
+            <button role="menuitem" class="hp-dropdown-item ${homepageProjectMenuState.activeSection === 'overview' ? 'is-active' : ''}"
+                    onclick="event.stopPropagation(); window.selectHomepageMenuSection('overview')">
+              <span class="hp-dropdown-item-label">
+                <i class="fa-solid fa-chart-pie"></i> Overview
+              </span>
+            </button>
+
+            <button role="menuitem" class="hp-dropdown-item is-disabled" onclick="event.stopPropagation();" disabled aria-disabled="true">
+              <span class="hp-dropdown-item-label">
+                <i class="fa-solid fa-chart-line"></i> Analytics
+              </span>
+              <span class="hp-badge-coming-soon">Coming soon</span>
+            </button>
+
+            <button role="menuitem" class="hp-dropdown-item is-disabled" onclick="event.stopPropagation();" disabled aria-disabled="true">
+              <span class="hp-dropdown-item-label">
+                <i class="fa-solid fa-file-lines"></i> Reports
+              </span>
+              <span class="hp-badge-coming-soon">Coming soon</span>
+            </button>
+
+            <button role="menuitem" class="hp-dropdown-item is-disabled" onclick="event.stopPropagation();" disabled aria-disabled="true">
+              <span class="hp-dropdown-item-label">
+                <i class="fa-solid fa-clock-rotate-left"></i> Activity
+              </span>
+              <span class="hp-badge-coming-soon">Coming soon</span>
+            </button>
+
+            <button role="menuitem" class="hp-dropdown-item is-disabled" onclick="event.stopPropagation();" disabled aria-disabled="true">
+              <span class="hp-dropdown-item-label">
+                <i class="fa-solid fa-gear"></i> Settings
+              </span>
+              <span class="hp-badge-coming-soon">Coming soon</span>
+            </button>
+          </div>
+        </div>
+
+        <button class="hp-filter-toggle-btn ${homepageProjectMenuState.filtersOpen ? 'is-active' : ''}"
+                onclick="event.stopPropagation(); window.toggleHomepageProjectFilters()"
+                aria-expanded="${homepageProjectMenuState.filtersOpen}"
+                aria-controls="homepageProjectFilterPanel"
+                aria-label="Toggle Project Filters">
+          <i class="fa-solid fa-sliders"></i> Filters
         </button>
       </div>
 
-      <div class="hp-summary-cards-grid ${homepageProjectMenuState.summaryOpen ? 'is-open' : 'is-collapsed'}">
+      <div class="hp-summary-cards-grid ${homepageProjectMenuState.activeSection === 'overview' ? 'is-open' : 'is-collapsed'}">
         <div class="hp-summary-card accent-card">
           <div class="summary-icon icon-active"><i class="fa-solid fa-chart-line"></i></div>
           <div class="summary-info">
@@ -359,7 +534,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
         </div>
       </div>
 
-      <div class="hp-filter-toolbar">
+      <div id="homepageProjectFilterPanel" class="hp-filter-toolbar ${homepageProjectMenuState.filtersOpen ? 'is-open' : 'is-collapsed'}">
         <div class="filter-inputs-row">
           <div class="input-with-icon">
             <i class="fa-solid fa-user"></i>
@@ -374,7 +549,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
             <input type="text" placeholder="Search by Jewellery Brand" value="${escapeHtml(homepageProjectFilters.searchBrand)}" oninput="window.handleHomepageProjectFilterChange('searchBrand', this.value)">
           </div>
         </div>
-        <div class="filter-selects-row ${homepageProjectMenuState.filtersOpen ? 'is-open' : 'is-collapsed'}">
+        <div class="filter-selects-row">
           <select value="${escapeHtml(homepageProjectFilters.projectStatus)}" onchange="window.handleHomepageProjectFilterChange('projectStatus', this.value)">
             <option value="">Project Status</option>
             <option value="Upcoming" ${homepageProjectFilters.projectStatus === 'Upcoming' ? 'selected' : ''}>Upcoming</option>
@@ -415,7 +590,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
           <span>Select saved Stylist or add new</span>
         </div>
 
-        ${filteredProjects.length === 0 ? '<div class="hp-project-card"><strong>No projects match the selected filters.</strong></div>' : filteredProjects.map(p => {
+        ${filteredProjects.length === 0 ? '<div class="hp-project-card"><strong>No projects match the selected filters.</strong></div>' : paginatedProjects.map(p => {
     const isActive = activeProject && p.id === activeProject.id;
     const celebrity = ProjectStore.getCelebrityById(p.celebrityId);
     const stylist = ProjectStore.getStylistById(p.stylistId);
@@ -437,7 +612,6 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
               <div class="hp-card-header">
                 <div>
                   <h3 class="hp-card-project-name">${escapeHtml(p.title)}</h3>
-                  <span class="hp-brand-tag">${escapeHtml(p.jewelleryBrand || 'Jewellery Brand')}</span>
                 </div>
                 <span class="proj-status-badge ${getProjectStatusClass(projectStatus)}">${escapeHtml(projectStatus)}</span>
               </div>
@@ -445,17 +619,13 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
               <div class="hp-card-basic-grid">
                 <div class="basic-item"><i class="fa-solid fa-star"></i> ${escapeHtml(celebrityName)}</div>
                 <div class="basic-item"><i class="fa-solid fa-user-tie"></i> ${escapeHtml(stylistName)}</div>
-                <div class="basic-item"><i class="fa-solid fa-user-secret"></i> ${escapeHtml(p.headStylist || 'Head Stylist')}</div>
-                <div class="basic-item"><i class="fa-solid fa-gem"></i> ${escapeHtml(p.jewelleryBrand || 'Brand')}</div>
+              
               </div>
 
               <hr class="hp-card-divider" />
 
               <div class="hp-card-section">
-                <div class="hp-section-label-flex">
-                  <span>Important Dates</span>
-                  <span class="deliv-summary-text">${sharedDate ? 'Shared' : 'No dates'}</span>
-                </div>
+          
                 <div class="hp-dates-row">
                   <div class="date-chip ${isDateOverdue(sharedDate) ? 'date-overdue' : ''}">
                     <span class="d-label">Final Tray</span>
@@ -481,17 +651,6 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
                 </div>
               </div>
 
-              <div class="hp-card-section">
-                <div class="hp-section-label-flex">
-                  <span>Deliverables</span>
-                  <span class="deliv-summary-text">${deliverables.completed}/${deliverables.total} Complete</span>
-                </div>
-                <div class="progress-bar-container">
-                  <div class="progress-bar-fill" style="width: ${deliverables.percent}%;"></div>
-                </div>
-                <div class="soc-date" style="margin-top: 6px;">${deliverables.percent}% complete</div>
-              </div>
-
               <div class="hp-card-dual-grid">
                 <div class="soc-badge-wrap">
                   <div class="hp-section-label">Social</div>
@@ -506,16 +665,18 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
               </div>
 
               <div class="hp-card-quick-actions">
-                <button class="btn-qa btn-qa-primary" onclick="event.stopPropagation(); window.handleProjectChange('${p.id}')"><i class="fa-solid fa-arrow-up-right-from-square"></i> View Project</button>
+
                 <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickEditProjectModal('${p.id}')"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
                 <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickUpdateReturnModal('${p.id}')"><i class="fa-solid fa-rotate-left"></i> Update Return</button>
-                <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickUpdateDeliverablesModal('${p.id}')"><i class="fa-solid fa-list-check"></i> Deliverables</button>
+                
                 <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.quickToggleSocialPosted('${p.id}')"><i class="fa-solid fa-share-nodes"></i> Social</button>
               </div>
             </div>
           `;
   }).join('')}
       </div>
+
+      ${paginationHtml}
     </div>
   `;
 
