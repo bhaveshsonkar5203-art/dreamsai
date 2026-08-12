@@ -883,7 +883,7 @@ async function generateSelectionPdf() {
   }
 }
 
-async function generateFinalTrayFromSerials() {
+async function generateFinalTrayFromSerials(isBypassed = false) {
   let serials = [...finalTraySerials];
 
   if (!serials.length) {
@@ -918,6 +918,14 @@ async function generateFinalTrayFromSerials() {
   if (!serials.length) {
     alert("Please select items from the catalogue or add serial codes to the Final Tray list first.");
     setSerialFeedback("Please select items or add serial codes first.", true);
+    return;
+  }
+
+  // Validate availability before proceeding
+  if (!isBypassed) {
+    validateFinalTrayAvailabilityAndProceed((bypassed) => {
+      generateFinalTrayFromSerials(true);
+    }, isBypassed);
     return;
   }
 
@@ -1254,6 +1262,347 @@ function getFinalTraySuggestions(rawQuery) {
   return [...fromCurrentList, ...fromKnown].slice(0, 12);
 }
 
+function isProductAvailableForFinalTray(serialNo, currentProjectId = null) {
+  if (!serialNo) return { available: false, reason: "Invalid item", project: null };
+  const sNo = String(serialNo).trim();
+  if (!sNo) return { available: false, reason: "Invalid item", project: null };
+
+  // 1. Check dataBySerial status
+  if (typeof dataBySerial !== 'undefined' && dataBySerial && dataBySerial.has(sNo)) {
+    const item = dataBySerial.get(sNo);
+    const statusStr = String(item["Status"] || "").toLowerCase();
+    if (statusStr === "missing") {
+      return { available: false, reason: "Marked as Missing", project: null };
+    }
+  }
+
+  // 2. Check active projects in ProjectStore
+  const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+  if (store && typeof store.getProjects === 'function') {
+    const projects = store.getProjects();
+    for (const p of projects) {
+      // Skip current project (Rule 21: Current Project Exception)
+      if (currentProjectId && p.id === currentProjectId) {
+        continue;
+      }
+
+      const pStatus = String(p.projectStatus || p.status || "").toLowerCase();
+      const isCompleted = pStatus === 'completed' || pStatus === 'returned';
+      const isFinalTrayShared = !!p.finalTraySharedDate && !isCompleted;
+
+      if (isFinalTrayShared && Array.isArray(p.selectedSerials) && p.selectedSerials.includes(sNo)) {
+        const celebrity = store.getCelebrityById ? store.getCelebrityById(p.celebrityId) : null;
+        const stylist = store.getStylistById ? store.getStylistById(p.stylistId) : null;
+        const celebName = celebrity ? celebrity.name : (p.title || 'Another Project');
+        const stylistName = stylist ? stylist.name : '';
+        const returnDue = p.returnDueDate || '';
+
+        return {
+          available: false,
+          reason: `Out with ${celebName}${stylistName ? ' (Stylist: ' + stylistName + ')' : ''}`,
+          project: p,
+          projectTitle: p.title,
+          celebrityName: celebName,
+          stylistName: stylistName,
+          returnDueDate: returnDue
+        };
+      }
+    }
+  }
+
+  return { available: true, reason: "Available", project: null };
+}
+
+window.isProductAvailableForFinalTray = isProductAvailableForFinalTray;
+
+function validateFinalTrayAvailabilityAndProceed(onProceed, isBypassed = false) {
+  if (isBypassed) {
+    onProceed();
+    return;
+  }
+
+  const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+  const activeCtx = store && store.getActiveContext ? store.getActiveContext() : {};
+  const activeProject = activeCtx.project;
+  const activeProjectId = activeProject ? activeProject.id : null;
+
+  let targetSerials = [...finalTraySerials];
+  if (!targetSerials.length && Array.isArray(selected) && selected.length) {
+    targetSerials = [...selected];
+  }
+  if (!targetSerials.length && activeProject && Array.isArray(activeProject.selectedSerials)) {
+    targetSerials = [...activeProject.selectedSerials];
+  }
+
+  if (!targetSerials.length) {
+    onProceed();
+    return;
+  }
+
+  const availableSerials = [];
+  const unavailableItems = [];
+
+  targetSerials.forEach((serial) => {
+    const avail = isProductAvailableForFinalTray(serial, activeProjectId);
+    if (avail.available) {
+      availableSerials.push(serial);
+    } else {
+      const itemData = typeof dataBySerial !== 'undefined' && dataBySerial ? dataBySerial.get(serial) : null;
+      const title = itemData ? (itemData["Title"] || itemData["Name"] || serial) : serial;
+      const brand = itemData ? (itemData["Brand"] || activeProject?.jewelleryBrand || "Ascend Fine Jewellery") : (activeProject?.jewelleryBrand || "Ascend Fine Jewellery");
+
+      unavailableItems.push({
+        serial: serial,
+        title: title,
+        brand: brand,
+        reason: avail.reason,
+        projectTitle: avail.projectTitle || "Another Project",
+        celebrityName: avail.celebrityName || "Client",
+        stylistName: avail.stylistName || "",
+        returnDueDate: avail.returnDueDate || ""
+      });
+    }
+  });
+
+  if (unavailableItems.length === 0) {
+    onProceed();
+    return;
+  }
+
+  showUnavailableProductsModal({
+    activeProject: activeProject,
+    availableSerials: availableSerials,
+    unavailableItems: unavailableItems,
+    onContinueAvailable: () => {
+      finalTraySerials = [...availableSerials];
+      selected = [...availableSerials];
+      if (store && store.updateProjectItems && activeProjectId) {
+        store.updateProjectItems(activeProjectId, availableSerials);
+      }
+      renderFinalTraySerialManager();
+      onProceed(true);
+    }
+  });
+}
+
+function showUnavailableProductsModal({ activeProject, availableSerials, unavailableItems, onContinueAvailable }) {
+  let modal = document.getElementById("unavailableProductsModalOverlay");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "unavailableProductsModalOverlay";
+    modal.className = "project-modal-overlay";
+    document.body.appendChild(modal);
+  }
+
+  const unavailableRows = unavailableItems.map(item => `
+    <div style="padding: 12px; border: 1px solid #fecaca; border-radius: 8px; margin-bottom: 10px; background: #fff5f5;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+        <div style="font-weight: 700; font-size: 0.9rem; color: #991b1b;">
+          <i class="fa-solid fa-xmark" style="color: #dc2626;"></i> ${escapeHtml(item.title)} (${escapeHtml(item.serial)})
+        </div>
+        <span class="prod-badge badge-missing" style="margin: 0; font-size: 0.75rem;">Unavailable</span>
+      </div>
+      <div style="font-size: 0.82rem; color: #7f1d1d; margin-top: 4px;">
+        Brand: <strong>${escapeHtml(item.brand)}</strong> &nbsp;|&nbsp; ${escapeHtml(item.reason)}
+      </div>
+      ${item.returnDueDate ? `<div style="font-size: 0.8rem; color: #991b1b; margin-top: 2px;"><i class="fa-solid fa-clock"></i> Expected Return: <strong>${formatDateDisplay(item.returnDueDate)}</strong></div>` : ''}
+    </div>
+  `).join('');
+
+  const hasAvailable = availableSerials.length > 0;
+
+  modal.innerHTML = `
+    <div class="project-modal-card fashion-theme" style="max-width: 560px; box-sizing: border-box;">
+      <div class="project-modal-header" style="background: #fff1f2; border-bottom: 1px solid #fecdd3;">
+        <h3 style="color: #9f1239;"><i class="fa-solid fa-triangle-exclamation" style="color: #e11d48;"></i> ${hasAvailable ? 'Some Selected Products Are Unavailable' : 'All Selected Products Are Unavailable'}</h3>
+        <button class="btn-close-modal" onclick="document.getElementById('unavailableProductsModalOverlay').style.display='none'">&times;</button>
+      </div>
+
+      <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
+        <p style="margin: 0 0 14px 0; font-size: 0.88rem; color: #44403c;">
+          ${hasAvailable ? `<strong>${unavailableItems.length}</strong> of your selected products are currently committed to other active projects and cannot be included in a new Final Tray:` : `No selected products are currently available for Final Tray sharing:`}
+        </p>
+
+        ${unavailableRows}
+
+        ${hasAvailable ? `
+          <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; margin-top: 14px; color: #166534; font-size: 0.86rem; font-weight: 600;">
+            <i class="fa-solid fa-check" style="color: #16a34a;"></i> ${availableSerials.length} product(s) are available and ready to be shared.
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="project-modal-footer" style="padding: 14px 20px; display: flex; flex-direction: column; gap: 10px; background: #fafaf9; border-top: 1px solid #e7e5e4;">
+        <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+          <button class="btn-qa btn-qa-secondary" onclick="document.getElementById('unavailableProductsModalOverlay').style.display='none'">Cancel</button>
+
+          <button class="btn-qa btn-qa-secondary" style="border-color: #d4af37; color: #854d0e; background: #fefce8;" onclick="window.handleGenerateUnavailablePdfClick()">
+            <i class="fa-solid fa-file-pdf"></i> Generate Unavailable PDF
+          </button>
+
+          ${hasAvailable ? `
+            <button class="btn-qa btn-qa-primary" onclick="document.getElementById('unavailableProductsModalOverlay').style.display='none'; window._onContinueAvailableAction();">
+              <i class="fa-solid fa-arrow-right"></i> Continue with ${availableSerials.length} Available
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+
+  window._onContinueAvailableAction = onContinueAvailable;
+  window._lastUnavailableModalData = { activeProject, unavailableItems };
+  modal.style.display = "flex";
+}
+
+window.handleGenerateUnavailablePdfClick = async function() {
+  const data = window._lastUnavailableModalData;
+  if (!data || !data.unavailableItems || !data.unavailableItems.length) return;
+
+  const result = await generateUnavailableProductsPdf(data.activeProject, data.unavailableItems);
+  if (!result || !result.blob) return;
+
+  triggerBlobDownload(result.blob, result.fileName);
+
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const projTitle = data.activeProject ? data.activeProject.title : "Jewellery Curation";
+  const whatsappText = encodeURIComponent(
+    `📄 *PRODUCT AVAILABILITY UPDATE — ${projTitle.toUpperCase()}*\n` +
+    `Document File: ${result.fileName}\n\n` +
+    `Some requested pieces are currently unavailable with other projects. Please see the attached PDF for details.`
+  );
+
+  const waUrl = isMobile
+    ? `https://api.whatsapp.com/send?text=${whatsappText}`
+    : `https://web.whatsapp.com/send?text=${whatsappText}`;
+
+  if (navigator.canShare) {
+    const file = new File([result.blob], result.fileName, { type: "application/pdf" });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Unavailable Products Update",
+          text: `📄 Unavailable Products Update - ${projTitle}`
+        });
+        return;
+      } catch (e) {}
+    }
+  }
+
+  openWhatsAppComposer(waUrl);
+};
+
+async function generateUnavailableProductsPdf(activeProject, unavailableItems) {
+  const jsPdfApi = window.jspdf && window.jspdf.jsPDF;
+  if (!jsPdfApi) {
+    alert("PDF generator library is loading. Please try again.");
+    return null;
+  }
+
+  const pdf = new jsPdfApi({ orientation: "portrait", unit: "pt", format: "a4" });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 36;
+
+  pdf.setFillColor(24, 24, 27);
+  pdf.rect(0, 0, pageWidth, 75, "F");
+
+  pdf.setFillColor(212, 175, 55);
+  pdf.rect(0, 75, pageWidth, 4, "F");
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(18);
+  pdf.setTextColor(255, 255, 255);
+  pdf.text("PRODUCT AVAILABILITY UPDATE", margin, 42);
+
+  pdf.setFontSize(9);
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(212, 175, 55);
+  pdf.text("ASCEND HIGH JEWELRY CURATION", margin, 58);
+
+  const projTitle = activeProject ? activeProject.title : "Jewellery Curation";
+  const todayStr = formatDateDisplay(new Date().toISOString().split('T')[0]);
+
+  let y = 105;
+  pdf.setFontSize(11);
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(24, 24, 27);
+  pdf.text(`Project: ${projTitle}`, margin, y);
+
+  pdf.setFontSize(9.5);
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(115, 115, 115);
+  y += 16;
+  pdf.text(`Generated Date: ${todayStr}   |   Total Excluded Items: ${unavailableItems.length}`, margin, y);
+
+  y += 24;
+
+  pdf.setFillColor(245, 245, 244);
+  pdf.rect(margin, y, pageWidth - (margin * 2), 24, "F");
+  pdf.setDrawColor(231, 229, 228);
+  pdf.rect(margin, y, pageWidth - (margin * 2), 24, "S");
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(24, 24, 27);
+  pdf.text("Serial Code", margin + 10, y + 15);
+  pdf.text("Product Details", margin + 110, y + 15);
+  pdf.text("Availability Status", margin + 280, y + 15);
+  pdf.text("Expected Return", margin + 440, y + 15);
+
+  y += 24;
+
+  unavailableItems.forEach((item, index) => {
+    if (y > pageHeight - 60) {
+      pdf.addPage();
+      y = 40;
+    }
+
+    const rowBg = index % 2 === 0 ? [255, 255, 255] : [250, 250, 249];
+    pdf.setFillColor(rowBg[0], rowBg[1], rowBg[2]);
+    pdf.rect(margin, y, pageWidth - (margin * 2), 36, "F");
+    pdf.setDrawColor(240, 238, 237);
+    pdf.rect(margin, y, pageWidth - (margin * 2), 36, "S");
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(24, 24, 27);
+    pdf.text(String(item.serial), margin + 10, y + 21);
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8.5);
+    const shortTitle = String(item.title).length > 28 ? String(item.title).substring(0, 26) + "..." : String(item.title);
+    pdf.text(shortTitle, margin + 110, y + 15);
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(120, 113, 108);
+    pdf.text(`Brand: ${item.brand}`, margin + 110, y + 27);
+
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(180, 83, 9);
+    pdf.text(item.reason, margin + 280, y + 21);
+
+    pdf.setTextColor(87, 83, 78);
+    const retStr = item.returnDueDate ? formatDateDisplay(item.returnDueDate) : "Pending";
+    pdf.text(retStr, margin + 440, y + 21);
+
+    y += 36;
+  });
+
+  y += 20;
+  if (y < pageHeight - 40) {
+    pdf.setFontSize(8);
+    pdf.setFont("helvetica", "italic");
+    pdf.setTextColor(168, 162, 158);
+    pdf.text("This document is an inventory availability notice. Available pieces will be shared in a separate Final Tray.", margin, y);
+  }
+
+  const pdfBlob = pdf.output("blob");
+  const fileName = `Unavailable_Products_${String(projTitle).replace(/[^a-zA-Z0-9_-]/g, "_")}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+  return { blob: pdfBlob, fileName: fileName };
+}
+
 function renderFinalTraySerialManager() {
   const listNode = document.getElementById("finalTrayList");
   const metaNode = document.getElementById("finalTrayListMeta");
@@ -1269,12 +1618,24 @@ function renderFinalTraySerialManager() {
   if (!finalTraySerials.length) {
     listNode.innerHTML = '<span class="panel-meta">No serials added yet.</span>';
   } else {
-    listNode.innerHTML = finalTraySerials.map((serial) => `
-      <span class="final-tray-chip" title="${serial}">
-        ${serial}
-        <button type="button" class="final-tray-chip-remove" data-serial="${serial}" aria-label="Remove ${serial}">✕</button>
-      </span>
-    `).join("");
+    const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+    const activeCtx = store && store.getActiveContext ? store.getActiveContext() : {};
+    const activeProjectId = activeCtx.project ? activeCtx.project.id : null;
+
+    listNode.innerHTML = finalTraySerials.map((serial) => {
+      const avail = isProductAvailableForFinalTray(serial, activeProjectId);
+      const isUnavailable = !avail.available;
+      const chipClass = isUnavailable ? "final-tray-chip chip-unavailable" : "final-tray-chip";
+      const badgeIcon = isUnavailable ? `<i class="fa-solid fa-triangle-exclamation" style="color: #ea580c; margin-right: 4px;"></i>` : ``;
+      const titleAttr = isUnavailable ? `Unavailable: ${avail.reason}` : serial;
+
+      return `
+        <span class="${chipClass}" title="${escapeHtml(titleAttr)}">
+          ${badgeIcon}${escapeHtml(serial)}
+          <button type="button" class="final-tray-chip-remove" data-serial="${escapeHtml(serial)}" aria-label="Remove ${escapeHtml(serial)}">✕</button>
+        </span>
+      `;
+    }).join("");
 
     listNode.querySelectorAll(".final-tray-chip-remove").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -1795,7 +2156,14 @@ function openWhatsAppComposer(waUrl) {
 }
 
 /* SHARE CURRENT PDF TO WHATSAPP / NATIVE SHARE */
-async function shareCurrentPdf() {
+async function shareCurrentPdf(isBypassed = false) {
+  if (!isBypassed) {
+    validateFinalTrayAvailabilityAndProceed((bypassed) => {
+      shareCurrentPdf(true);
+    }, isBypassed);
+    return;
+  }
+
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const shareLogPrefix = "[shareCurrentPdf]";
   let pendingWin = null;
