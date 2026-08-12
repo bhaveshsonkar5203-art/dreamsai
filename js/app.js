@@ -969,13 +969,34 @@ async function generateFinalTrayFromSerials() {
       const activeProject = activeCtx.project;
       if (store && store.updateProject && activeProject) {
         const today = new Date().toISOString().split('T')[0];
-        const followUpDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const returnDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const finalTraySharedDate = activeProject.finalTraySharedDate || today;
+        
+        // Calculate followUpDate = 15 days after finalTraySharedDate if missing
+        let followUpDate = activeProject.followUpDate;
+        if (!followUpDate) {
+          const d = new Date(finalTraySharedDate);
+          d.setDate(d.getDate() + 15);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          followUpDate = `${yyyy}-${mm}-${dd}`;
+        }
+
+        let returnDueDate = activeProject.returnDueDate;
+        if (!returnDueDate) {
+          const d = new Date(finalTraySharedDate);
+          d.setDate(d.getDate() + 7);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          returnDueDate = `${yyyy}-${mm}-${dd}`;
+        }
+
         const finalTrayStatus = "Waiting for Return";
         const updatedProject = store.updateProject(activeProject.id, {
           status: finalTrayStatus,
           projectStatus: finalTrayStatus,
-          finalTraySharedDate: today,
+          finalTraySharedDate,
           followUpDate,
           returnDueDate,
           productStats: {
@@ -1691,12 +1712,22 @@ async function markCurrentFinalTrayAsDelivered(serials = []) {
       const activeProject = activeCtx.project;
       if (store && store.updateProject && activeProject) {
         const today = new Date().toISOString().split('T')[0];
+        const finalTraySharedDate = activeProject.finalTraySharedDate || today;
+        let followUpDate = activeProject.followUpDate;
+        if (!followUpDate) {
+          const d = new Date(finalTraySharedDate);
+          d.setDate(d.getDate() + 15);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          followUpDate = `${yyyy}-${mm}-${dd}`;
+        }
         const deliveredProject = store.updateProject(activeProject.id, {
           status: "Delivered",
           projectStatus: "Delivered",
-          finalTraySharedDate: today,
-          followUpDate: today,
-          returnDueDate: today,
+          finalTraySharedDate,
+          followUpDate,
+          returnDueDate: activeProject.returnDueDate || today,
           productStats: {
             sent: matchedItems.length,
             returned: matchedItems.length,

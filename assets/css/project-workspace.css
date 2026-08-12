@@ -1653,3 +1653,16 @@ body.gateway-active .homepage-gateway-overlay {
     padding: 8px 12px;
   }
 }
+
+/* FOLLOW-UP DATE CHIP STATES */
+.date-chip.date-followup-due {
+  background: #fff7ed;
+  border-color: #fb923c;
+  color: #9a3412;
+}
+
+.date-chip.date-followup-overdue {
+  background: #fef2f2;
+  border-color: #f87171;
+  color: #991b1b;
+}

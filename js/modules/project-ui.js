@@ -86,6 +86,41 @@ function formatCurrency(value) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(value || 0));
 }
 
+function addDaysToDateString(dateStr, days = 15) {
+  if (!dateStr) return '';
+  const dateObj = new Date(dateStr);
+  if (isNaN(dateObj.getTime())) return '';
+  dateObj.setDate(dateObj.getDate() + days);
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateDisplay(dateValue) {
+  if (!dateValue) return '—';
+  const target = new Date(dateValue);
+  if (Number.isNaN(target.getTime())) return dateValue;
+  const day = target.getDate();
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = monthNames[target.getMonth()];
+  const year = target.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+function getFollowUpStatus(dateValue) {
+  if (!dateValue) return 'none';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateValue);
+  if (Number.isNaN(target.getTime())) return 'none';
+  target.setHours(0, 0, 0, 0);
+
+  if (target < today) return 'overdue';
+  if (target.getTime() === today.getTime()) return 'due';
+  return 'future';
+}
+
 function isDateOverdue(dateValue) {
   if (!dateValue) return false;
   const today = new Date();
@@ -335,6 +370,18 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
   const selectionEnd = activeElement && typeof activeElement.selectionEnd === 'number' ? activeElement.selectionEnd : null;
 
   const allProjects = ProjectStore.getProjects();
+
+  // Auto-derive followUpDate for existing projects that have finalTraySharedDate but no followUpDate
+  allProjects.forEach(p => {
+    if (p.finalTraySharedDate && !p.followUpDate) {
+      const derived = addDaysToDateString(p.finalTraySharedDate, 15);
+      if (derived) {
+        p.followUpDate = derived;
+        ProjectStore.updateProject(p.id, { followUpDate: derived });
+      }
+    }
+  });
+
   const filteredProjects = getFilteredHomepageProjects(allProjects);
   const { project: activeProject } = ProjectStore.getActiveContext();
   const summary = getHomepageSummaryStats(allProjects);
@@ -603,8 +650,16 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
     const deliverables = getDeliverables(p);
     const returnStatus = productStats.missing > 0 ? 'Missing' : productStats.pending > 0 ? 'Pending' : productStats.returned > 0 ? 'Returned' : 'Completed';
     const sharedDate = p.finalTraySharedDate || '';
-    const followUpDate = p.followUpDate || '';
+    const followUpDate = p.followUpDate || (sharedDate ? addDaysToDateString(sharedDate, 15) : '');
     const returnDueDate = p.returnDueDate || '';
+
+    const followUpStatus = getFollowUpStatus(followUpDate);
+    let followUpChipClass = '';
+    if (followUpStatus === 'overdue') {
+      followUpChipClass = 'date-followup-overdue';
+    } else if (followUpStatus === 'due') {
+      followUpChipClass = 'date-followup-due';
+    }
 
     return `
             <div class="hp-project-card ${isActive ? 'active-project' : ''}" onclick="window.handleProjectChange('${p.id}')">
@@ -629,15 +684,15 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
                 <div class="hp-dates-row">
                   <div class="date-chip ${isDateOverdue(sharedDate) ? 'date-overdue' : ''}">
                     <span class="d-label">Final Tray</span>
-                    <span class="d-val">${escapeHtml(sharedDate || '—')}</span>
+                    <span class="d-val">${escapeHtml(formatDateDisplay(sharedDate))}</span>
                   </div>
-                  <div class="date-chip ${isDateOverdue(followUpDate) ? 'date-overdue' : ''}">
+                  <div class="date-chip ${followUpChipClass || (isDateOverdue(followUpDate) ? 'date-overdue' : '')}">
                     <span class="d-label">Follow-up</span>
-                    <span class="d-val">${escapeHtml(followUpDate || '—')}</span>
+                    <span class="d-val">${escapeHtml(formatDateDisplay(followUpDate))}</span>
                   </div>
                   <div class="date-chip ${isDateOverdue(returnDueDate) ? 'date-overdue' : ''}">
                     <span class="d-label">Return Due</span>
-                    <span class="d-val">${escapeHtml(returnDueDate || '—')}</span>
+                    <span class="d-val">${escapeHtml(formatDateDisplay(returnDueDate))}</span>
                   </div>
                 </div>
               </div>
@@ -679,6 +734,9 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
       ${paginationHtml}
     </div>
   `;
+
+  // Check for follow-up reminders once per session
+  checkAndShowFollowUpReminders();
 
   if (activePlaceholder) {
     const restoredInput = container.querySelector(`input[placeholder="${activePlaceholder}"]`);
@@ -1361,6 +1419,94 @@ window.quickToggleSocialPosted = function (projectId) {
 window.toggleNewCelebrityForm = function () {
   const form = document.getElementById("newCelebrityForm");
   if (form) form.style.display = form.style.display === "none" ? "flex" : "none";
+};
+
+function checkAndShowFollowUpReminders() {
+  if (sessionStorage.getItem('hp_followup_reminder_shown') === 'true') {
+    return;
+  }
+
+  const allProjects = ProjectStore.getProjects();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dueProjects = allProjects.filter(p => {
+    if (!p.followUpDate) return false;
+    const fDate = new Date(p.followUpDate);
+    if (isNaN(fDate.getTime())) return false;
+    fDate.setHours(0, 0, 0, 0);
+    return today >= fDate;
+  });
+
+  if (dueProjects.length === 0) return;
+
+  sessionStorage.setItem('hp_followup_reminder_shown', 'true');
+  showFollowUpReminderModal(dueProjects);
+}
+
+function showFollowUpReminderModal(dueProjects) {
+  let modal = document.getElementById("followUpReminderModalOverlay");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "followUpReminderModalOverlay";
+    modal.className = "project-modal-overlay";
+    document.body.appendChild(modal);
+  }
+
+  const itemsHtml = dueProjects.map(p => {
+    const celebrity = ProjectStore.getCelebrityById(p.celebrityId);
+    const stylist = ProjectStore.getStylistById(p.stylistId);
+    const celebrityName = celebrity ? celebrity.name : 'Celebrity';
+    const stylistName = stylist ? stylist.name : 'Stylist';
+    const status = getFollowUpStatus(p.followUpDate);
+    const badgeText = status === 'overdue' ? 'Overdue' : 'Due Today';
+    const badgeClass = status === 'overdue' ? 'badge-missing' : 'badge-pending';
+
+    return `
+      <div style="padding: 12px; border: 1px solid #e7e5e4; border-radius: 8px; margin-bottom: 10px; background: #fafaf9; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+        <div>
+          <div style="font-weight: 700; font-size: 0.92rem; color: #1c1917;">${escapeHtml(p.title)}</div>
+          <div style="font-size: 0.82rem; color: #78716c; margin-top: 2px;">
+            <i class="fa-solid fa-star"></i> ${escapeHtml(celebrityName)} &nbsp;|&nbsp; <i class="fa-solid fa-user-tie"></i> ${escapeHtml(stylistName)}
+          </div>
+          <div style="font-size: 0.8rem; color: #a8a29e; margin-top: 2px;">
+            Follow-up date: <strong>${formatDateDisplay(p.followUpDate)}</strong>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+          <span class="prod-badge ${badgeClass}" style="margin:0;">${badgeText}</span>
+          <button class="btn-qa btn-qa-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="window.closeFollowUpReminderModal(); window.handleProjectChange('${p.id}');">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Project
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  modal.innerHTML = `
+    <div class="project-modal-card fashion-theme" style="max-width: 540px; box-sizing: border-box;">
+      <div class="project-modal-header">
+        <h3><i class="fa-solid fa-bell" style="color: #fb923c;"></i> Follow-up Reminders (${dueProjects.length})</h3>
+        <button class="btn-close-modal" onclick="window.closeFollowUpReminderModal()">&times;</button>
+      </div>
+      <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
+        <p style="margin: 0 0 14px 0; font-size: 0.88rem; color: #78716c;">
+          The following campaign project(s) have reached or passed their 15-day follow-up date:
+        </p>
+        ${itemsHtml}
+      </div>
+      <div class="project-modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; background: #fafaf9; border-top: 1px solid #e7e5e4;">
+        <button class="btn-qa btn-qa-secondary" onclick="window.closeFollowUpReminderModal()">Dismiss</button>
+      </div>
+    </div>
+  `;
+
+  modal.style.display = "flex";
+}
+
+window.closeFollowUpReminderModal = function() {
+  const modal = document.getElementById("followUpReminderModalOverlay");
+  if (modal) modal.style.display = "none";
 };
 
 function escapeHtml(str) {
