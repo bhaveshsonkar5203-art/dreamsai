@@ -293,11 +293,11 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
           <h2><i class="fa-solid fa-gem"></i> Projects &amp; Stylists Gateway</h2>
           <p>Monitor every campaign at a glance, from delivery progress to payments and social posting.</p>
         </div>
-        <button class="btn-create-project-main" onclick="openNewProjectDialog()">
-          <i class="fa-solid fa-plus"></i> + Create New Project
-        </button>
+        <!--<button class="btn-create-project-main" onclick="openNewProjectDialog()">
+          <i class="fa-solid fa-plus"></i>  Create New Project
+        </button>-->:
       </div>
-
+ 
       <div class="hp-menu-buttons">
         <button class="hp-menu-btn ${homepageProjectMenuState.summaryOpen ? 'is-active' : ''}" onclick="event.stopPropagation(); window.toggleHomepageProjectMenu('summary')">
           <i class="fa-solid fa-layer-group"></i> Overview Menu
@@ -411,7 +411,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
       <div class="hp-projects-cards-grid">
         <div class="hp-project-card new-project-card" onclick="openNewProjectDialog()">
           <div class="new-card-icon"><i class="fa-solid fa-plus"></i></div>
-          <strong>+ Create New Project</strong>
+          <strong> Create New Project</strong>
           <span>Select saved Stylist or add new</span>
         </div>
 
