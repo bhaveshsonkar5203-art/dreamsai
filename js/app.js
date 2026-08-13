@@ -62,8 +62,13 @@ function syncCurrentSelectionToProject() {
 initProjectUI({
   onProjectSwitch: (project) => {
     selected = project && project.selectedSerials ? [...project.selectedSerials] : [];
+    finalTraySerials = project && project.selectedSerials ? [...project.selectedSerials] : [];
+    returnProductsState = []; // Force rebuild of return products state next time it's viewed
     updateTabBadge();
     render();
+    if (typeof window.renderFinalTraySerialManager === 'function') {
+      window.renderFinalTraySerialManager();
+    }
     if (typeof window.renderHomepageProjectsSection === 'function') {
       window.renderHomepageProjectsSection();
     }
@@ -74,6 +79,7 @@ initProjectUI({
 const { project: initialActiveProject } = ProjectStore.getActiveContext();
 if (initialActiveProject && Array.isArray(initialActiveProject.selectedSerials)) {
   selected = [...initialActiveProject.selectedSerials];
+  finalTraySerials = [...initialActiveProject.selectedSerials];
 }
 
 /* FETCH DATA */
