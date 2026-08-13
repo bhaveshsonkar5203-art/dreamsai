@@ -35,8 +35,7 @@ let dataBySerial = new Map();
 let returnProductsState = [];
 let returnProductsFilter = "";
 
-const API_URL = "https://script.google.com/macros/s/AKfycbx0eH7JARm9zfA7thFyCYt4LYUTcPzw0MdKFuVTAg-z6il9_r2YSJG00WiRwv2QJmQ/exec";
-const APP_BUILD_TAG = "script-20260410-guard-logs-1";
+import { API_URL, APP_BUILD_TAG } from './config.js';
 
 function traceFinalTray(step, details) {
   const stamp = new Date().toISOString();

@@ -4,7 +4,8 @@
  * Automatically saves Projects, Stylists, Celebrities, and Item Selections directly to Google Sheets!
  */
 
-export const API_URL = "https://script.google.com/macros/s/AKfycbx0eH7JARm9zfA7thFyCYt4LYUTcPzw0MdKFuVTAg-z6il9_r2YSJG00WiRwv2QJmQ/exec";
+import { API_URL } from '../config.js';
+export { API_URL };
 
 import { db, collection, setDoc, getDocs, doc } from './firebase-config.js';
 
