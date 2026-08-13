@@ -186,9 +186,23 @@ export function mergeProjects(localProjects = [], remoteProjects = []) {
 
   const mergedMap = new Map();
 
+  // Deduplicate remoteProjects by picking the newest one for each ID
+  const remoteMap = new Map();
   (Array.isArray(remoteProjects) ? remoteProjects : []).forEach(remoteProj => {
     if (!remoteProj || !remoteProj.id) return;
+    const existing = remoteMap.get(remoteProj.id);
+    if (!existing) {
+      remoteMap.set(remoteProj.id, remoteProj);
+    } else {
+      const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+      const newTime = new Date(remoteProj.updatedAt || remoteProj.createdAt || 0).getTime();
+      if (newTime > existingTime) {
+        remoteMap.set(remoteProj.id, remoteProj);
+      }
+    }
+  });
 
+  Array.from(remoteMap.values()).forEach(remoteProj => {
     const localProj = localMap.get(remoteProj.id);
     if (!localProj) {
       mergedMap.set(remoteProj.id, { ...remoteProj });
