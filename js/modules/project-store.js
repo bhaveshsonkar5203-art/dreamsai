@@ -158,12 +158,96 @@ function initializeDefaultData() {
         activityLog: []
       }
     ];
-    safeSetItem(STORAGE_KEYS.PROJECTS, projects);
+    safeSetItem(STORAGE_KEYS.PROJECTS, sortProjectsDescending(projects));
   }
 }
 
 // Initialize on load
 initializeDefaultData();
+
+/* --- PROJECT MERGE & SORTING HELPERS --- */
+
+export function sortProjectsDescending(projects = []) {
+  if (!Array.isArray(projects)) return [];
+  return [...projects].sort((a, b) => {
+    const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+    const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
+}
+
+export function mergeProjects(localProjects = [], remoteProjects = []) {
+  const localMap = new Map();
+  (Array.isArray(localProjects) ? localProjects : []).forEach(p => {
+    if (p && p.id) {
+      localMap.set(p.id, p);
+    }
+  });
+
+  const mergedMap = new Map();
+
+  (Array.isArray(remoteProjects) ? remoteProjects : []).forEach(remoteProj => {
+    if (!remoteProj || !remoteProj.id) return;
+
+    const localProj = localMap.get(remoteProj.id);
+    if (!localProj) {
+      mergedMap.set(remoteProj.id, { ...remoteProj });
+      return;
+    }
+
+    const localTime = new Date(localProj.updatedAt || localProj.createdAt || 0).getTime();
+    const remoteTime = new Date(remoteProj.updatedAt || remoteProj.createdAt || 0).getTime();
+
+    const base = localTime >= remoteTime ? { ...remoteProj, ...localProj } : { ...localProj, ...remoteProj };
+
+    mergedMap.set(remoteProj.id, {
+      ...base,
+      title: base.title || localProj.title || remoteProj.title,
+      status: base.status || localProj.status || remoteProj.status,
+      projectStatus: base.projectStatus || localProj.projectStatus || remoteProj.projectStatus,
+      finalTraySharedDate: base.finalTraySharedDate || localProj.finalTraySharedDate || remoteProj.finalTraySharedDate || '',
+      followUpDate: base.followUpDate || localProj.followUpDate || remoteProj.followUpDate || '',
+      returnDueDate: base.returnDueDate || localProj.returnDueDate || remoteProj.returnDueDate || '',
+      selectedSerials: (Array.isArray(base.selectedSerials) && base.selectedSerials.length > 0)
+        ? base.selectedSerials
+        : ((Array.isArray(localProj.selectedSerials) && localProj.selectedSerials.length > 0) ? localProj.selectedSerials : (remoteProj.selectedSerials || [])),
+      productStats: {
+        sent: base.productStats?.sent ?? localProj.productStats?.sent ?? remoteProj.productStats?.sent ?? 0,
+        returned: base.productStats?.returned ?? localProj.productStats?.returned ?? remoteProj.productStats?.returned ?? 0,
+        pending: base.productStats?.pending ?? localProj.productStats?.pending ?? remoteProj.productStats?.pending ?? 0,
+        missing: base.productStats?.missing ?? localProj.productStats?.missing ?? remoteProj.productStats?.missing ?? 0
+      },
+      deliverables: {
+        completed: base.deliverables?.completed ?? localProj.deliverables?.completed ?? remoteProj.deliverables?.completed ?? 0,
+        total: base.deliverables?.total ?? localProj.deliverables?.total ?? remoteProj.deliverables?.total ?? 5
+      },
+      socialPosting: {
+        status: base.socialPosting?.status || localProj.socialPosting?.status || remoteProj.socialPosting?.status || 'Pending',
+        postingDate: base.socialPosting?.postingDate || localProj.socialPosting?.postingDate || remoteProj.socialPosting?.postingDate || ''
+      },
+      payment: {
+        invoiceAmount: base.payment?.invoiceAmount ?? localProj.payment?.invoiceAmount ?? remoteProj.payment?.invoiceAmount ?? 0,
+        amountReceived: base.payment?.amountReceived ?? localProj.payment?.amountReceived ?? remoteProj.payment?.amountReceived ?? 0,
+        status: base.payment?.status || localProj.payment?.status || remoteProj.payment?.status || 'Pending'
+      },
+      pdfRecords: (Array.isArray(base.pdfRecords) && base.pdfRecords.length > 0)
+        ? base.pdfRecords
+        : (localProj.pdfRecords || remoteProj.pdfRecords || []),
+      updatedAt: localTime >= remoteTime
+        ? (localProj.updatedAt || new Date().toISOString())
+        : (remoteProj.updatedAt || localProj.updatedAt || new Date().toISOString())
+    });
+
+    localMap.delete(remoteProj.id);
+  });
+
+  localMap.forEach((localProj, id) => {
+    mergedMap.set(id, { ...localProj });
+  });
+
+  const mergedList = Array.from(mergedMap.values());
+  return sortProjectsDescending(mergedList);
+}
 
 /* --- GOOGLE SHEETS CLOUD SYNC HELPERS --- */
 
@@ -190,7 +274,9 @@ export async function fetchProjectsFromGoogleSheets() {
     const res = await postToGoogleSheets({ action: "getProjectsAndStylists" });
     if (res && res.ok) {
       if (Array.isArray(res.projects) && res.projects.length) {
-        safeSetItem(STORAGE_KEYS.PROJECTS, res.projects);
+        const localProjects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
+        const mergedProjects = mergeProjects(localProjects, res.projects);
+        safeSetItem(STORAGE_KEYS.PROJECTS, mergedProjects);
       }
       if (Array.isArray(res.stylists) && res.stylists.length) {
         safeSetItem(STORAGE_KEYS.STYLISTS, res.stylists);
@@ -198,7 +284,10 @@ export async function fetchProjectsFromGoogleSheets() {
       if (Array.isArray(res.celebrities) && res.celebrities.length) {
         safeSetItem(STORAGE_KEYS.CELEBRITIES, res.celebrities);
       }
-      console.log("[GoogleSheetsSync] Successfully pulled projects from Google Sheets.");
+      console.log("[GoogleSheetsSync] Successfully pulled and merged projects from Google Sheets.");
+      if (typeof window !== 'undefined' && typeof window.renderHomepageProjectsGateway === 'function') {
+        window.renderHomepageProjectsGateway();
+      }
       return res;
     }
   } catch (e) {
@@ -274,6 +363,7 @@ export function saveCelebrity({ name, category = "A-List Actress & Icon", house 
 
 export function getProjects(celebrityId = null, stylistId = null) {
   let projects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
+  projects = sortProjectsDescending(projects);
   if (celebrityId) {
     projects = projects.filter(p => p.celebrityId === celebrityId);
   }
@@ -324,7 +414,7 @@ export function createProject({ celebrityId, stylistId = null, title, season = "
   };
 
   projects.unshift(newProject);
-  safeSetItem(STORAGE_KEYS.PROJECTS, projects);
+  safeSetItem(STORAGE_KEYS.PROJECTS, sortProjectsDescending(projects));
   setActiveContext(celebrityId, newProject.id);
 
   // Sync to Google Sheets API
@@ -334,7 +424,7 @@ export function createProject({ celebrityId, stylistId = null, title, season = "
 }
 
 export function updateProject(projectId, updates) {
-  const projects = getProjects();
+  const projects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
   const idx = projects.findIndex(p => p.id === projectId);
   if (idx === -1) return null;
 
@@ -344,7 +434,8 @@ export function updateProject(projectId, updates) {
     updatedAt: new Date().toISOString()
   };
 
-  safeSetItem(STORAGE_KEYS.PROJECTS, projects);
+  const sorted = sortProjectsDescending(projects);
+  safeSetItem(STORAGE_KEYS.PROJECTS, sorted);
 
   // Sync update to Google Sheets API
   postToGoogleSheets({ action: "saveProject", project: projects[idx] });

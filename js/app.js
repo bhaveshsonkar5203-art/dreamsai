@@ -1007,6 +1007,7 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
           finalTraySharedDate,
           followUpDate,
           returnDueDate,
+          selectedSerials: serials,
           productStats: {
             sent: exportItems.length,
             returned: 0,
