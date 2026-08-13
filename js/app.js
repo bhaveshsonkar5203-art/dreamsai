@@ -3017,21 +3017,32 @@ function applyReturnProductInventoryRules() {
 }
 
 function buildReturnProductsStateFromFinalTray() {
-  const serials = [...new Set(finalTraySerials.filter(Boolean))];
-  const items = resolveItemsBySerials(serials);
-  returnProductsState = items.map((item) => {
-    const serial = String(item["Serial No"] || "").trim();
-    return {
-      serial,
-      name: String(item["Description"] || item["Name"] || item["Type"] || serial),
-      code: serial,
-      category: String(item["Type"] || "Jewellery"),
-      quantity: 1,
-      image: getPreviewImageUrl(item),
-      returnStatus: "pending",
-      condition: "good"
-    };
-  });
+  const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+  let activeProject = null;
+  if (store && store.getActiveContext) {
+    activeProject = store.getActiveContext().project;
+  }
+
+  // If the active project already has saved return products state, use it!
+  if (activeProject && Array.isArray(activeProject.returnProductsState) && activeProject.returnProductsState.length > 0) {
+    returnProductsState = activeProject.returnProductsState;
+  } else {
+    const serials = [...new Set(finalTraySerials.filter(Boolean))];
+    const items = resolveItemsBySerials(serials);
+    returnProductsState = items.map((item) => {
+      const serial = String(item["Serial No"] || "").trim();
+      return {
+        serial,
+        name: String(item["Description"] || item["Name"] || item["Type"] || serial),
+        code: serial,
+        category: String(item["Type"] || "Jewellery"),
+        quantity: 1,
+        image: getPreviewImageUrl(item),
+        returnStatus: "pending",
+        condition: "good"
+      };
+    });
+  }
   refreshReturnProductsUi();
   applyReturnProductInventoryRules();
 }
@@ -3049,12 +3060,47 @@ function handleReturnProductsSearch(value) {
   renderReturnProductsList();
 }
 
+function persistReturnProductsState() {
+  const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
+  if (store && store.updateProject && store.getActiveContext) {
+    const activeProject = store.getActiveContext().project;
+    if (activeProject) {
+      const summary = getReturnProductSummary();
+      const productStats = {
+        sent: summary.total,
+        returned: summary.received,
+        pending: summary.pending,
+        missing: summary.missing
+      };
+      // Keep projectStatus as 'Completed' if it's currently 'Completed', otherwise calculate it
+      let newStatus = activeProject.projectStatus || activeProject.status || 'Active';
+      if (newStatus !== 'Completed') {
+        if (summary.pending > 0) newStatus = 'Waiting for Return';
+        else if (summary.total > 0) newStatus = 'Waiting for Deliverables';
+      }
+      
+      store.updateProject(activeProject.id, {
+        returnProductsState: [...returnProductsState],
+        productStats: productStats,
+        status: newStatus,
+        projectStatus: newStatus
+      });
+      
+      // Force UI updates for the project list if the function exists
+      if (typeof window.renderProjectBar === 'function') {
+        window.renderProjectBar();
+      }
+    }
+  }
+}
+
 function updateReturnProductStatus(serial, status) {
   const entry = returnProductsState.find((item) => item.serial === serial);
   if (!entry) return;
   entry.returnStatus = status;
   refreshReturnProductsUi();
   applyReturnProductInventoryRules();
+  persistReturnProductsState();
 }
 
 function updateReturnProductCondition(serial, condition) {
@@ -3063,6 +3109,7 @@ function updateReturnProductCondition(serial, condition) {
   entry.condition = condition;
   refreshReturnProductsUi();
   applyReturnProductInventoryRules();
+  persistReturnProductsState();
 }
 
 function markReturnProductReceived(serial) {
