@@ -6,6 +6,8 @@
 
 export const API_URL = "https://script.google.com/macros/s/AKfycbx0eH7JARm9zfA7thFyCYt4LYUTcPzw0MdKFuVTAg-z6il9_r2YSJG00WiRwv2QJmQ/exec";
 
+import { db, collection, setDoc, getDocs, doc } from './firebase-config.js';
+
 const STORAGE_KEYS = {
   STYLISTS: "dreamsai_celebrity_stylists_v6",
   CELEBRITIES: "dreamsai_celebrities_v6",
@@ -263,55 +265,47 @@ export function mergeProjects(localProjects = [], remoteProjects = []) {
   return sortProjectsDescending(mergedList);
 }
 
-/* --- GOOGLE SHEETS CLOUD SYNC HELPERS --- */
+/* --- FIREBASE CLOUD SYNC HELPERS --- */
 
-async function postToGoogleSheets(payload) {
+export async function fetchDataFromFirebase() {
   try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) {
-      console.warn(`[GoogleSheetsSync] HTTP ${response.status}`);
-      return null;
+    const projectsSnap = await getDocs(collection(db, "projects"));
+    const remoteProjects = [];
+    projectsSnap.forEach((d) => remoteProjects.push(d.data()));
+    
+    if (remoteProjects.length > 0) {
+      const localProjects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
+      const mergedProjects = mergeProjects(localProjects, remoteProjects);
+      safeSetItem(STORAGE_KEYS.PROJECTS, mergedProjects);
     }
-    const data = await response.json();
-    return data;
-  } catch (err) {
-    console.warn(`[GoogleSheetsSync] Network error syncing with Google Sheets`, err);
+
+    const stylistsSnap = await getDocs(collection(db, "stylists"));
+    const remoteStylists = [];
+    stylistsSnap.forEach((d) => remoteStylists.push(d.data()));
+    if (remoteStylists.length > 0) {
+      safeSetItem(STORAGE_KEYS.STYLISTS, remoteStylists);
+    }
+
+    const celebsSnap = await getDocs(collection(db, "celebrities"));
+    const remoteCelebs = [];
+    celebsSnap.forEach((d) => remoteCelebs.push(d.data()));
+    if (remoteCelebs.length > 0) {
+      safeSetItem(STORAGE_KEYS.CELEBRITIES, remoteCelebs);
+    }
+
+    console.log("[FirebaseSync] Successfully pulled and merged data from Firestore.");
+    if (typeof window !== 'undefined' && typeof window.renderHomepageProjectsGateway === 'function') {
+      window.renderHomepageProjectsGateway();
+    }
+    return { ok: true };
+  } catch (e) {
+    console.warn("[FirebaseSync] Error fetching from Firebase", e);
     return null;
   }
 }
 
-export async function fetchProjectsFromGoogleSheets() {
-  try {
-    const res = await postToGoogleSheets({ action: "getProjectsAndStylists" });
-    if (res && res.ok) {
-      if (Array.isArray(res.projects) && res.projects.length) {
-        const localProjects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
-        const mergedProjects = mergeProjects(localProjects, res.projects);
-        safeSetItem(STORAGE_KEYS.PROJECTS, mergedProjects);
-      }
-      if (Array.isArray(res.stylists) && res.stylists.length) {
-        safeSetItem(STORAGE_KEYS.STYLISTS, res.stylists);
-      }
-      if (Array.isArray(res.celebrities) && res.celebrities.length) {
-        safeSetItem(STORAGE_KEYS.CELEBRITIES, res.celebrities);
-      }
-      console.log("[GoogleSheetsSync] Successfully pulled and merged projects from Google Sheets.");
-      if (typeof window !== 'undefined' && typeof window.renderHomepageProjectsGateway === 'function') {
-        window.renderHomepageProjectsGateway();
-      }
-      return res;
-    }
-  } catch (e) {
-    console.warn("[GoogleSheetsSync] Error fetching from Google Sheets", e);
-  }
-  return null;
-}
-
-// Automatically sync from Google Sheets on load
-fetchProjectsFromGoogleSheets();
+// Automatically sync from Firebase on load
+fetchDataFromFirebase();
 
 /* --- STYLIST APIs --- */
 
@@ -336,8 +330,8 @@ export function saveStylist({ name, title = "Personal Stylist", specialty = "Cou
   stylists.unshift(newStylist);
   safeSetItem(STORAGE_KEYS.STYLISTS, stylists);
 
-  // Sync to Google Sheets
-  postToGoogleSheets({ action: "saveStylist", stylist: newStylist });
+  // Sync to Firebase
+  setDoc(doc(db, "stylists", newStylist.id), newStylist).catch(e => console.warn("Firebase sync error", e));
 
   return newStylist;
 }
@@ -367,8 +361,8 @@ export function saveCelebrity({ name, category = "A-List Actress & Icon", house 
   celebrities.unshift(newCelebrity);
   safeSetItem(STORAGE_KEYS.CELEBRITIES, celebrities);
 
-  // Sync to Google Sheets
-  postToGoogleSheets({ action: "saveCelebrity", celebrity: newCelebrity });
+  // Sync to Firebase
+  setDoc(doc(db, "celebrities", newCelebrity.id), newCelebrity).catch(e => console.warn("Firebase sync error", e));
 
   return newCelebrity;
 }
@@ -431,8 +425,8 @@ export function createProject({ celebrityId, stylistId = null, title, season = "
   safeSetItem(STORAGE_KEYS.PROJECTS, sortProjectsDescending(projects));
   setActiveContext(celebrityId, newProject.id);
 
-  // Sync to Google Sheets API
-  postToGoogleSheets({ action: "saveProject", project: newProject });
+  // Sync to Firebase API
+  setDoc(doc(db, "projects", newProject.id), newProject).catch(e => console.warn("Firebase sync error", e));
 
   return newProject;
 }
@@ -451,8 +445,8 @@ export function updateProject(projectId, updates) {
   const sorted = sortProjectsDescending(projects);
   safeSetItem(STORAGE_KEYS.PROJECTS, sorted);
 
-  // Sync update to Google Sheets API
-  postToGoogleSheets({ action: "saveProject", project: projects[idx] });
+  // Sync update to Firebase API
+  setDoc(doc(db, "projects", projects[idx].id), projects[idx]).catch(e => console.warn("Firebase sync error", e));
 
   return projects[idx];
 }
@@ -493,8 +487,8 @@ export function logProjectActivity(projectId, action, details) {
 
   safeSetItem(STORAGE_KEYS.PROJECTS, projects);
 
-  // Sync to Google Sheets
-  postToGoogleSheets({ action: "saveProject", project: projects[idx] });
+  // Sync to Firebase
+  setDoc(doc(db, "projects", projects[idx].id), projects[idx]).catch(e => console.warn("Firebase sync error", e));
 
   return newActivity;
 }
