@@ -35,9 +35,9 @@ function getProjectDisplayStatus(project) {
 function getProjectStatusClass(status) {
   const value = String(status || '').trim();
   if (value === 'Completed') return 'proj-completed';
-  if (value === 'Waiting for Return') return 'proj-return';
-  if (value === 'Waiting for Deliverables') return 'proj-deliverables';
-  if (value === 'Waiting for Social Post') return 'proj-social';
+  if (value === 'Return pending') return 'proj-return';
+  if (value === 'Missing deliverables') return 'proj-deliverables';
+  if (value === 'Social pending') return 'proj-social';
   if (value === 'Active' || value === 'Lookbook Sent') return 'proj-active';
   return 'proj-upcoming';
 }
@@ -464,7 +464,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
     <div class="hp-gateway-wrapper">
       <div class="hp-gateway-header">
         <div class="hp-gateway-title">
-          <h2><i class="fa-solid fa-gem"></i> Projects &amp; Stylists Gateway</h2>
+          <h2><i class="fa-solid fa-gem"></i> All Projects</h2>
           <p>Monitor every campaign at a glance, from delivery progress to payments and social posting.</p>
         </div>
       </div>
@@ -601,9 +601,9 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
             <option value="">Project Status</option>
             <option value="Upcoming" ${homepageProjectFilters.projectStatus === 'Upcoming' ? 'selected' : ''}>Upcoming</option>
             <option value="Active" ${homepageProjectFilters.projectStatus === 'Active' ? 'selected' : ''}>Active</option>
-            <option value="Waiting for Return" ${homepageProjectFilters.projectStatus === 'Waiting for Return' ? 'selected' : ''}>Waiting for Return</option>
-            <option value="Waiting for Deliverables" ${homepageProjectFilters.projectStatus === 'Waiting for Deliverables' ? 'selected' : ''}>Waiting for Deliverables</option>
-            <option value="Waiting for Social Post" ${homepageProjectFilters.projectStatus === 'Waiting for Social Post' ? 'selected' : ''}>Waiting for Social Post</option>
+            <option value="Return pending" ${homepageProjectFilters.projectStatus === 'Return pending' ? 'selected' : ''}>Return pending</option>
+            <option value="Missing deliverables" ${homepageProjectFilters.projectStatus === 'Missing deliverables' ? 'selected' : ''}>Missing deliverables</option>
+            <option value="Social pending" ${homepageProjectFilters.projectStatus === 'Social pending' ? 'selected' : ''}>Social pending</option>
             <option value="Completed" ${homepageProjectFilters.projectStatus === 'Completed' ? 'selected' : ''}>Completed</option>
           </select>
           <select onchange="window.handleHomepageProjectFilterChange('paymentStatus', this.value)">
@@ -633,7 +633,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
       <div class="hp-projects-cards-grid">
         <div class="hp-project-card new-project-card" onclick="openNewProjectDialog()">
           <div class="new-card-icon"><i class="fa-solid fa-plus"></i></div>
-          <strong> Create New Project</strong>
+          <strong> New Project</strong>
           <span>Select saved Stylist or add new</span>
         </div>
 
@@ -683,7 +683,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
           
                 <div class="hp-dates-row">
                   <div class="date-chip ${isDateOverdue(sharedDate) ? 'date-overdue' : ''}">
-                    <span class="d-label">Final Tray</span>
+                    <span class="d-label">Final List</span>
                     <span class="d-val">${escapeHtml(formatDateDisplay(sharedDate))}</span>
                   </div>
                   <div class="date-chip ${followUpChipClass || (isDateOverdue(followUpDate) ? 'date-overdue' : '')}">
@@ -722,7 +722,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
               <div class="hp-card-quick-actions">
 
                 <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickEditProjectModal('${p.id}')"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-                <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickUpdateReturnModal('${p.id}')"><i class="fa-solid fa-rotate-left"></i> Update Return</button>
+                <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickUpdateReturnModal('${p.id}')"><i class="fa-solid fa-rotate-left"></i> Return</button>
                 
                 <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.quickToggleSocialPosted('${p.id}')"><i class="fa-solid fa-share-nodes"></i> Social</button>
               </div>
@@ -767,22 +767,22 @@ function injectNewProjectModal(onProjectSwitch) {
     <div id="newProjectModalOverlay" class="project-modal-overlay" style="display: none;">
       <div class="project-modal-card fashion-theme" style="max-width: 520px;">
         <div class="project-modal-header">
-          <h3><i class="fa-solid fa-folder-plus"></i> Create New Project</h3>
+          <h3><i class="fa-solid fa-folder-plus"></i> New Project</h3>
           <button class="btn-close-modal" onclick="closeNewProjectDialog()">&times;</button>
         </div>
         <form onsubmit="submitNewProjectDialog(event)" style="padding: 24px;">
           <div class="form-group" style="margin-bottom: 16px;">
-            <label style="font-weight: 700; color: #1c1917; font-size: 0.9rem;">1. Celebrity Name:</label>
+            <label style="font-weight: 700; color: #1c1917; font-size: 0.9rem;">Celebrity Name:</label>
             <input type="text" id="dialogCelebrityName" value="${escapeHtml(defaultCelebrity)}" placeholder="e.g. Shreya" required class="pm-select" style="margin-top: 6px; width: 100%;" />
           </div>
 
           <div class="form-group" style="margin-bottom: 16px;">
-            <label style="font-weight: 700; color: #1c1917; font-size: 0.9rem;">2. Project / Requirement Title:</label>
+            <label style="font-weight: 700; color: #1c1917; font-size: 0.9rem;">Project Title:</label>
             <input type="text" id="dialogProjectTitle" placeholder="e.g. Monday Bridal Selection" required class="pm-select" style="margin-top: 6px; width: 100%;" />
           </div>
 
           <div class="form-group" style="margin-bottom: 20px;">
-            <label style="font-weight: 700; color: #1c1917; font-size: 0.9rem;">3. Assigned Stylist:</label>
+            <label style="font-weight: 700; color: #1c1917; font-size: 0.9rem;">Stylist:</label>
             <select id="dialogStylistSelect" class="pm-select" onchange="handleStylistSelectChange(this.value)" style="margin-top: 6px; width: 100%;">
               <!-- Dynamic populated -->
             </select>
@@ -793,7 +793,7 @@ function injectNewProjectModal(onProjectSwitch) {
           </div>
 
           <button type="submit" class="btn-proceed-large" style="margin-top: 0;">
-            <i class="fa-solid fa-arrow-right"></i> Create Project &amp; Proceed
+            <i class="fa-solid fa-arrow-right"></i> Create Project
           </button>
         </form>
       </div>
@@ -1011,7 +1011,7 @@ function refreshProjectModalContent() {
   }).join('')}
         </div>
 
-        <button class="btn-primary-sm full-width" onclick="openNewProjectDialog()">+ Create New Project</button>
+        <button class="btn-primary-sm full-width" onclick="openNewProjectDialog()">+ New Project</button>
       </div>
 
       <div class="pm-section pm-details">
@@ -1191,9 +1191,9 @@ window.openQuickEditProjectModal = function (projectId) {
                 <select id="qeProjectStatus" class="pm-select">
                   <option value="Upcoming">Upcoming</option>
                   <option value="Active">Active</option>
-                  <option value="Waiting for Return">Waiting for Return</option>
-                  <option value="Waiting for Deliverables">Waiting for Deliverables</option>
-                  <option value="Waiting for Social Post">Waiting for Social Post</option>
+                  <option value="Return pending">Return pending</option>
+                  <option value="Missing deliverables">Missing deliverables</option>
+                  <option value="Social pending">Social pending</option>
                   <option value="Completed">Completed</option>
                 </select>
               </div>

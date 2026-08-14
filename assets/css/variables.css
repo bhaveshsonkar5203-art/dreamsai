@@ -1,47 +1,47 @@
 /* Design system tokens for Jewellery Catalog PDF Studio */
 :root {
   /* Primary Colors */
-  --color-text: #121212;
+  --color-text: #111827;               /* Deep charcoal */
   --color-text-2: #ffffff;
-  --color-local-accent: #121212;       /* Obsidian Noir */
-  --color-local-accent-2: #c5a059;     /* Warm Gold Accent */
-  --color-local-accent-3: #faf9f6;     /* Warm Alabaster Neutral */
+  --color-local-accent: #0f2b3c;       /* Deep blue / editorial primary */
+  --color-local-accent-2: #2d5a68;     /* Muted teal */
+  --color-local-accent-3: #f8f9fa;     /* Cool icy white */
 
   /* Mapped Tokens */
-  --bg: #faf9f6;
+  --bg: #f8f9fa;
   --surface: #ffffff;
   --panel: #ffffff;
   --panel-strong: #ffffff;
-  --ink: #121212;                      /* High contrast obsidian */
-  --muted: #666056;                    /* Warm charcoal slate */
-  --line: #e6e2da;                     /* Hairline border */
-  --accent: #c5a059;                   /* Warm Gold */
-  --accent-dark: #121212;              /* Obsidian */
-  --accent-soft: #f4f0e6;              /* Soft Gold Surface Tint */
+  --ink: #111827;                      /* High contrast dark blue-gray */
+  --muted: #64748b;                    /* Slate gray */
+  --line: #e2e8f0;                     /* Thin cool border */
+  --accent: #0f2b3c;                   /* Deep blue */
+  --accent-dark: #0b1f2b;              /* Darker deep blue */
+  --accent-soft: #f1f5f9;              /* Soft cool surface tint */
   --success: #2b7053;
   --warning: #b36e15;
-  --shadow: 0 4px 20px rgba(18, 18, 18, 0.04);
-  --shadow-hover: 0 12px 32px rgba(18, 18, 18, 0.08);
+  --shadow: 0 2px 10px rgba(15, 43, 60, 0.03);
+  --shadow-hover: 0 4px 16px rgba(15, 43, 60, 0.06);
 
   /* Typography */
   --font-vrai: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
-  --font-mendes: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mendes: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  /* Border Radii */
-  --radius: 6px;
-  --radius-sm: 4px;
-  --radius-sharp: 2px;
+  /* Border Radii - simple and rounded */
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-sharp: 4px;
 
-  /* Spacing */
-  --space-6: 6px;
-  --space-1: 8px;
-  --space-4: 12px;
-  --space-2: 16px;
-  --space-3: 20px;
-  --space-10: 24px;
-  --space-5: 32px;
-  --space-7: 48px;
-  --space-8: 64px;
+  /* Spacing - Generous whitespace */
+  --space-6: 8px;
+  --space-1: 12px;
+  --space-4: 16px;
+  --space-2: 24px;
+  --space-3: 32px;
+  --space-10: 40px;
+  --space-5: 48px;
+  --space-7: 64px;
+  --space-8: 80px;
 
   --transition: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }

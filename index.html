@@ -10,9 +10,7 @@
   <meta name="theme-color" content="#faf9f6">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="assets/css/variables.css">
   <link rel="stylesheet" href="assets/css/base.css">
@@ -44,17 +42,17 @@
           <i class="fa-solid fa-chart-pie"></i> <span>Overview</span>
         </button>
         <button id="tabBrowseBtn" class="sidebar-nav-item" onclick="switchTab('browse')">
-          <i class="fa-solid fa-gem"></i> <span>Browse Items</span>
+          <i class="fa-solid fa-gem"></i> <span>Browse</span>
         </button>
         <button id="tabSelectedBtn" class="sidebar-nav-item" onclick="switchTab('selected')">
-          <i class="fa-solid fa-bookmark"></i> <span>Selected Items</span>
+          <i class="fa-solid fa-bookmark"></i> <span>Selected</span>
           <span id="browseTabBadge" class="badge"></span>
         </button>
         <button id="tabFinalTrayBtn" class="sidebar-nav-item" onclick="switchTab('finalTray')">
-          <i class="fa-solid fa-plane"></i> <span>Final Travel</span>
+          <i class="fa-solid fa-plane"></i> <span>Final List</span>
         </button>
         <button id="tabReturnProductsBtn" class="sidebar-nav-item" onclick="switchTab('returnProducts')">
-          <i class="fa-solid fa-rotate-left"></i> <span>Return</span>
+          <i class="fa-solid fa-rotate-left"></i> <span>Returns</span>
         </button>
       </nav>
     </aside>
@@ -136,8 +134,7 @@
 
                       <div id="controlsContent" class="controls-content filter-dropdown hidden">
                         <button type="button" id="breakdownToggleBtn"
-                          class="btn btn-secondary btn-sm breakdown-toggle-btn" onclick="toggleBreakdown(event)">View
-                          brand &amp; type breakdown</button>
+                          class="btn btn-secondary btn-sm breakdown-toggle-btn" onclick="toggleBreakdown(event)">Show breakdown</button>
                         <div id="countSummary" class="count-summary hidden"></div>
                         <div class="controls">
                           <input id="searchSerial" type="text" placeholder="Search by serial" oninput="onSearchInput()"
@@ -177,7 +174,7 @@
                             <button type="button" id="clearFiltersBtn" class="btn btn-secondary btn-sm"
                               onclick="clearCatalogueFilters()">Clear</button>
                             <button id="selectAllFilteredBtn" class="btn btn-secondary"
-                              onclick="selectAllByBrand()">Select visible</button>
+                              onclick="selectAllByBrand()">Select all visible</button>
                           </div>
                         </div>
                       </div>
@@ -207,7 +204,7 @@
                 <div class="panel-heading compact">
                   <div>
                     <p class="eyebrow small">Selection</p>
-                    <h3>Items queued for export</h3>
+                    <h3>Ready to export</h3>
                   </div>
                   <p id="selectedSummary" class="panel-meta">0 selected items</p>
                 </div>
@@ -216,8 +213,7 @@
                   style="display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
                   <div style="display: flex; gap: 8px;">
                     <button class="btn btn-secondary btn-sm" onclick="clearAllSelected()">Clear all</button>
-                    <button class="btn btn-secondary btn-sm" onclick="removeMarkedFromSelected()">Remove marked
-                      items</button>
+                    <button class="btn btn-secondary btn-sm" onclick="removeMarkedFromSelected()">Remove unavailable</button>
                   </div>
                 </div>
 
@@ -283,8 +279,8 @@
               <div class="panel final-tray-panel floating-panel">
                 <div class="panel-heading">
                   <div>
-                    <p class="eyebrow small">Final tray</p>
-                    <h3>Build the final client list</h3>
+                    <p class="eyebrow small">Final List</p>
+                    <h3>Create the final client list</h3>
                   </div>
                   <p class="panel-meta">Paste serial numbers, add items, and generate a final tray PDF.</p>
                 </div>
@@ -308,14 +304,11 @@
 
                 <div class="actions primary-actions">
                   <button class="btn btn-primary"
-                    onclick="if(typeof window.generateFinalTrayFromSerials==='function'){window.generateFinalTrayFromSerials();}else{alert('Studio workspace is initializing, please try again in a moment.');}">Create
-                    final tray PDF</button>
+                    onclick="if(typeof window.generateFinalTrayFromSerials==='function'){window.generateFinalTrayFromSerials();}else{alert('Studio workspace is initializing, please try again in a moment.');}">Create PDF</button>
                   <button class="btn btn-secondary"
-                    onclick="if(typeof window.downloadCurrentPdf==='function'){window.downloadCurrentPdf();}else{alert('Please create a PDF first.');}">Download
-                    final tray PDF</button>
+                    onclick="if(typeof window.downloadCurrentPdf==='function'){window.downloadCurrentPdf();}else{alert('Please create a PDF first.');}">Download PDF</button>
                   <button class="btn btn-secondary"
-                    onclick="if(typeof window.shareFinalTrayPdf==='function'){window.shareFinalTrayPdf();}else{alert('Please create a PDF first.');}">Share
-                    final tray PDF</button>
+                    onclick="if(typeof window.shareFinalTrayPdf==='function'){window.shareFinalTrayPdf();}else{alert('Please create a PDF first.');}">Share PDF</button>
                 </div>
                 <div id="serialFeedback" class="feedback"></div>
               </div>
@@ -325,8 +318,8 @@
               <div class="panel floating-panel return-products-panel">
                 <div class="panel-heading">
                   <div>
-                    <p class="eyebrow small">Return Products</p>
-                    <h3>Process incoming returns with quick verification</h3>
+                    <p class="eyebrow small">Returns</p>
+                    <h3>Process returns</h3>
                   </div>
                   <p class="panel-meta">Items are loaded from the current final tray and updated instantly as you verify
                     them.</p>
@@ -336,7 +329,7 @@
                   <input id="returnProductsSearch" type="text" placeholder="Search by product code or serial"
                     oninput="window.handleReturnProductsSearch(this.value)">
                   <button class="btn btn-secondary" type="button"
-                    onclick="window.loadReturnProductsFromFinalTray(true)">Reload from Final Tray</button>
+                    onclick="window.loadReturnProductsFromFinalTray(true)">Reload list</button>
                 </div>
 
                 <div id="returnSummaryCards" class="return-summary-grid"></div>
@@ -376,9 +369,8 @@
       <div class="mini-website-field">
         <label for="miniWebsitePurposeSelect">Lookbook Mode &amp; Audience</label>
         <select id="miniWebsitePurposeSelect">
-          <option value="review">Interactive Celebrity Selection (Celebrity can review &amp; approve pieces for studio)
-          </option>
-          <option value="final">Showcase Lookbook (Clean read-only presentation for Celebrity &amp; Red Carpet)</option>
+          <option value="review">Interactive (Client can review &amp; approve)</option>
+          <option value="final">Read-only Lookbook</option>
         </select>
       </div>
 
@@ -386,7 +378,7 @@
 
       <div class="actions secondary-actions preview-actions" style="margin-top: 14px; justify-content: flex-end;">
         <button class="btn btn-secondary" onclick="closeMiniWebsiteModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="createMiniWebsiteFromModal()">Create Client Lookbook</button>
+        <button class="btn btn-primary" onclick="createMiniWebsiteFromModal()">Create Lookbook</button>
       </div>
       <footer class="vrai-footer" style="background:#121212; color:#fff; padding: 40px 32px; margin-top: 60px;">
         <div
