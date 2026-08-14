@@ -9,6 +9,7 @@ body.gateway-active #controlsContent,
 body.gateway-active .grid-container,
 body.gateway-active .catalogue-controls-bar,
 body.gateway-active .page-shell,
+body.gateway-active .app-layout,
 body.gateway-active .floating-selection-bar {
   display: none !important;
 }

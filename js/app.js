@@ -65,6 +65,9 @@ initProjectUI({
     returnProductsState = []; // Force rebuild of return products state next time it's viewed
     updateTabBadge();
     render();
+    if (typeof window.renderDashboard === 'function') {
+      window.renderDashboard();
+    }
     if (typeof window.renderFinalTraySerialManager === 'function') {
       window.renderFinalTraySerialManager();
     }
@@ -79,6 +82,10 @@ const { project: initialActiveProject } = ProjectStore.getActiveContext();
 if (initialActiveProject && Array.isArray(initialActiveProject.selectedSerials)) {
   selected = [...initialActiveProject.selectedSerials];
   finalTraySerials = [...initialActiveProject.selectedSerials];
+}
+
+if (typeof window.renderDashboard === 'function') {
+  window.renderDashboard();
 }
 
 /* FETCH DATA */
@@ -3122,6 +3129,7 @@ function switchTab(tabName) {
   }
 
   const tabs = {
+    dashboard: { btn: "tabDashboardBtn", section: "dashboardTab" },
     browse: { btn: "tabBrowseBtn", section: "browseTab" },
     selected: { btn: "tabSelectedBtn", section: "selectedTab" },
     finalTray: { btn: "tabFinalTrayBtn", section: "finalTrayTab" },
@@ -3143,11 +3151,16 @@ function switchTab(tabName) {
 
   const pageShell = document.querySelector(".page-shell");
   if (pageShell) {
+    pageShell.classList.remove("browse-active", "dashboard-active");
     if (tabName === "browse") {
       pageShell.classList.add("browse-active");
-    } else {
-      pageShell.classList.remove("browse-active");
+    } else if (tabName === "dashboard") {
+      pageShell.classList.add("dashboard-active");
     }
+  }
+
+  if (tabName === "dashboard") {
+    renderDashboard();
   }
 
   if (tabName === "selected") {
@@ -3272,6 +3285,47 @@ window.shareLookbookToWhatsApp = shareLookbookToWhatsApp;
 window.importApprovedProjectToFinalTray = importApprovedProjectToFinalTray;
 window.renderFloatingSelectionBar = renderFloatingSelectionBar;
 window.switchTab = switchTab;
+window.toggleMobileSidebar = function() {
+  const sidebar = document.getElementById('appSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  if (sidebar && overlay) {
+    sidebar.classList.toggle('is-open');
+    overlay.classList.toggle('is-visible');
+  }
+};
+window.renderDashboard = function() {
+  const ctx = ProjectStore.getActiveContext();
+  if (document.getElementById("dashboardProjectTitle")) {
+    document.getElementById("dashboardProjectTitle").textContent = ctx.project?.title || "No Project Selected";
+  }
+  if (document.getElementById("dashboardStylistName")) {
+    document.getElementById("dashboardStylistName").textContent = ctx.stylist ? `Stylist: ${ctx.stylist.name}` : "Stylist: —";
+  }
+  if (document.getElementById("dashboardProjectCode")) {
+    document.getElementById("dashboardProjectCode").textContent = ctx.project ? `Code: ${ctx.project.id}` : "—";
+  }
+  if (document.getElementById("dashCelebrityName")) {
+    document.getElementById("dashCelebrityName").textContent = ctx.celebrity?.name || "—";
+  }
+  if (document.getElementById("dashSelectedCount")) {
+    document.getElementById("dashSelectedCount").textContent = selected ? selected.length : "0";
+  }
+  
+  // Update status based on selected length
+  const statusEl = document.getElementById("dashStatus");
+  const statusSubEl = document.getElementById("dashStatusSubtitle");
+  if (statusEl && statusSubEl) {
+    if (selected && selected.length > 0) {
+      statusEl.textContent = "Pulling";
+      statusEl.style.color = "var(--color-local-accent-2)";
+      statusSubEl.textContent = "Items are actively being selected.";
+    } else {
+      statusEl.textContent = "Ready";
+      statusEl.style.color = "var(--color-local-accent)";
+      statusSubEl.textContent = "Ready for items to be selected.";
+    }
+  }
+};
 window.loadReturnProductsFromFinalTray = loadReturnProductsFromFinalTray;
 window.handleReturnProductsSearch = handleReturnProductsSearch;
 window.updateReturnProductStatus = updateReturnProductStatus;
