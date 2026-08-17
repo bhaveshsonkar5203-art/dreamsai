@@ -337,7 +337,7 @@ export function renderProjectBar() {
 
   const { celebrity, project, stylist } = ProjectStore.getActiveContext();
 
-  const celebrityName = celebrity ? celebrity.name : "No Celebrity Selected";
+  const celebrityName = celebrity ? celebrity.name : "Unassigned";
   const stylistName = stylist ? stylist.name : "Unassigned Stylist";
   const projectTitle = project ? project.title : "No Active Project";
   const projectCode = project ? project.code : "N/A";
@@ -353,29 +353,53 @@ export function renderProjectBar() {
 
   bar.innerHTML = `
     <div class="project-bar-container">
-      <div class="project-bar-info">
+      <div class="project-bar-left">
         <button class="btn-switch-projects" onclick="showHomepageGateway()" title="Return to Projects Gateway">
-          <i class="fa-solid fa-arrow-left"></i> All Projects Gateway
+          <i class="fa-solid fa-grid-2-plus"></i> <span>Gateway</span>
         </button>
-        <span class="stylist-pill">
-          <i class="fa-solid fa-user-tie"></i> Stylist: <strong>${escapeHtml(stylistName)}</strong>
-        </span>
-        <span class="celebrity-pill">
-          <i class="fa-solid fa-star"></i> Celebrity: <strong>${escapeHtml(celebrityName)}</strong>
-        </span>
-        <span class="divider">/</span>
-        <span class="project-pill" onclick="openProjectDrawer()" title="Click to view details">
-          <i class="fa-solid fa-layer-group"></i> Active Project: <strong>${escapeHtml(projectTitle)}</strong>
-          <span class="project-code">(${escapeHtml(projectCode)})</span>
-        </span>
-        <span class="status-badge ${statusBadgeClass}">${escapeHtml(projectStatus)}</span>
+
+        <div class="project-bar-divider"></div>
+
+        <div class="project-meta-group">
+          <span class="project-pill" onclick="openProjectDrawer()" title="Click to view project details">
+            <i class="fa-solid fa-layer-group"></i>
+            <span class="project-title-text">${escapeHtml(projectTitle)}</span>
+            <span class="project-code">${escapeHtml(projectCode)}</span>
+          </span>
+          <span class="status-badge ${statusBadgeClass}">${escapeHtml(projectStatus)}</span>
+        </div>
       </div>
 
-      <div class="project-bar-stats">
-        <span class="stat-tag"><i class="fa-solid fa-gem"></i> ${selectedCount} Pieces</span>
-        <span class="stat-tag"><i class="fa-solid fa-file-pdf"></i> ${pdfCount} PDFs</span>
-        <button class="btn-project-manage fashion-btn" onclick="openProjectDrawer()">
-          <i class="fa-solid fa-sliders"></i> Manager
+      <div class="project-bar-center">
+        <div class="people-pills-group">
+          <span class="meta-pill stylist-pill" title="Stylist">
+            <i class="fa-solid fa-user-tie"></i>
+            <span class="pill-label">Stylist:</span>
+            <strong>${escapeHtml(stylistName)}</strong>
+          </span>
+          <span class="meta-pill celebrity-pill" title="Celebrity">
+            <i class="fa-solid fa-star"></i>
+            <span class="pill-label">Celebrity:</span>
+            <strong>${escapeHtml(celebrityName)}</strong>
+          </span>
+        </div>
+      </div>
+
+      <div class="project-bar-right">
+        <div class="project-bar-stats">
+          <span class="stat-tag" title="Selected pieces">
+            <i class="fa-solid fa-gem"></i>
+            <strong>${selectedCount}</strong> <span class="stat-lbl">Pieces</span>
+          </span>
+          <span class="stat-tag" title="Exported PDFs">
+            <i class="fa-solid fa-file-pdf"></i>
+            <strong>${pdfCount}</strong> <span class="stat-lbl">PDFs</span>
+          </span>
+        </div>
+
+        <button class="btn-project-manage fashion-btn" onclick="openProjectDrawer()" title="Open Project Manager">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Manager</span>
         </button>
       </div>
     </div>

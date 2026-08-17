@@ -2,158 +2,246 @@
    ASCEND Atelier Studio — Project Workspace & Operational Command Center
    ========================================================================== */
 
-/* Top Contextual Project Bar */
+/* Top Contextual Project Bar - Fashion Command Header */
 .dreamsai-project-bar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border-hairline);
-  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  padding: 10px 24px;
   position: sticky;
   top: 0;
   z-index: 80;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 .project-bar-container {
-  max-width: 1440px;
+  max-width: 1480px;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 14px;
+  gap: 16px;
 }
 
-.project-bar-info {
+/* Left Section: Gateway Button + Active Project Badge */
+.project-bar-left {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-family: var(--font-sans);
-  font-size: 0.85rem;
+  gap: 14px;
 }
 
 .btn-switch-projects {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: var(--surface-container-low);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-sm);
+  gap: 8px;
+  padding: 7px 14px;
+  background: var(--surface-container-low, #f8f9fa);
+  border: 1px solid var(--border-hairline, #e2e8f0);
+  border-radius: 9999px;
   font-family: var(--font-sans);
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--primary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.btn-switch-projects:hover {
-  background: var(--surface-container-highest);
-  border-color: var(--outline);
-}
-
-.stylist-pill,
-.celebrity-pill,
-.project-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: var(--surface-container-lowest);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-sm);
-  color: var(--secondary);
-}
-
-.stylist-pill strong,
-.celebrity-pill strong,
-.project-pill strong {
-  color: var(--primary);
-}
-
-.project-pill {
-  cursor: pointer;
-}
-
-.project-pill:hover {
-  border-color: var(--accent-gold);
-}
-
-.project-code {
-  color: var(--outline);
-  font-size: 0.78rem;
-}
-
-.divider {
-  color: var(--outline-variant);
-}
-
-.status-badge,
-.proj-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-switch-projects:hover {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.project-bar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-hairline, #e2e8f0);
+}
+
+.project-meta-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.project-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(18, 18, 22, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.project-pill i {
+  color: var(--accent-gold, #c5a059);
+  font-size: 0.85rem;
+}
+
+.project-title-text {
+  font-weight: 700;
+  color: #111827;
+}
+
+.project-code {
+  color: #6b7280;
+  font-size: 0.74rem;
+  font-family: var(--font-mono, monospace);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.project-pill:hover {
+  background: rgba(197, 160, 89, 0.08);
+  border-color: rgba(197, 160, 89, 0.4);
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 
 .badge-curating { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-.badge-sent { background: #fefce8; color: #854d0e; border: 1px solid #fef08a; }
+.badge-sent { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
 .badge-approved { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
 .badge-reserved { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
 .badge-order { background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc; }
 
-.badge-active { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-.badge-pending { background: #fefce8; color: #854d0e; border: 1px solid #fef08a; }
-.badge-missing { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-.badge-completed { background: #f1f5f9; color: #475467; border: 1px solid #cbd5e1; }
+/* Center Section: People Context Pills */
+.project-bar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.people-pills-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 4px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 0.78rem;
+  color: #4b5563;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.meta-pill i {
+  color: #6b7280;
+  font-size: 0.78rem;
+}
+
+.celebrity-pill i {
+  color: #d97706;
+}
+
+.pill-label {
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.meta-pill strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+/* Right Section: Stats & Manager Button */
+.project-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 
 .project-bar-stats {
   display: flex;
   align-items: center;
   gap: 12px;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .stat-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--secondary);
+  font-size: 0.78rem;
+  color: #4b5563;
 }
 
 .stat-tag i {
-  color: var(--accent-gold);
+  color: var(--accent-gold, #c5a059);
+  font-size: 0.8rem;
+}
+
+.stat-tag strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+.stat-lbl {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
 }
 
 .btn-project-manage {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  background: var(--primary);
-  color: var(--on-primary);
-  border: 1px solid var(--primary);
-  border-radius: var(--radius-sm);
+  gap: 8px;
+  padding: 7px 16px;
+  background: #111827;
+  color: #ffffff;
+  border: 1px solid #111827;
+  border-radius: 9999px;
   font-family: var(--font-sans);
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-project-manage:hover {
-  background: #242830;
+  background: #1f2937;
+  border-color: #1f2937;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
 }
 
 /* ==========================================================================

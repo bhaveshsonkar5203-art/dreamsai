@@ -92,21 +92,36 @@
   transform: scale(1.06);
 }
 
-/* Card Label & Meta */
+/* Card Label & Meta - Clean Minimal Label below image */
 .card-label {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 24px 10px 8px;
-  background: linear-gradient(180deg, transparent 0%, rgba(10, 10, 12, 0.85) 100%);
-  color: #ffffff;
-  font-family: var(--font-sans);
-  font-size: 0.82rem;
-  font-weight: 600;
+  position: relative;
+  width: 100%;
+  margin: 0;
+  padding: 10px 8px 8px;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  color: #111827;
+  font-family: var(--font-sans, 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif);
+  font-size: 0.8rem;
+  font-weight: 700;
   text-align: center;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  box-shadow: none;
+  transition: color 0.2s ease, letter-spacing 0.2s ease;
+}
+
+.card:hover .card-label,
+.selection-card:hover .card-label {
+  background: transparent;
+  color: #000000;
+  letter-spacing: 0.06em;
 }
 
 /* Selection Indicator / Checkmark */

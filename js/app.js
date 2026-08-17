@@ -598,8 +598,8 @@ function render() {
         <div class="card-media">
           <img src="${imageUrl}" loading="lazy" ${onErrorAttr}>
           <div class="select-indicator">${checkSvg}</div>
-          <p class="card-label">${item["Serial No"]}</p>
         </div>
+        <p class="card-label">${item["Serial No"]}</p>
       </div>
     `;
   });
@@ -697,8 +697,8 @@ function renderSelected() {
         <button class="remove-btn" onclick="removeFromSelected('${item["Serial No"].replace(/'/g, "\\'")}')" title="Remove from selection">✕</button>
         <div class="card-media">
           <img src="${primaryUrl}" alt="${item["Serial No"]}" loading="lazy" ${onErrorAttr}>
-          <p class="card-label">${item["Serial No"]}</p>
         </div>
+        <p class="card-label">${item["Serial No"]}</p>
       </div>
     `;
     }).join("");
