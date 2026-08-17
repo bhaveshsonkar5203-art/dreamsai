@@ -464,8 +464,13 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
     <div class="hp-gateway-wrapper">
       <div class="hp-gateway-header">
         <div class="hp-gateway-title">
-          <h2><i class="fa-solid fa-gem"></i> All Projects</h2>
-          <p>Monitor every campaign at a glance, from delivery progress to payments and social posting.</p>
+          <h2><i class="fa-solid fa-gem" style="color: #d4af37; margin-right: 8px;"></i> ASCEND Communications</h2>
+          <p>PR Campaign Dashboard — monitor active pulls, pending returns, client deliverables, and launch new projects.</p>
+        </div>
+        <div class="hp-gateway-actions">
+          <button class="btn-create-project-main" onclick="openNewProjectDialog()">
+            <i class="fa-solid fa-plus"></i> New Project
+          </button>
         </div>
       </div>
 
@@ -631,12 +636,6 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
       </div>
 
       <div class="hp-projects-cards-grid">
-        <div class="hp-project-card new-project-card" onclick="openNewProjectDialog()">
-          <div class="new-card-icon"><i class="fa-solid fa-plus"></i></div>
-          <strong> New Project</strong>
-          <span>Select saved Stylist or add new</span>
-        </div>
-
         ${filteredProjects.length === 0 ? '<div class="hp-project-card"><strong>No projects match the selected filters.</strong></div>' : paginatedProjects.map(p => {
     const isActive = activeProject && p.id === activeProject.id;
     const celebrity = ProjectStore.getCelebrityById(p.celebrityId);

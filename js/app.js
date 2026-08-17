@@ -3157,7 +3157,8 @@ function switchTab(tabName) {
       dashboard: "bottomNavHome",
       browse: "bottomNavBrowse",
       selected: "bottomNavSelected",
-      finalTray: "bottomNavFinal"
+      finalTray: "bottomNavFinalTray",
+      returnProducts: "bottomNavReturns"
     };
     const bottomBtn = bottomNavIds[key] ? document.getElementById(bottomNavIds[key]) : null;
 

@@ -49,7 +49,7 @@
           <span id="browseTabBadge" class="badge"></span>
         </button>
         <button id="tabFinalTrayBtn" class="sidebar-nav-item" onclick="switchTab('finalTray')">
-          <i class="fa-solid fa-briefcase"></i> <span>Client Kit</span>
+          <i class="fa-solid fa-briefcase"></i> <span>Final Tray</span>
         </button>
         <button id="tabReturnProductsBtn" class="sidebar-nav-item" onclick="switchTab('returnProducts')">
           <i class="fa-solid fa-rotate-left"></i> <span>Returns</span>
@@ -203,10 +203,17 @@
               <div class="panel floating-panel">
                 <div class="panel-heading compact">
                   <div>
-                    <p class="eyebrow small">Active Pull</p>
-                    <h3>Selected Items</h3>
+                    <p class="eyebrow small">Step 1 of 2: Review Selection</p>
+                    <h3>Selected Items for Pull</h3>
                   </div>
                   <p id="selectedSummary" class="panel-meta">0 items</p>
+                </div>
+
+                <div class="workflow-guide-banner" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.88rem; color: #334155; display: flex; align-items: center; gap: 12px;">
+                  <i class="fa-solid fa-circle-info" style="color: #3b82f6; font-size: 1.1rem;"></i>
+                  <div>
+                    <strong>PR Workflow Guide:</strong> Review your items below. Click <strong>Generate PDF</strong> to build the pull sheet, then use <strong>Share via WhatsApp</strong> to send it to the client/stylist.
+                  </div>
                 </div>
 
                 <div class="bulk-toolbar"
@@ -278,8 +285,8 @@
               <div class="panel final-tray-panel floating-panel">
                 <div class="panel-heading">
                   <div>
-                    <p class="eyebrow small">Client Kit</p>
-                    <h3>Prepare Client Kit</h3>
+                    <p class="eyebrow small">Final Tray</p>
+                    <h3>Prepare Final Tray</h3>
                   </div>
                   <p class="panel-meta">Enter serial numbers, add items, and generate a final PDF.</p>
                 </div>
@@ -359,13 +366,13 @@
           </div>
           <span>Pulls</span>
         </button>
+        <button id="bottomNavFinalTray" class="bottom-nav-item" onclick="switchTab('finalTray')">
+          <i class="fa-solid fa-briefcase"></i>
+          <span>Final Tray</span>
+        </button>
         <button id="bottomNavReturns" class="bottom-nav-item" onclick="switchTab('returnProducts')">
           <i class="fa-solid fa-rotate-left"></i>
           <span>Returns</span>
-        </button>
-        <button class="bottom-nav-item" onclick="toggleMobileSidebar()">
-          <i class="fa-solid fa-ellipsis"></i>
-          <span>More</span>
         </button>
       </nav>
 
