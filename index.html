@@ -279,12 +279,20 @@
                 <div id="finalTrayList" class="final-tray-list"></div>
 
                 <div class="actions primary-actions">
-                  <button class="btn btn-primary"
-                    onclick="if(typeof window.generateFinalTrayFromSerials==='function'){window.generateFinalTrayFromSerials();}else{alert('Studio workspace is initializing, please try again in a moment.');}">Create PDF</button>
-                  <button class="btn btn-secondary"
-                    onclick="if(typeof window.downloadCurrentPdf==='function'){window.downloadCurrentPdf();}else{alert('Please create a PDF first.');}">Download PDF</button>
-                  <button class="btn btn-secondary"
-                    onclick="if(typeof window.shareFinalTrayPdf==='function'){window.shareFinalTrayPdf();}else{alert('Please create a PDF first.');}">Share PDF</button>
+                  <button id="btnCreateFinalTrayPdf" class="btn btn-primary"
+                    onclick="if(typeof window.generateFinalTrayFromSerials==='function'){window.generateFinalTrayFromSerials();}else{alert('Studio workspace is initializing, please try again in a moment.');}">
+                    <i class="fa-solid fa-file-pdf"></i> Create PDF
+                  </button>
+                  <div id="finalTrayPostActions" class="post-pdf-actions hidden-actions">
+                    <button class="btn btn-secondary"
+                      onclick="if(typeof window.downloadCurrentPdf==='function'){window.downloadCurrentPdf();}else{alert('Please create a PDF first.');}">
+                      <i class="fa-solid fa-download"></i> Download PDF
+                    </button>
+                    <button class="btn btn-whatsapp"
+                      onclick="if(typeof window.shareFinalTrayPdf==='function'){window.shareFinalTrayPdf();}else{alert('Please create a PDF first.');}">
+                      <i class="fa-brands fa-whatsapp"></i> Share via WhatsApp
+                    </button>
+                  </div>
                 </div>
                 <div id="serialFeedback" class="feedback"></div>
               </div>

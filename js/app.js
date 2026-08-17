@@ -1019,6 +1019,12 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
 
     setSerialFeedback(`Done. Client Kit PDF generated for ${exportItems.length} item(s).`, false);
 
+    const postActions = document.getElementById("finalTrayPostActions");
+    if (postActions) {
+      postActions.classList.remove("hidden-actions");
+      postActions.classList.add("visible-actions");
+    }
+
     // Persist final-tray summary onto the active project so the homepage dashboard reflects it
     try {
       const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
@@ -1696,11 +1702,7 @@ function renderFinalTraySerialManager() {
 
         const title = matchedItem["Title"] || matchedItem["Name"] || matchedItem["Serial No"] || serial;
         const brand = matchedItem["Brand"] || matchedItem["Category"] || matchedItem["Type"] || "Piece";
-        const price = matchedItem["Price"] || matchedItem["MRP"] ? `₹${matchedItem["Price"] || matchedItem["MRP"]}` : "";
-
-        const statusTag = isUnavailable
-          ? `<span class="ft-card-badge ft-badge-unavailable" title="${escapeHtml(avail.reason)}"><i class="fa-solid fa-triangle-exclamation"></i> Unavailable</span>`
-          : `<span class="ft-card-badge ft-badge-available"><i class="fa-solid fa-circle-check"></i> Available</span>`;
+        const footerHtml = price ? `<div class="ft-card-footer"><span class="ft-card-price">${escapeHtml(price)}</span></div>` : '';
 
         return `
           <div class="final-tray-card ${isUnavailable ? 'ft-card-disabled' : ''}">
@@ -1714,10 +1716,7 @@ function renderFinalTraySerialManager() {
                 ${statusTag}
               </div>
               <h4 class="ft-card-title">${escapeHtml(title)}</h4>
-              <div class="ft-card-footer">
-                <span class="ft-card-serial">${escapeHtml(serial)}</span>
-                ${price ? `<span class="ft-card-price">${escapeHtml(price)}</span>` : ''}
-              </div>
+              ${footerHtml}
             </div>
           </div>
         `;
@@ -1739,9 +1738,6 @@ function renderFinalTraySerialManager() {
                 ${statusTag}
               </div>
               <h4 class="ft-card-title">${escapeHtml(serial)}</h4>
-              <div class="ft-card-footer">
-                <span class="ft-card-serial">${escapeHtml(serial)}</span>
-              </div>
             </div>
           </div>
         `;
