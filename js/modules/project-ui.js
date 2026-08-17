@@ -263,7 +263,7 @@ export function initProjectUI({ onProjectSwitch }) {
   window.handleStylistSelectChange = handleStylistSelectChange;
   window.submitNewProjectDialog = (e) => submitNewProjectDialog(e, onProjectSwitch);
   window.handleCelebrityChange = handleCelebrityChange;
-  window.handleProjectChange = (projId) => handleProjectChange(projId, onProjectSwitch);
+  window.handleProjectChange = (projId, callback, targetTab = 'browse') => handleProjectChange(projId, callback || onProjectSwitch, targetTab);
   window.handleCreateCelebritySubmit = handleCreateCelebritySubmit;
   window.handleCreateProjectSubmit = (e) => handleCreateProjectSubmit(e, onProjectSwitch);
   window.handleQuickNewProject = () => openNewProjectDialog();
@@ -273,10 +273,33 @@ export function initProjectUI({ onProjectSwitch }) {
   window.renderHomepageProjectsGateway = () => renderHomepageProjectsGateway(homepageProjectSwitchCallback);
   window.renderDashboard = renderProjectDashboard;
   window.renderProjectDashboard = renderProjectDashboard;
-  window.toggleHomepageProjectMenu = toggleHomepageProjectMenu;
-  window.selectHomepageMenuSection = selectHomepageMenuSection;
   window.toggleHomepageProjectFilters = toggleHomepageProjectFilters;
   window.changeHomepageProjectPage = changeHomepageProjectPage;
+  window.quickFilterOverview = (type) => {
+    if (type === 'active') {
+      homepageProjectFilters.projectStatus = homepageProjectFilters.projectStatus === 'Active' ? '' : 'Active';
+      homepageProjectFilters.returnStatus = '';
+      homepageProjectFilters.paymentStatus = '';
+    } else if (type === 'pendingReturns') {
+      homepageProjectFilters.returnStatus = homepageProjectFilters.returnStatus === 'Pending' ? '' : 'Pending';
+      homepageProjectFilters.projectStatus = '';
+      homepageProjectFilters.paymentStatus = '';
+    } else if (type === 'missing') {
+      homepageProjectFilters.returnStatus = homepageProjectFilters.returnStatus === 'Missing' ? '' : 'Missing';
+      homepageProjectFilters.projectStatus = '';
+      homepageProjectFilters.paymentStatus = '';
+    } else if (type === 'revenue') {
+      homepageProjectFilters.paymentStatus = homepageProjectFilters.paymentStatus === 'Paid' ? '' : 'Paid';
+      homepageProjectFilters.projectStatus = '';
+      homepageProjectFilters.returnStatus = '';
+    } else {
+      homepageProjectFilters.projectStatus = '';
+      homepageProjectFilters.returnStatus = '';
+      homepageProjectFilters.paymentStatus = '';
+    }
+    homepageProjectPagination.currentPage = 1;
+    renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+  };
   window.handleHomepageProjectFilterChange = (field, value) => {
     homepageProjectFilters[field] = value;
     homepageProjectPagination.currentPage = 1;
@@ -368,7 +391,8 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
     container = document.createElement("div");
     container.id = "homepageProjectsGatewayContainer";
     container.className = "homepage-gateway-overlay";
-    document.body.prepend(container);
+    const appMain = document.querySelector(".app-main") || document.body;
+    appMain.prepend(container);
   }
 
   const activeElement = document.activeElement;
@@ -481,44 +505,73 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
         </div>
       </div>
 
-      <!-- Direct Homepage Overview Statistics -->
+      <!-- Direct Homepage Overview Statistics with Visual Indicators -->
       <div class="hp-overview-section">
         <div class="hp-summary-cards-grid">
-          <div class="hp-summary-card accent-card">
-            <div class="summary-icon icon-active"><i class="fa-solid fa-chart-line"></i></div>
+          <button class="hp-summary-card card-indicator-green ${homepageProjectFilters.projectStatus === 'Active' ? 'is-filter-active' : ''}"
+                  onclick="window.quickFilterOverview('active')"
+                  title="Filter Active Projects">
+            <div class="summary-card-top-row">
+              <div class="summary-icon icon-active"><i class="fa-solid fa-chart-line"></i></div>
+              <span class="hp-status-pill pill-green"><span class="pulse-dot dot-green"></span> Active</span>
+            </div>
             <div class="summary-info">
               <span class="summary-val">${summary.active}</span>
               <span class="summary-lbl">Active Projects</span>
             </div>
-          </div>
-          <div class="hp-summary-card">
-            <div class="summary-icon icon-pending-returns"><i class="fa-solid fa-rotate-left"></i></div>
+          </button>
+
+          <button class="hp-summary-card card-indicator-amber ${homepageProjectFilters.returnStatus === 'Pending' ? 'is-filter-active' : ''}"
+                  onclick="window.quickFilterOverview('pendingReturns')"
+                  title="Filter Pending Returns">
+            <div class="summary-card-top-row">
+              <div class="summary-icon icon-pending-returns"><i class="fa-solid fa-rotate-left"></i></div>
+              <span class="hp-status-pill pill-amber"><span class="pulse-dot dot-amber"></span> Pending</span>
+            </div>
             <div class="summary-info">
               <span class="summary-val">${summary.pendingReturns}</span>
               <span class="summary-lbl">Pending Returns</span>
             </div>
-          </div>
-          <div class="hp-summary-card">
-            <div class="summary-icon icon-missing"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          </button>
+
+          <button class="hp-summary-card card-indicator-red ${homepageProjectFilters.returnStatus === 'Missing' ? 'is-filter-active' : ''}"
+                  onclick="window.quickFilterOverview('missing')"
+                  title="Filter Missing Products">
+            <div class="summary-card-top-row">
+              <div class="summary-icon icon-missing"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              <span class="hp-status-pill pill-red"><span class="pulse-dot dot-red"></span> Missing</span>
+            </div>
             <div class="summary-info">
               <span class="summary-val">${summary.missingProducts}</span>
               <span class="summary-lbl">Missing Products</span>
             </div>
-          </div>
-          <div class="hp-summary-card">
-            <div class="summary-icon icon-total"><i class="fa-solid fa-folder-open"></i></div>
+          </button>
+
+          <button class="hp-summary-card card-indicator-slate ${(!homepageProjectFilters.projectStatus && !homepageProjectFilters.returnStatus && !homepageProjectFilters.paymentStatus) ? 'is-filter-active' : ''}"
+                  onclick="window.quickFilterOverview('all')"
+                  title="View All Projects">
+            <div class="summary-card-top-row">
+              <div class="summary-icon icon-total"><i class="fa-solid fa-folder-open"></i></div>
+              <span class="hp-status-pill pill-slate">Total</span>
+            </div>
             <div class="summary-info">
               <span class="summary-val">${summary.total}</span>
               <span class="summary-lbl">Total Projects</span>
             </div>
-          </div>
-          <div class="hp-summary-card value-card">
-            <div class="summary-icon icon-revenue"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+          </button>
+
+          <button class="hp-summary-card card-indicator-emerald ${homepageProjectFilters.paymentStatus === 'Paid' ? 'is-filter-active' : ''}"
+                  onclick="window.quickFilterOverview('revenue')"
+                  title="Filter Settled Revenue">
+            <div class="summary-card-top-row">
+              <div class="summary-icon icon-revenue"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+              <span class="hp-status-pill pill-emerald"><i class="fa-solid fa-check"></i> Settled</span>
+            </div>
             <div class="summary-info">
               <span class="summary-val">${formatCurrency(summary.revenueReceived || summary.totalValue)}</span>
               <span class="summary-lbl">Revenue Received</span>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -600,7 +653,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
     const hasAnyDates = Boolean(sharedDate || followUpDate || returnDueDate);
 
     return `
-            <div class="hp-project-card ${isActive ? 'active-project' : ''}" onclick="window.handleProjectChange('${p.id}')" role="button" tabindex="0" aria-label="Open ${escapeHtml(p.title)} project dashboard">
+            <div class="hp-project-card ${isActive ? 'active-project' : ''}" onclick="window.handleProjectChange('${p.id}', null, 'browse')" role="button" tabindex="0" aria-label="Open ${escapeHtml(p.title)} inventory">
               <div class="hp-card-stylist-block">
                 <span class="hp-meta-label">STYLIST</span>
                 <span class="hp-stylist-val">${escapeHtml(stylistName)}</span>
@@ -639,8 +692,14 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
                 </div>
               ` : ''}
 
-              <div class="hp-card-footer-affordance">
-                <span class="hp-arrow-link"><i class="fa-solid fa-arrow-right"></i></span>
+              <div class="hp-card-footer-actions">
+                <button class="hp-card-btn-dashboard" onclick="event.stopPropagation(); window.handleProjectChange('${p.id}', null, 'dashboard')" title="Open Project Dashboard">
+                  <i class="fa-solid fa-gauge-high"></i> Dashboard
+                </button>
+                <div class="hp-card-browse-link" onclick="event.stopPropagation(); window.handleProjectChange('${p.id}', null, 'browse')" title="Open Inventory">
+                  <span class="hp-browse-lbl">Inventory</span>
+                  <span class="hp-arrow-link"><i class="fa-solid fa-arrow-right"></i></span>
+                </div>
               </div>
             </div>
           `;
@@ -982,7 +1041,7 @@ function handleCelebrityChange(celebrityId) {
   refreshProjectModalContent();
 }
 
-function handleProjectChange(projectId, callback) {
+function handleProjectChange(projectId, callback, targetTab = 'browse') {
   const project = ProjectStore.getProjectById(projectId);
   if (project) {
     ProjectStore.setActiveContext(project.celebrityId, project.id);
@@ -994,9 +1053,11 @@ function handleProjectChange(projectId, callback) {
       callback(project);
     }
     if (typeof window.switchTab === 'function') {
-      window.switchTab('dashboard');
+      window.switchTab(targetTab);
     }
-    renderProjectDashboard();
+    if (targetTab === 'dashboard') {
+      renderProjectDashboard();
+    }
   }
 }
 
