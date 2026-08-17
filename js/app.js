@@ -37,6 +37,16 @@ let returnProductsFilter = "";
 
 import { API_URL, APP_BUILD_TAG } from './config.js';
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function traceFinalTray(step, details) {
   const stamp = new Date().toISOString();
   if (details === undefined) {
@@ -1658,26 +1668,87 @@ function renderFinalTraySerialManager() {
   if (!finalTraySerials || finalTraySerials.length === 0) {
     listNode.innerHTML = '<span class="panel-meta">0 items</span>';
   } else {
+    const resolvedItemsMap = new Map();
     const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
     const activeCtx = store && store.getActiveContext ? store.getActiveContext() : {};
     const activeProjectId = activeCtx.project ? activeCtx.project.id : null;
 
+    if (Array.isArray(window.data) && window.data.length > 0) {
+      window.data.forEach(item => {
+        const key = sanitizeSerialToken(item["Serial No"] || "");
+        if (key && !resolvedItemsMap.has(key)) {
+          resolvedItemsMap.set(key, item);
+        }
+      });
+    }
+
     listNode.innerHTML = finalTraySerials.map((serial) => {
+      const cleanSerial = sanitizeSerialToken(serial);
+      const matchedItem = resolvedItemsMap.get(cleanSerial);
+
       const avail = isProductAvailableForFinalTray(serial, activeProjectId);
       const isUnavailable = !avail.available;
-      const chipClass = isUnavailable ? "final-tray-chip chip-unavailable" : "final-tray-chip";
-      const badgeIcon = isUnavailable ? `<i class="fa-solid fa-triangle-exclamation" style="color: #ea580c; margin-right: 4px;"></i>` : ``;
-      const titleAttr = isUnavailable ? `Unavailable: ${avail.reason}` : serial;
 
-      return `
-        <span class="${chipClass}" title="${escapeHtml(titleAttr)}">
-          ${badgeIcon}${escapeHtml(serial)}
-          <button type="button" class="final-tray-chip-remove" data-serial="${escapeHtml(serial)}" aria-label="Remove ${escapeHtml(serial)}">✕</button>
-        </span>
-      `;
+      if (matchedItem) {
+        const primaryUrl = typeof window.getPreviewImageUrl === 'function' ? window.getPreviewImageUrl(matchedItem) : (matchedItem.image || matchedItem["Image URL"] || '');
+        const fallbackUrl = typeof window.getPreviewFallbackImageUrl === 'function' ? window.getPreviewFallbackImageUrl(matchedItem) : '';
+        const onErrorAttr = fallbackUrl ? `onerror="this.onerror=null;this.src='${fallbackUrl.replace(/'/g, "\\'")}';"` : `onerror="this.onerror=null;this.classList.add('img-error');"`;
+
+        const title = matchedItem["Title"] || matchedItem["Name"] || matchedItem["Serial No"] || serial;
+        const brand = matchedItem["Brand"] || matchedItem["Category"] || matchedItem["Type"] || "Piece";
+        const price = matchedItem["Price"] || matchedItem["MRP"] ? `₹${matchedItem["Price"] || matchedItem["MRP"]}` : "";
+
+        const statusTag = isUnavailable
+          ? `<span class="ft-card-badge ft-badge-unavailable" title="${escapeHtml(avail.reason)}"><i class="fa-solid fa-triangle-exclamation"></i> Unavailable</span>`
+          : `<span class="ft-card-badge ft-badge-available"><i class="fa-solid fa-circle-check"></i> Available</span>`;
+
+        return `
+          <div class="final-tray-card ${isUnavailable ? 'ft-card-disabled' : ''}">
+            <button type="button" class="final-tray-card-remove" data-serial="${escapeHtml(serial)}" title="Remove ${escapeHtml(serial)}">✕</button>
+            <div class="ft-card-media">
+              <img src="${primaryUrl}" alt="${escapeHtml(title)}" loading="lazy" ${onErrorAttr}>
+            </div>
+            <div class="ft-card-info">
+              <div class="ft-card-header">
+                <span class="ft-card-category">${escapeHtml(brand)}</span>
+                ${statusTag}
+              </div>
+              <h4 class="ft-card-title">${escapeHtml(title)}</h4>
+              <div class="ft-card-footer">
+                <span class="ft-card-serial">${escapeHtml(serial)}</span>
+                ${price ? `<span class="ft-card-price">${escapeHtml(price)}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        // Fallback card for custom / unrecognized serial codes
+        const statusTag = isUnavailable
+          ? `<span class="ft-card-badge ft-badge-unavailable" title="${escapeHtml(avail.reason)}"><i class="fa-solid fa-triangle-exclamation"></i> Unavailable</span>`
+          : `<span class="ft-card-badge ft-badge-unknown"><i class="fa-solid fa-code"></i> Code Item</span>`;
+
+        return `
+          <div class="final-tray-card ft-card-custom ${isUnavailable ? 'ft-card-disabled' : ''}">
+            <button type="button" class="final-tray-card-remove" data-serial="${escapeHtml(serial)}" title="Remove ${escapeHtml(serial)}">✕</button>
+            <div class="ft-card-media ft-custom-media">
+              <i class="fa-solid fa-box-archive"></i>
+            </div>
+            <div class="ft-card-info">
+              <div class="ft-card-header">
+                <span class="ft-card-category">Custom Code</span>
+                ${statusTag}
+              </div>
+              <h4 class="ft-card-title">${escapeHtml(serial)}</h4>
+              <div class="ft-card-footer">
+                <span class="ft-card-serial">${escapeHtml(serial)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
     }).join("");
 
-    listNode.querySelectorAll(".final-tray-chip-remove").forEach((btn) => {
+    listNode.querySelectorAll(".final-tray-card-remove").forEach((btn) => {
       btn.addEventListener("click", () => {
         removeSerialFromFinalTray(btn.getAttribute("data-serial") || "");
       });
