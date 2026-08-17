@@ -1715,7 +1715,13 @@ function renderFinalTraySerialManager() {
 
         const title = matchedItem["Title"] || matchedItem["Name"] || matchedItem["Serial No"] || serial;
         const brand = matchedItem["Brand"] || matchedItem["Category"] || matchedItem["Type"] || "Piece";
-        const footerHtml = price ? `<div class="ft-card-footer"><span class="ft-card-price">${escapeHtml(price)}</span></div>` : '';
+        const priceVal = matchedItem["Price"] || matchedItem["MRP"] || "";
+        const priceStr = priceVal ? `₹${priceVal}` : "";
+        const footerHtml = priceStr ? `<div class="ft-card-footer"><span class="ft-card-price">${escapeHtml(priceStr)}</span></div>` : '';
+
+        const statusTag = isUnavailable
+          ? `<span class="ft-card-badge ft-badge-unavailable" title="${escapeHtml(avail.reason)}"><i class="fa-solid fa-triangle-exclamation"></i> Unavailable</span>`
+          : `<span class="ft-card-badge ft-badge-available"><i class="fa-solid fa-circle-check"></i> Available</span>`;
 
         return `
           <div class="final-tray-card ${isUnavailable ? 'ft-card-disabled' : ''}">
