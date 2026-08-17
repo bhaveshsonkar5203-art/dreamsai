@@ -1241,6 +1241,13 @@ function addSerialsToFinalTray(values) {
     addedCount += 1;
   });
 
+  if (addedCount > 0 && typeof buildReturnProductsStateFromFinalTray === 'function') {
+    buildReturnProductsStateFromFinalTray();
+    if (typeof persistReturnProductsState === 'function') {
+      persistReturnProductsState();
+    }
+  }
+
   return addedCount;
 }
 
@@ -1280,6 +1287,12 @@ function removeSerialFromFinalTray(serial) {
     return;
   }
   finalTraySerials = finalTraySerials.filter((s) => s !== normalized);
+  if (Array.isArray(returnProductsState)) {
+    returnProductsState = returnProductsState.filter(item => item.serial !== normalized);
+    if (typeof persistReturnProductsState === 'function') {
+      persistReturnProductsState();
+    }
+  }
   renderFinalTraySerialManager();
 }
 
