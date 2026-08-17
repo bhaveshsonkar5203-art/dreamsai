@@ -75,37 +75,8 @@
           <section class="workspace-main">
 
             <section id="dashboardTab" class="tab-section active">
-              <div class="panel floating-panel">
-                <div class="panel-heading">
-                  <div>
-                    <p class="eyebrow small" id="dashboardStylistName">Stylist: —</p>
-                    <h3 id="dashboardProjectTitle">Loading Dashboard...</h3>
-                  </div>
-                  <p class="panel-meta" id="dashboardProjectCode">Project: —</p>
-                </div>
-
-                <div class="dashboard-grid">
-                  <div class="dashboard-card primary">
-                    <h4>Status</h4>
-                    <div class="stat-value" id="dashStatus">Active</div>
-                    <p id="dashStatusSubtitle">Ready for items to be selected.</p>
-                  </div>
-                  <div class="dashboard-card">
-                    <h4>Client</h4>
-                    <div class="stat-value" id="dashCelebrityName">—</div>
-                    <p>Current active client</p>
-                  </div>
-                  <div class="dashboard-card">
-                    <h4>Selected Items</h4>
-                    <div class="stat-value" id="dashSelectedCount">0</div>
-                    <p>Items in the current selection</p>
-                  </div>
-                  <div class="dashboard-card">
-                    <h4>Deliverables</h4>
-                    <div class="stat-value" id="dashDeliverables">0 / 0</div>
-                    <p>Completed deliverables</p>
-                  </div>
-                </div>
+              <div id="projectDashboardContent" class="project-dashboard-content">
+                <!-- Dynamically rendered by renderProjectDashboard() -->
               </div>
             </section>
 

@@ -266,6 +266,8 @@ export function initProjectUI({ onProjectSwitch }) {
   window.showHomepageGateway = showHomepageGateway;
   window.updateCurrentProjectStatus = updateCurrentProjectStatus;
   window.renderHomepageProjectsGateway = () => renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+  window.renderDashboard = renderProjectDashboard;
+  window.renderProjectDashboard = renderProjectDashboard;
   window.toggleHomepageProjectMenu = toggleHomepageProjectMenu;
   window.selectHomepageMenuSection = selectHomepageMenuSection;
   window.toggleHomepageProjectFilters = toggleHomepageProjectFilters;
@@ -640,90 +642,56 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
     const isActive = activeProject && p.id === activeProject.id;
     const celebrity = ProjectStore.getCelebrityById(p.celebrityId);
     const stylist = ProjectStore.getStylistById(p.stylistId);
-    const celebrityName = celebrity ? celebrity.name : 'Celebrity';
-    const stylistName = stylist ? stylist.name : 'Unassigned Stylist';
-    const projectStatus = getProjectDisplayStatus(p);
-    const paymentStatus = getPaymentStatus(p);
-    const socialStatus = getSocialStatus(p);
-    const productStats = getProductStats(p);
-    const deliverables = getDeliverables(p);
-    const returnStatus = productStats.missing > 0 ? 'Missing' : productStats.pending > 0 ? 'Pending' : productStats.returned > 0 ? 'Returned' : 'Completed';
+    const celebrityName = celebrity ? celebrity.name : (p.celebrityName || 'Celebrity');
+    const stylistName = p.headStylist || (stylist ? stylist.name : 'Unassigned Stylist');
+
     const sharedDate = p.finalTraySharedDate || '';
     const followUpDate = p.followUpDate || (sharedDate ? addDaysToDateString(sharedDate, 15) : '');
     const returnDueDate = p.returnDueDate || '';
-
-    const followUpStatus = getFollowUpStatus(followUpDate);
-    let followUpChipClass = '';
-    if (followUpStatus === 'overdue') {
-      followUpChipClass = 'date-followup-overdue';
-    } else if (followUpStatus === 'due') {
-      followUpChipClass = 'date-followup-due';
-    }
+    const hasAnyDates = Boolean(sharedDate || followUpDate || returnDueDate);
 
     return `
-            <div class="hp-project-card ${isActive ? 'active-project' : ''}" onclick="window.handleProjectChange('${p.id}')">
-              ${isActive ? '<div class="active-ribbon">Selected Project</div>' : ''}
-              <div class="hp-card-header">
-                <div>
-                  <h3 class="hp-card-project-name">${escapeHtml(p.title)}</h3>
-                </div>
-                <span class="proj-status-badge ${getProjectStatusClass(projectStatus)}">${escapeHtml(projectStatus)}</span>
+            <div class="hp-project-card ${isActive ? 'active-project' : ''}" onclick="window.handleProjectChange('${p.id}')" role="button" tabindex="0" aria-label="Open ${escapeHtml(p.title)} project dashboard">
+              <div class="hp-card-stylist-block">
+                <span class="hp-meta-label">STYLIST</span>
+                <span class="hp-stylist-val">${escapeHtml(stylistName)}</span>
               </div>
 
-              <div class="hp-card-basic-grid">
-                <div class="basic-item"><i class="fa-solid fa-star"></i> ${escapeHtml(celebrityName)}</div>
-                <div class="basic-item"><i class="fa-solid fa-user-tie"></i> ${escapeHtml(stylistName)}</div>
-              
+              <div class="hp-card-title-block">
+                <h3 class="hp-project-title">${escapeHtml(p.title)}</h3>
               </div>
 
-              <hr class="hp-card-divider" />
-
-              <div class="hp-card-section">
-          
-                <div class="hp-dates-row">
-                  <div class="date-chip ${isDateOverdue(sharedDate) ? 'date-overdue' : ''}">
-                    <span class="d-label">Final List</span>
-                    <span class="d-val">${escapeHtml(formatDateDisplay(sharedDate))}</span>
-                  </div>
-                  <div class="date-chip ${followUpChipClass || (isDateOverdue(followUpDate) ? 'date-overdue' : '')}">
-                    <span class="d-label">Follow-up</span>
-                    <span class="d-val">${escapeHtml(formatDateDisplay(followUpDate))}</span>
-                  </div>
-                  <div class="date-chip ${isDateOverdue(returnDueDate) ? 'date-overdue' : ''}">
-                    <span class="d-label">Return Due</span>
-                    <span class="d-val">${escapeHtml(formatDateDisplay(returnDueDate))}</span>
-                  </div>
-                </div>
+              <div class="hp-card-celebrity-block">
+                <span class="hp-meta-label">CELEBRITY</span>
+                <span class="hp-celebrity-val">${escapeHtml(celebrityName)}</span>
               </div>
 
-              <div class="hp-card-section">
-                <div class="hp-section-label">Product Status</div>
-                <div class="hp-prod-badges-row">
-                  <span class="prod-badge badge-returned">Returned ${productStats.returned}</span>
-                  <span class="prod-badge badge-pending">Pending ${productStats.pending}</span>
-                  <span class="prod-badge badge-missing">Missing ${productStats.missing}</span>
+              ${hasAnyDates ? `
+                <div class="hp-card-divider-clean"></div>
+                <div class="hp-dates-vertical">
+                  ${sharedDate ? `
+                    <div class="hp-date-line">
+                      <span class="hp-date-type">Final List</span>
+                      <span class="hp-date-val">${escapeHtml(formatDateDisplay(sharedDate))}</span>
+                    </div>
+                  ` : ''}
+                  ${followUpDate ? `
+                    <div class="hp-date-line">
+                      <span class="hp-date-type">Follow-up</span>
+                      <span class="hp-date-val">${escapeHtml(formatDateDisplay(followUpDate))}</span>
+                    </div>
+                  ` : ''}
+                  ${returnDueDate ? `
+                    <div class="hp-date-line">
+                      <span class="hp-date-type">Return Due</span>
+                      <span class="hp-date-val">${escapeHtml(formatDateDisplay(returnDueDate))}</span>
+                    </div>
+                  ` : ''}
                 </div>
-              </div>
+              ` : ''}
 
-              <div class="hp-card-dual-grid">
-                <div class="soc-badge-wrap">
-                  <div class="hp-section-label">Social</div>
-                  <span class="soc-badge ${getSocialStatusClass(socialStatus)}">${escapeHtml(socialStatus)}</span>
-                  <div class="soc-date">${escapeHtml(socialStatus === 'Pending' ? 'No posting date yet' : (p.socialPosting?.postingDate || '—'))}</div>
-                </div>
-                <div class="pay-badge-wrap">
-                  <div class="hp-section-label">Payment</div>
-                  <span class="soc-badge ${getPaymentStatusClass(paymentStatus)}">${escapeHtml(paymentStatus)}</span>
-                  <div class="pay-details">Invoice ${formatCurrency(p.payment?.invoiceAmount || 0)} · Received ${formatCurrency(p.payment?.amountReceived || 0)}</div>
-                </div>
-              </div>
-
-              <div class="hp-card-quick-actions">
-
-                <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickEditProjectModal('${p.id}')"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-                <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.openQuickUpdateReturnModal('${p.id}')"><i class="fa-solid fa-rotate-left"></i> Return</button>
-                
-                <button class="btn-qa btn-qa-secondary" onclick="event.stopPropagation(); window.quickToggleSocialPosted('${p.id}')"><i class="fa-solid fa-share-nodes"></i> Social</button>
+              <div class="hp-card-footer-affordance">
+                <span class="hp-arrow-link"><i class="fa-solid fa-arrow-right"></i></span>
               </div>
             </div>
           `;
@@ -1071,8 +1039,9 @@ function handleProjectChange(projectId, callback) {
       callback(project);
     }
     if (typeof window.switchTab === 'function') {
-      window.switchTab('browse');
+      window.switchTab('dashboard');
     }
+    renderProjectDashboard();
   }
 }
 
@@ -1099,6 +1068,7 @@ function handleCreateCelebritySubmit(e) {
   ProjectStore.setActiveContext(newCelebrity.id, newProject.id);
   renderProjectBar();
   refreshProjectModalContent();
+  renderProjectDashboard();
 }
 
 function handleCreateProjectSubmit(e, callback) {
@@ -1129,8 +1099,9 @@ function handleCreateProjectSubmit(e, callback) {
   }
 
   if (typeof window.switchTab === 'function') {
-    window.switchTab('browse');
+    window.switchTab('dashboard');
   }
+  renderProjectDashboard();
 }
 
 function updateCurrentProjectStatus(projectId, newStatus) {
@@ -1139,6 +1110,7 @@ function updateCurrentProjectStatus(projectId, newStatus) {
   renderProjectBar();
   refreshProjectModalContent();
   renderHomepageProjectsGateway();
+  renderProjectDashboard();
 }
 
 window.openQuickEditProjectModal = function (projectId) {
@@ -1267,6 +1239,7 @@ window.handleQuickEditProjectSubmit = function (e) {
   document.getElementById("quickEditProjectModal").style.display = "none";
   renderHomepageProjectsGateway();
   renderProjectBar();
+  renderProjectDashboard();
 };
 
 window.openQuickUpdateReturnModal = function (projectId) {
@@ -1334,6 +1307,7 @@ window.handleQuickReturnSubmit = function (e) {
   ProjectStore.updateProject(pid, { productStats });
   document.getElementById("quickReturnModal").style.display = "none";
   renderHomepageProjectsGateway();
+  renderProjectDashboard();
 };
 
 window.openQuickUpdateDeliverablesModal = function (projectId) {
@@ -1389,6 +1363,7 @@ window.handleQuickDeliverablesSubmit = function (e) {
   ProjectStore.updateProject(pid, { deliverables });
   document.getElementById("quickDeliverablesModal").style.display = "none";
   renderHomepageProjectsGateway();
+  renderProjectDashboard();
 };
 
 window.quickToggleSocialPosted = function (projectId) {
@@ -1413,6 +1388,7 @@ window.quickToggleSocialPosted = function (projectId) {
   });
 
   renderHomepageProjectsGateway();
+  renderProjectDashboard();
 };
 
 window.toggleNewCelebrityForm = function () {
@@ -1507,6 +1483,419 @@ window.closeFollowUpReminderModal = function() {
   const modal = document.getElementById("followUpReminderModalOverlay");
   if (modal) modal.style.display = "none";
 };
+
+/**
+ * Complete Project Dashboard Workspace Renderer
+ * Renders all operational details, metrics, dates, returns, payment, social, deliverables, and actions.
+ */
+export function renderProjectDashboard() {
+  const container = document.getElementById("projectDashboardContent") || document.getElementById("dashboardTab");
+  if (!container) return;
+
+  const { celebrity, project, stylist } = ProjectStore.getActiveContext();
+  const allProjects = ProjectStore.getProjects();
+  const p = project || (allProjects.length > 0 ? allProjects[0] : null);
+
+  if (!p) {
+    container.innerHTML = `
+      <div class="dash-empty-state">
+        <i class="fa-solid fa-folder-open"></i>
+        <h3>No Project Selected</h3>
+        <p>Choose an existing project from the Home catalog or create a new campaign.</p>
+        <button class="btn-dash-action btn-dash-primary" onclick="showHomepageGateway()">
+          <i class="fa-solid fa-house"></i> Go to All Projects
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const activeCelebrity = celebrity || ProjectStore.getCelebrityById(p.celebrityId);
+  const activeStylist = stylist || ProjectStore.getStylistById(p.stylistId);
+  const celebrityName = activeCelebrity ? activeCelebrity.name : (p.celebrityName || 'Celebrity');
+  const stylistName = p.headStylist || (activeStylist ? activeStylist.name : 'Unassigned Stylist');
+  const projectCode = p.code || p.id || 'N/A';
+  const brandName = p.jewelleryBrand || 'Ascend Fine Jewellery';
+  const seasonName = p.season || 'Fall / Winter 2026';
+  const purposeName = p.purpose || 'Client Styling & PR Pull';
+
+  const projectStatus = getProjectDisplayStatus(p);
+  const paymentStatus = getPaymentStatus(p);
+  const socialStatus = getSocialStatus(p);
+  const productStats = getProductStats(p);
+  const deliverables = getDeliverables(p);
+
+  const sharedDate = p.finalTraySharedDate || '';
+  const followUpDate = p.followUpDate || (sharedDate ? addDaysToDateString(sharedDate, 15) : '');
+  const returnDueDate = p.returnDueDate || '';
+  const postingDate = p.socialPosting?.postingDate || '';
+
+  const followUpStatus = getFollowUpStatus(followUpDate);
+  const isReturnOverdue = isDateOverdue(returnDueDate);
+
+  const totalProducts = productStats.sent || (productStats.returned + productStats.pending + productStats.missing) || 0;
+  const returnRate = totalProducts > 0 ? Math.round((productStats.returned / totalProducts) * 100) : (productStats.returned > 0 ? 100 : 0);
+
+  const pay = p.payment || { invoiceAmount: 0, amountReceived: 0, status: 'Pending' };
+  const invoiceAmt = Number(pay.invoiceAmount || 0);
+  const receivedAmt = Number(pay.amountReceived || 0);
+  const outstandingAmt = Math.max(0, invoiceAmt - receivedAmt);
+
+  const delivCompleted = deliverables.completed || 0;
+  const delivTotal = deliverables.total || 0;
+  const delivRate = delivTotal > 0 ? Math.round((delivCompleted / delivTotal) * 100) : 0;
+
+  const selectedPiecesCount = Array.isArray(p.selectedSerials) ? p.selectedSerials.length : (Array.isArray(window.selected) ? window.selected.length : 0);
+  const activityLog = Array.isArray(p.activityLog) ? p.activityLog : [];
+
+  container.innerHTML = `
+    <div class="dash-workspace-wrapper">
+      <!-- TOP NAVIGATION & ACTION BAR -->
+      <div class="dash-nav-header">
+        <button class="btn-dash-back" onclick="showHomepageGateway()" title="Return to Home Gateway">
+          <i class="fa-solid fa-arrow-left"></i> All Projects
+        </button>
+
+        <div class="dash-quick-actions">
+          <button class="btn-dash-action" onclick="window.openQuickEditProjectModal('${p.id}')">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Project
+          </button>
+          <button class="btn-dash-action" onclick="window.openQuickUpdateReturnModal('${p.id}')">
+            <i class="fa-solid fa-rotate-left"></i> Manage Returns
+          </button>
+          <button class="btn-dash-action" onclick="window.openQuickUpdateDeliverablesModal('${p.id}')">
+            <i class="fa-solid fa-list-check"></i> Update Deliverables
+          </button>
+          <button class="btn-dash-action" onclick="window.quickToggleSocialPosted('${p.id}')">
+            <i class="fa-solid fa-share-nodes"></i> Toggle Social
+          </button>
+          <button class="btn-dash-action btn-dash-primary" onclick="switchTab('browse')">
+            <i class="fa-solid fa-gem"></i> Browse Catalog
+          </button>
+        </div>
+      </div>
+
+      <!-- PROJECT HERO BANNER -->
+      <div class="dash-hero-banner">
+        <div class="dash-hero-meta">
+          <div class="dash-eyebrow-row">
+            <span class="dash-tag-stylist"><i class="fa-solid fa-user-tie"></i> Stylist: <strong>${escapeHtml(stylistName)}</strong></span>
+            <span class="dash-divider">•</span>
+            <span class="dash-tag-celeb"><i class="fa-solid fa-star"></i> Celebrity: <strong>${escapeHtml(celebrityName)}</strong></span>
+            <span class="dash-divider">•</span>
+            <span class="dash-tag-code">ID: <strong>${escapeHtml(projectCode)}</strong></span>
+          </div>
+          <h1 class="dash-project-title">${escapeHtml(p.title)}</h1>
+          <p class="dash-project-subtitle">${escapeHtml(brandName)} &nbsp;|&nbsp; ${escapeHtml(seasonName)} &nbsp;|&nbsp; ${escapeHtml(purposeName)}</p>
+        </div>
+
+        <div class="dash-hero-status-box">
+          <div class="dash-status-label">Project Status</div>
+          <div class="dash-status-pill-wrap">
+            <span class="proj-status-badge ${getProjectStatusClass(projectStatus)}">${escapeHtml(projectStatus)}</span>
+          </div>
+          <div class="dash-stage-select-wrap">
+            <label for="dashStageSelect">Stage:</label>
+            <select id="dashStageSelect" onchange="window.updateCurrentProjectStatus('${p.id}', this.value)" class="dash-stage-select">
+              <option value="Curating" ${p.status === 'Curating' ? 'selected' : ''}>1. Curating</option>
+              <option value="Lookbook Sent" ${p.status === 'Lookbook Sent' ? 'selected' : ''}>2. Lookbook Sent</option>
+              <option value="Celebrity Approved" ${p.status === 'Celebrity Approved' ? 'selected' : ''}>3. Celebrity Approved</option>
+              <option value="Sample Reserved" ${p.status === 'Sample Reserved' ? 'selected' : ''}>4. Sample Reserved</option>
+              <option value="Order Placed" ${p.status === 'Order Placed' ? 'selected' : ''}>5. Order Placed</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- KEY METRICS ROW -->
+      <div class="dash-metrics-grid">
+        <div class="dash-metric-card" onclick="switchTab('selected')" style="cursor: pointer;" title="View Pieces in Pull">
+          <div class="dash-metric-icon icon-curated"><i class="fa-solid fa-gem"></i></div>
+          <div class="dash-metric-data">
+            <span class="dash-metric-val">${selectedPiecesCount}</span>
+            <span class="dash-metric-lbl">Curated Pieces in Pull</span>
+          </div>
+        </div>
+
+        <div class="dash-metric-card" onclick="window.openQuickUpdateReturnModal('${p.id}')" style="cursor: pointer;" title="Update Return Progress">
+          <div class="dash-metric-icon icon-returns"><i class="fa-solid fa-rotate-left"></i></div>
+          <div class="dash-metric-data">
+            <span class="dash-metric-val">${productStats.returned} / ${totalProducts}</span>
+            <span class="dash-metric-lbl">Products Returned (${returnRate}%)</span>
+          </div>
+        </div>
+
+        <div class="dash-metric-card" onclick="window.openQuickEditProjectModal('${p.id}')" style="cursor: pointer;" title="Update Financials">
+          <div class="dash-metric-icon icon-payment"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+          <div class="dash-metric-data">
+            <span class="dash-metric-val">${formatCurrency(receivedAmt)}</span>
+            <span class="dash-metric-lbl">Received of ${formatCurrency(invoiceAmt)}</span>
+          </div>
+        </div>
+
+        <div class="dash-metric-card" onclick="window.quickToggleSocialPosted('${p.id}')" style="cursor: pointer;" title="Toggle Social Post State">
+          <div class="dash-metric-icon icon-social"><i class="fa-solid fa-share-nodes"></i></div>
+          <div class="dash-metric-data">
+            <span class="dash-metric-val">${escapeHtml(socialStatus)}</span>
+            <span class="dash-metric-lbl">Social Media Status</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN OPERATIONAL SECTIONS GRID -->
+      <div class="dash-sections-grid">
+        <!-- 1. IMPORTANT DATES -->
+        <div class="dash-section-card">
+          <div class="dash-card-header">
+            <h3><i class="fa-regular fa-calendar-days"></i> Important Dates</h3>
+            <button class="dash-card-header-btn" onclick="window.openQuickEditProjectModal('${p.id}')">Edit Dates</button>
+          </div>
+          <div class="dash-dates-list">
+            <div class="dash-date-row">
+              <div class="dash-date-label-wrap">
+                <span class="dash-date-name">Final List (Shared)</span>
+                <span class="dash-date-desc">Curated selection sent to stylist</span>
+              </div>
+              <div class="dash-date-value ${isDateOverdue(sharedDate) ? 'text-overdue' : ''}">
+                ${escapeHtml(formatDateDisplay(sharedDate))}
+              </div>
+            </div>
+
+            <div class="dash-date-row">
+              <div class="dash-date-label-wrap">
+                <span class="dash-date-name">15-Day Follow-up</span>
+                <span class="dash-date-desc">Check-in with stylist & muse</span>
+              </div>
+              <div class="dash-date-value-wrap">
+                <span class="dash-date-value ${followUpStatus === 'overdue' ? 'text-overdue' : ''}">${escapeHtml(formatDateDisplay(followUpDate))}</span>
+                ${followUpStatus === 'overdue' ? '<span class="dash-badge-danger">Overdue</span>' : (followUpStatus === 'due' ? '<span class="dash-badge-warning">Due Today</span>' : '<span class="dash-badge-neutral">Upcoming</span>')}
+              </div>
+            </div>
+
+            <div class="dash-date-row">
+              <div class="dash-date-label-wrap">
+                <span class="dash-date-name">Return Due Date</span>
+                <span class="dash-date-desc">Expected return to inventory</span>
+              </div>
+              <div class="dash-date-value-wrap">
+                <span class="dash-date-value ${isReturnOverdue ? 'text-overdue' : ''}">${escapeHtml(formatDateDisplay(returnDueDate))}</span>
+                ${isReturnOverdue ? '<span class="dash-badge-danger">Past Due</span>' : ''}
+              </div>
+            </div>
+
+            <div class="dash-date-row">
+              <div class="dash-date-label-wrap">
+                <span class="dash-date-name">Social Posting Date</span>
+                <span class="dash-date-desc">Scheduled publication</span>
+              </div>
+              <div class="dash-date-value">
+                ${escapeHtml(postingDate ? formatDateDisplay(postingDate) : 'Not scheduled')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. PRODUCT STATUS & RETURNS -->
+        <div class="dash-section-card">
+          <div class="dash-card-header">
+            <h3><i class="fa-solid fa-rotate-left"></i> Product Status & Returns</h3>
+            <button class="dash-card-header-btn" onclick="window.openQuickUpdateReturnModal('${p.id}')">Update Counts</button>
+          </div>
+          
+          <div class="dash-progress-wrap">
+            <div class="dash-progress-labels">
+              <span>Return Completion Rate</span>
+              <strong>${returnRate}% (${productStats.returned}/${totalProducts})</strong>
+            </div>
+            <div class="dash-progress-track">
+              <div class="dash-progress-fill" style="width: ${Math.min(100, Math.max(0, returnRate))}%;"></div>
+            </div>
+          </div>
+
+          <div class="dash-product-stats-grid">
+            <div class="dash-pstat-box">
+              <span class="dash-pstat-lbl">Sent</span>
+              <span class="dash-pstat-val">${totalProducts}</span>
+            </div>
+            <div class="dash-pstat-box box-returned">
+              <span class="dash-pstat-lbl">Returned</span>
+              <span class="dash-pstat-val">${productStats.returned}</span>
+            </div>
+            <div class="dash-pstat-box box-pending">
+              <span class="dash-pstat-lbl">Pending</span>
+              <span class="dash-pstat-val">${productStats.pending}</span>
+            </div>
+            <div class="dash-pstat-box box-missing">
+              <span class="dash-pstat-lbl">Missing</span>
+              <span class="dash-pstat-val">${productStats.missing}</span>
+            </div>
+          </div>
+
+          <div class="dash-card-actions-footer">
+            <button class="btn-dash-action" onclick="window.openQuickUpdateReturnModal('${p.id}')">
+              <i class="fa-solid fa-pen"></i> Quick Return Update
+            </button>
+            <button class="btn-dash-action" onclick="switchTab('returnProducts')">
+              <i class="fa-solid fa-boxes-stacked"></i> Full Returns Workspace
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. SOCIAL MEDIA & PR -->
+        <div class="dash-section-card">
+          <div class="dash-card-header">
+            <h3><i class="fa-solid fa-share-nodes"></i> Social & PR Coverage</h3>
+            <button class="dash-card-header-btn" onclick="window.quickToggleSocialPosted('${p.id}')">Toggle Status</button>
+          </div>
+
+          <div class="dash-social-details">
+            <div class="dash-detail-row">
+              <span class="dash-detail-lbl">Posting Status</span>
+              <span class="soc-badge ${getSocialStatusClass(socialStatus)}">${escapeHtml(socialStatus)}</span>
+            </div>
+            <div class="dash-detail-row">
+              <span class="dash-detail-lbl">Scheduled / Published Date</span>
+              <span class="dash-detail-val">${escapeHtml(postingDate ? formatDateDisplay(postingDate) : 'Pending Confirmation')}</span>
+            </div>
+            <div class="dash-detail-row">
+              <span class="dash-detail-lbl">Celebrity Tags</span>
+              <span class="dash-detail-val">@${escapeHtml(celebrityName.toLowerCase().replace(/\\s+/g, ''))} · @ascendjewels</span>
+            </div>
+          </div>
+
+          <div class="dash-card-actions-footer">
+            <button class="btn-dash-action" onclick="window.quickToggleSocialPosted('${p.id}')">
+              <i class="fa-solid fa-circle-check"></i> Advance Social Stage (${socialStatus})
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. PAYMENT & INVOICING -->
+        <div class="dash-section-card">
+          <div class="dash-card-header">
+            <h3><i class="fa-solid fa-wallet"></i> Payment & Invoicing</h3>
+            <button class="dash-card-header-btn" onclick="window.openQuickEditProjectModal('${p.id}')">Edit Payment</button>
+          </div>
+
+          <div class="dash-payment-breakdown">
+            <div class="dash-pay-main-row">
+              <div>
+                <span class="dash-pay-status-lbl">Payment Status</span>
+                <div style="margin-top: 4px;">
+                  <span class="soc-badge ${getPaymentStatusClass(paymentStatus)}">${escapeHtml(paymentStatus)}</span>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="dash-pay-status-lbl">Invoice Total</span>
+                <div class="dash-pay-total-val">${formatCurrency(invoiceAmt)}</div>
+              </div>
+            </div>
+
+            <div class="dash-pay-sub-grid">
+              <div class="dash-pay-box">
+                <span class="dash-pay-box-lbl">Amount Received</span>
+                <span class="dash-pay-box-val text-success">${formatCurrency(receivedAmt)}</span>
+              </div>
+              <div class="dash-pay-box">
+                <span class="dash-pay-box-lbl">Outstanding Balance</span>
+                <span class="dash-pay-box-val ${outstandingAmt > 0 ? 'text-danger' : 'text-muted'}">${formatCurrency(outstandingAmt)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-card-actions-footer">
+            <button class="btn-dash-action" onclick="window.openQuickEditProjectModal('${p.id}')">
+              <i class="fa-solid fa-receipt"></i> Update Invoice / Payment
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. DELIVERABLES -->
+        <div class="dash-section-card">
+          <div class="dash-card-header">
+            <h3><i class="fa-solid fa-list-check"></i> Deliverables</h3>
+            <button class="dash-card-header-btn" onclick="window.openQuickUpdateDeliverablesModal('${p.id}')">Update</button>
+          </div>
+
+          <div class="dash-progress-wrap">
+            <div class="dash-progress-labels">
+              <span>Agreed Assets</span>
+              <strong>${delivCompleted} / ${delivTotal} Completed (${delivRate}%)</strong>
+            </div>
+            <div class="dash-progress-track">
+              <div class="dash-progress-fill" style="width: ${Math.min(100, Math.max(0, delivRate))}%;"></div>
+            </div>
+          </div>
+
+          <div class="dash-deliverable-items">
+            <div class="dash-deliv-item ${delivCompleted >= 1 ? 'is-done' : ''}">
+              <i class="fa-solid ${delivCompleted >= 1 ? 'fa-circle-check' : 'fa-circle'}"></i> Lookbook Selection PDF
+            </div>
+            <div class="dash-deliv-item ${delivCompleted >= 2 ? 'is-done' : ''}">
+              <i class="fa-solid ${delivCompleted >= 2 ? 'fa-circle-check' : 'fa-circle'}"></i> Celebrity Pull Dispatch
+            </div>
+            <div class="dash-deliv-item ${delivCompleted >= 3 ? 'is-done' : ''}">
+              <i class="fa-solid ${delivCompleted >= 3 ? 'fa-circle-check' : 'fa-circle'}"></i> Red Carpet / Event Feature
+            </div>
+            <div class="dash-deliv-item ${delivCompleted >= 4 ? 'is-done' : ''}">
+              <i class="fa-solid ${delivCompleted >= 4 ? 'fa-circle-check' : 'fa-circle'}"></i> High-Res Editorial Photography
+            </div>
+          </div>
+
+          <div class="dash-card-actions-footer">
+            <button class="btn-dash-action" onclick="window.openQuickUpdateDeliverablesModal('${p.id}')">
+              <i class="fa-solid fa-pen-to-square"></i> Edit Deliverables
+            </button>
+          </div>
+        </div>
+
+        <!-- 6. PROJECT NOTES & ACTIVITY -->
+        <div class="dash-section-card">
+          <div class="dash-card-header">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Notes & Activity</h3>
+            <button class="dash-card-header-btn" onclick="window.openQuickEditProjectModal('${p.id}')">Edit Notes</button>
+          </div>
+
+          ${p.notes ? `
+            <div class="dash-notes-callout">
+              <i class="fa-solid fa-pen-nib"></i>
+              <div>
+                <strong>Curator Notes:</strong>
+                <p>${escapeHtml(p.notes)}</p>
+              </div>
+            </div>
+          ` : '<p class="text-muted" style="font-size:0.88rem; margin-bottom:12px;">No special notes added for this project yet.</p>'}
+
+          <div class="dash-activity-timeline">
+            ${activityLog.length > 0 ? activityLog.map(act => `
+              <div class="dash-timeline-item">
+                <div class="dash-timeline-dot"></div>
+                <div class="dash-timeline-content">
+                  <div class="dash-timeline-header">
+                    <strong>${escapeHtml(act.action || 'Activity')}</strong>
+                    <span class="dash-timeline-time">${escapeHtml(formatDateDisplay(act.timestamp))}</span>
+                  </div>
+                  <p class="dash-timeline-desc">${escapeHtml(act.details || '')}</p>
+                </div>
+              </div>
+            `).join('') : `
+              <div class="dash-timeline-item">
+                <div class="dash-timeline-dot"></div>
+                <div class="dash-timeline-content">
+                  <div class="dash-timeline-header">
+                    <strong>Project Initiated</strong>
+                    <span class="dash-timeline-time">${escapeHtml(formatDateDisplay(p.createdAt))}</span>
+                  </div>
+                  <p class="dash-timeline-desc">Project created for ${escapeHtml(celebrityName)} by ${escapeHtml(stylistName)}.</p>
+                </div>
+              </div>
+            `}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
 
 function escapeHtml(str) {
   if (!str) return '';

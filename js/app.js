@@ -3318,36 +3318,9 @@ window.toggleMobileSidebar = function() {
   }
 };
 window.renderDashboard = function() {
-  const ctx = ProjectStore.getActiveContext();
-  if (document.getElementById("dashboardProjectTitle")) {
-    document.getElementById("dashboardProjectTitle").textContent = ctx.project?.title || "No Project Selected";
-  }
-  if (document.getElementById("dashboardStylistName")) {
-    document.getElementById("dashboardStylistName").textContent = ctx.stylist ? `Stylist: ${ctx.stylist.name}` : "Stylist: —";
-  }
-  if (document.getElementById("dashboardProjectCode")) {
-    document.getElementById("dashboardProjectCode").textContent = ctx.project ? `Code: ${ctx.project.id}` : "—";
-  }
-  if (document.getElementById("dashCelebrityName")) {
-    document.getElementById("dashCelebrityName").textContent = ctx.celebrity?.name || "—";
-  }
-  if (document.getElementById("dashSelectedCount")) {
-    document.getElementById("dashSelectedCount").textContent = selected ? selected.length : "0";
-  }
-  
-  // Update status based on selected length
-  const statusEl = document.getElementById("dashStatus");
-  const statusSubEl = document.getElementById("dashStatusSubtitle");
-  if (statusEl && statusSubEl) {
-    if (selected && selected.length > 0) {
-      statusEl.textContent = "Pulling";
-      statusEl.style.color = "var(--color-local-accent-2)";
-      statusSubEl.textContent = "Items are actively being selected.";
-    } else {
-      statusEl.textContent = "Ready";
-      statusEl.style.color = "var(--color-local-accent)";
-      statusSubEl.textContent = "Ready for items to be selected.";
-    }
+  if (typeof window.renderProjectDashboard === 'function') {
+    window.renderProjectDashboard();
+    return;
   }
 };
 window.loadReturnProductsFromFinalTray = loadReturnProductsFromFinalTray;
