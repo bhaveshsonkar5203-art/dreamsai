@@ -3098,6 +3098,7 @@ function renderReturnProductsList() {
             <option value="damaged" ${item.condition === "damaged" ? "selected" : ""}>Damaged</option>
           </select>
           <button type="button" class="secondary" onclick="window.markReturnProductReceived('${item.serial}')">Mark Received</button>
+          <button type="button" class="secondary btn-missing-action" onclick="window.markReturnProductMissing('${item.serial}')">Mark Missing</button>
         </div>
       </div>
     `;
@@ -3143,36 +3144,48 @@ function buildReturnProductsStateFromFinalTray() {
     activeProject = store.getActiveContext().project;
   }
 
-  // If the active project already has saved return products state, use it!
-  if (activeProject && Array.isArray(activeProject.returnProductsState) && activeProject.returnProductsState.length > 0) {
-    returnProductsState = activeProject.returnProductsState;
-  } else {
-    const serialSource = finalTraySerials.length ? finalTraySerials : (Array.isArray(selected) && selected.length ? selected : (activeProject && Array.isArray(activeProject.selectedSerials) ? activeProject.selectedSerials : []));
-    const serials = [...new Set(serialSource.filter(Boolean))];
-    const items = resolveItemsBySerials(serials);
-    returnProductsState = items.map((item) => {
-      const serial = String(item["Serial No"] || "").trim();
-      return {
-        serial,
-        name: String(item["Description"] || item["Name"] || item["Type"] || serial),
-        code: serial,
-        category: String(item["Type"] || "Jewellery"),
-        quantity: 1,
-        image: getPreviewImageUrl(item),
-        returnStatus: "pending",
-        condition: "good"
-      };
+  const serialSource = finalTraySerials.length ? finalTraySerials : (Array.isArray(selected) && selected.length ? selected : (activeProject && Array.isArray(activeProject.selectedSerials) ? activeProject.selectedSerials : []));
+  const serials = [...new Set(serialSource.filter(Boolean))];
+  const items = resolveItemsBySerials(serials);
+
+  const existingMap = new Map();
+  if (Array.isArray(returnProductsState)) {
+    returnProductsState.forEach(entry => {
+      if (entry && entry.serial) {
+        existingMap.set(entry.serial, entry);
+      }
     });
   }
+  if (activeProject && Array.isArray(activeProject.returnProductsState)) {
+    activeProject.returnProductsState.forEach(entry => {
+      if (entry && entry.serial && !existingMap.has(entry.serial)) {
+        existingMap.set(entry.serial, entry);
+      }
+    });
+  }
+
+  returnProductsState = items.map((item) => {
+    const serial = String(item["Serial No"] || "").trim();
+    if (existingMap.has(serial)) {
+      return existingMap.get(serial);
+    }
+    return {
+      serial,
+      name: String(item["Description"] || item["Name"] || item["Type"] || serial),
+      code: serial,
+      category: String(item["Type"] || "Jewellery"),
+      quantity: 1,
+      image: typeof getPreviewImageUrl === 'function' ? getPreviewImageUrl(item) : (item.image || ''),
+      returnStatus: "pending",
+      condition: "good"
+    };
+  });
+
   refreshReturnProductsUi();
   applyReturnProductInventoryRules();
 }
 
 function loadReturnProductsFromFinalTray(force = false) {
-  if (!force && returnProductsState.length) {
-    refreshReturnProductsUi();
-    return;
-  }
   buildReturnProductsStateFromFinalTray();
 }
 
@@ -3235,6 +3248,10 @@ function updateReturnProductCondition(serial, condition) {
 
 function markReturnProductReceived(serial) {
   updateReturnProductStatus(serial, "received");
+}
+
+function markReturnProductMissing(serial) {
+  updateReturnProductStatus(serial, "missing");
 }
 
 function switchTab(tabName) {
@@ -3433,6 +3450,7 @@ window.handleReturnProductsSearch = handleReturnProductsSearch;
 window.updateReturnProductStatus = updateReturnProductStatus;
 window.updateReturnProductCondition = updateReturnProductCondition;
 window.markReturnProductReceived = markReturnProductReceived;
+window.markReturnProductMissing = markReturnProductMissing;
 window.generateSelectionPdf = generateSelectionPdf;
 window.downloadCurrentPdf = downloadCurrentPdf;
 window.downloadCoverPdf = downloadCoverPdf;
