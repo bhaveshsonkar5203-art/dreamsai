@@ -133,7 +133,11 @@ function isDateOverdue(dateValue) {
 
 function getHomepageSummaryStats(projects) {
   return {
-    active: projects.filter(p => String(getProjectDisplayStatus(p)).toLowerCase() === 'active').length,
+    total: projects.length,
+    active: projects.filter(p => {
+      const s = String(getProjectDisplayStatus(p)).toLowerCase();
+      return s === 'active' || s === 'lookbook sent' || s.includes('active');
+    }).length,
     pendingReturns: projects.filter(p => {
       const stats = getProductStats(p);
       return stats.pending > 0 || stats.missing > 0;
@@ -477,55 +481,51 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
         </div>
       </div>
 
-      <div class="hp-toolbar-actions">
-        <div class="hp-menu-container">
-          <button class="hp-menu-btn ${homepageProjectMenuState.menuOpen ? 'is-active' : ''}"
-                  onclick="event.stopPropagation(); window.toggleHomepageProjectMenu('toggleMenu')"
-                  aria-haspopup="menu"
-                  aria-expanded="${homepageProjectMenuState.menuOpen}"
-                  aria-controls="homepageProjectDropdownMenu"
-                  aria-label="Toggle Project Menu">
-            <i class="fa-solid fa-bars"></i> Menu
-          </button>
-
-          <div id="homepageProjectDropdownMenu" class="hp-dropdown-menu ${homepageProjectMenuState.menuOpen ? 'is-open' : ''}" role="menu" aria-label="Project Menu">
-            <div class="hp-dropdown-header">Project Menu</div>
-
-            <button role="menuitem" class="hp-dropdown-item ${homepageProjectMenuState.activeSection === 'overview' ? 'is-active' : ''}"
-                    onclick="event.stopPropagation(); window.selectHomepageMenuSection('overview')">
-              <span class="hp-dropdown-item-label">
-                <i class="fa-solid fa-chart-pie"></i> Overview
-              </span>
-            </button>
-
-            <button role="menuitem" class="hp-dropdown-item is-disabled" onclick="event.stopPropagation();" disabled aria-disabled="true">
-              <span class="hp-dropdown-item-label">
-                <i class="fa-solid fa-chart-line"></i> Analytics
-              </span>
-              <span class="hp-badge-coming-soon">Coming soon</span>
-            </button>
-
-            <button role="menuitem" class="hp-dropdown-item is-disabled" onclick="event.stopPropagation();" disabled aria-disabled="true">
-              <span class="hp-dropdown-item-label">
-                <i class="fa-solid fa-file-lines"></i> Reports
-              </span>
-              <span class="hp-badge-coming-soon">Coming soon</span>
-            </button>
-
-            <button role="menuitem" class="hp-dropdown-item is-disabled" onclick="event.stopPropagation();" disabled aria-disabled="true">
-              <span class="hp-dropdown-item-label">
-                <i class="fa-solid fa-clock-rotate-left"></i> Activity
-              </span>
-              <span class="hp-badge-coming-soon">Coming soon</span>
-            </button>
-
-            <button role="menuitem" class="hp-dropdown-item is-disabled" onclick="event.stopPropagation();" disabled aria-disabled="true">
-              <span class="hp-dropdown-item-label">
-                <i class="fa-solid fa-gear"></i> Settings
-              </span>
-              <span class="hp-badge-coming-soon">Coming soon</span>
-            </button>
+      <!-- Direct Homepage Overview Statistics -->
+      <div class="hp-overview-section">
+        <div class="hp-summary-cards-grid">
+          <div class="hp-summary-card accent-card">
+            <div class="summary-icon icon-active"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="summary-info">
+              <span class="summary-val">${summary.active}</span>
+              <span class="summary-lbl">Active Projects</span>
+            </div>
           </div>
+          <div class="hp-summary-card">
+            <div class="summary-icon icon-pending-returns"><i class="fa-solid fa-rotate-left"></i></div>
+            <div class="summary-info">
+              <span class="summary-val">${summary.pendingReturns}</span>
+              <span class="summary-lbl">Pending Returns</span>
+            </div>
+          </div>
+          <div class="hp-summary-card">
+            <div class="summary-icon icon-missing"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="summary-info">
+              <span class="summary-val">${summary.missingProducts}</span>
+              <span class="summary-lbl">Missing Products</span>
+            </div>
+          </div>
+          <div class="hp-summary-card">
+            <div class="summary-icon icon-total"><i class="fa-solid fa-folder-open"></i></div>
+            <div class="summary-info">
+              <span class="summary-val">${summary.total}</span>
+              <span class="summary-lbl">Total Projects</span>
+            </div>
+          </div>
+          <div class="hp-summary-card value-card">
+            <div class="summary-icon icon-revenue"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+            <div class="summary-info">
+              <span class="summary-val">${formatCurrency(summary.revenueReceived || summary.totalValue)}</span>
+              <span class="summary-lbl">Revenue Received</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-toolbar-actions">
+        <div class="hp-section-heading">
+          <h3 class="hp-section-title">Projects Directory</h3>
+          <span class="hp-project-count-badge">${filteredProjects.length} ${filteredProjects.length === 1 ? 'Project' : 'Projects'}</span>
         </div>
 
         <button class="hp-filter-toggle-btn ${homepageProjectMenuState.filtersOpen ? 'is-active' : ''}"
@@ -535,58 +535,6 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
                 aria-label="Toggle Project Filters">
           <i class="fa-solid fa-sliders"></i> Filters
         </button>
-      </div>
-
-      <div class="hp-summary-cards-grid ${homepageProjectMenuState.activeSection === 'overview' ? 'is-open' : 'is-collapsed'}">
-        <div class="hp-summary-card accent-card">
-          <div class="summary-icon icon-active"><i class="fa-solid fa-chart-line"></i></div>
-          <div class="summary-info">
-            <span class="summary-val">${summary.active}</span>
-            <span class="summary-lbl">Active Projects</span>
-          </div>
-        </div>
-        <div class="hp-summary-card">
-          <div class="summary-icon icon-pending-returns"><i class="fa-solid fa-rotate-left"></i></div>
-          <div class="summary-info">
-            <span class="summary-val">${summary.pendingReturns}</span>
-            <span class="summary-lbl">Pending Returns</span>
-          </div>
-        </div>
-        <div class="hp-summary-card">
-          <div class="summary-icon icon-missing"><i class="fa-solid fa-triangle-exclamation"></i></div>
-          <div class="summary-info">
-            <span class="summary-val">${summary.missingProducts}</span>
-            <span class="summary-lbl">Missing Products</span>
-          </div>
-        </div>
-        <div class="hp-summary-card">
-          <div class="summary-icon icon-deliverables"><i class="fa-solid fa-list-check"></i></div>
-          <div class="summary-info">
-            <span class="summary-val">${summary.pendingDeliverables}</span>
-            <span class="summary-lbl">Pending Deliverables</span>
-          </div>
-        </div>
-        <div class="hp-summary-card">
-          <div class="summary-icon icon-social"><i class="fa-solid fa-share-nodes"></i></div>
-          <div class="summary-info">
-            <span class="summary-val">${summary.pendingSocial}</span>
-            <span class="summary-lbl">Pending Social Posts</span>
-          </div>
-        </div>
-        <div class="hp-summary-card">
-          <div class="summary-icon icon-payment"><i class="fa-solid fa-wallet"></i></div>
-          <div class="summary-info">
-            <span class="summary-val">${summary.pendingPayments}</span>
-            <span class="summary-lbl">Pending Payments</span>
-          </div>
-        </div>
-        <div class="hp-summary-card">
-          <div class="summary-icon icon-revenue"><i class="fa-solid fa-indian-rupee-sign"></i></div>
-          <div class="summary-info">
-            <span class="summary-val">${formatCurrency(summary.revenueReceived)}</span>
-            <span class="summary-lbl">Revenue Received</span>
-          </div>
-        </div>
       </div>
 
       <div id="homepageProjectFilterPanel" class="hp-filter-toolbar ${homepageProjectMenuState.filtersOpen ? 'is-open' : 'is-collapsed'}">

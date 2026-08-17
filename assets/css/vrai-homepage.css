@@ -84,147 +84,46 @@
   box-shadow: var(--shadow);
 }
 
-/* Action Toolbar (Menu & Filter Toggles) */
-.hp-toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: relative;
+/* Executive Statistics Overview Grid directly on Homepage */
+.hp-overview-section {
+  margin: 8px 0 32px;
 }
 
-.hp-menu-container {
-  position: relative;
-}
-
-.hp-menu-btn,
-.hp-filter-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 18px;
-  background: var(--surface);
-  color: var(--on-surface);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-sans);
-  font-size: 0.82rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.hp-menu-btn:hover,
-.hp-filter-toggle-btn:hover {
-  border-color: var(--outline);
-  background: var(--surface-container-low);
-}
-
-.hp-menu-btn.is-active,
-.hp-filter-toggle-btn.is-active {
-  background: var(--surface-container-highest);
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-/* Dropdown Menu */
-.hp-dropdown-menu {
-  display: none;
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  width: 240px;
-  background: var(--surface);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
-  padding: 8px;
-  z-index: 120;
-  animation: fadeIn 0.2s ease-out;
-}
-
-.hp-dropdown-menu.is-open {
-  display: block;
-}
-
-.hp-dropdown-header {
-  font-family: var(--font-sans);
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--secondary);
-  padding: 8px 12px 6px;
-  border-bottom: 1px solid var(--line-light);
-  margin-bottom: 4px;
-}
-
-.hp-dropdown-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 10px 12px;
-  border: none;
-  background: transparent;
-  color: var(--on-surface);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-sans);
-  font-size: 0.86rem;
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.hp-dropdown-item:hover:not(.is-disabled) {
-  background: var(--surface-container-low);
-  color: var(--primary);
-}
-
-.hp-dropdown-item.is-active {
-  background: var(--surface-container-high);
-  font-weight: 600;
-}
-
-.hp-dropdown-item.is-disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.hp-badge-coming-soon {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  background: var(--surface-container);
-  color: var(--secondary);
-  padding: 2px 6px;
-  border-radius: var(--radius-sharp);
-}
-
-/* Executive Statistics Overview Grid */
 .hp-summary-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
   transition: all var(--transition);
 }
 
-.hp-summary-cards-grid.is-collapsed {
-  display: none;
+@media (max-width: 1200px) {
+  .hp-summary-cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .hp-summary-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .hp-summary-cards-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .hp-summary-card {
   background: var(--surface);
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius);
-  padding: 16px 20px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   box-shadow: var(--shadow-xs);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
 .hp-summary-card:hover {
@@ -246,6 +145,124 @@
   font-size: 1.1rem;
   background: var(--surface-container-low);
   color: var(--secondary);
+  flex-shrink: 0;
+}
+
+.summary-icon.icon-active {
+  color: var(--primary);
+  background: rgba(212, 175, 55, 0.12);
+}
+
+.summary-icon.icon-pending-returns {
+  color: #854d0e;
+  background: #fefce8;
+}
+
+.summary-icon.icon-missing {
+  color: #991b1b;
+  background: #fef2f2;
+}
+
+.summary-icon.icon-total {
+  color: var(--primary);
+  background: var(--surface-container-high);
+}
+
+.summary-icon.icon-revenue {
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.summary-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.summary-val {
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+.summary-lbl {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--secondary);
+  font-weight: 600;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Action Toolbar (Section Header & Filter Toggle) */
+.hp-toolbar-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 28px 0 16px;
+  position: relative;
+}
+
+.hp-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hp-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--primary);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.hp-project-count-badge {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--surface-container-high);
+  color: var(--secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.hp-filter-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: var(--surface);
+  color: var(--on-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.hp-filter-toggle-btn:hover {
+  border-color: var(--outline);
+  background: var(--surface-container-low);
+}
+
+.hp-filter-toggle-btn.is-active {
+  background: var(--surface-container-highest);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .icon-active { color: #2563eb; background: #eff6ff; }
