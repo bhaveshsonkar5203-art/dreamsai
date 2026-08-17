@@ -5,21 +5,24 @@ input,
 textarea {
   width: 100%;
   font-family: var(--font-mendes);
-  font-size: var(--font-type-2-size);
+  font-size: 1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: var(--bg);
   color: var(--color-text);
   padding: 10px 14px;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  min-height: 44px;
+  box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.02);
+  transition: all var(--transition-fast);
 }
 
 select:focus,
 input:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--color-local-accent-2);
-  box-shadow: 0 0 0 3px rgba(84, 120, 124, 0.15);
+  background: var(--surface);
+  border-color: var(--color-brand-secondary);
+  box-shadow: 0 0 0 4px rgba(52, 64, 84, 0.1), inset 0 1px 2px rgba(16, 24, 40, 0.02);
 }
 
 .hide-marked-toggle {
@@ -58,40 +61,47 @@ textarea:focus {
   font-family: var(--font-mendes);
   font-size: 0.92rem;
   font-weight: 500;
-  letter-spacing: 0.02em;
-  transition: all var(--transition);
+  letter-spacing: 0.01em;
+  transition: all var(--transition-fast);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   white-space: nowrap;
+  box-shadow: var(--shadow-xs);
 }
 
 .btn:hover {
   transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:active {
+  transform: scale(0.97);
 }
 
 .btn-primary {
   color: var(--color-text-2);
-  background: var(--color-local-accent);
-  border-color: var(--color-local-accent);
-  box-shadow: 0 4px 14px rgba(21, 21, 21, 0.18);
+  background: linear-gradient(180deg, var(--color-brand-secondary) 0%, var(--color-brand-primary) 100%);
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary:hover {
-  background: var(--color-local-accent-2);
-  border-color: var(--color-local-accent-2);
+  background: linear-gradient(180deg, var(--color-brand-tertiary) 0%, var(--color-brand-secondary) 100%);
+  border-color: var(--color-brand-secondary);
 }
 
 .btn-secondary {
   color: var(--color-local-accent);
-  background: var(--color-local-accent-3);
+  background: var(--surface);
   border: 1px solid var(--line);
 }
 
 .btn-secondary:hover {
-  background: var(--surface);
-  border-color: var(--color-local-accent);
+  background: var(--surface-hover);
+  border-color: var(--line-light);
 }
 
 .btn-sm {

@@ -19,9 +19,14 @@
 .floating-panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  transition: transform var(--transition), box-shadow var(--transition);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
+}
+
+.hero-copy:hover,
+.panel:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .hero-copy {

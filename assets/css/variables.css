@@ -1,47 +1,76 @@
-/* Design system tokens for Jewellery Catalog PDF Studio */
+/* Design system tokens for Premium 2026 UI */
 :root {
   /* Primary Colors */
-  --color-text: #111827;               /* Deep charcoal */
+  --color-text: #0f172a;               /* Slate 900 */
   --color-text-2: #ffffff;
-  --color-local-accent: #0f2b3c;       /* Deep blue / editorial primary */
-  --color-local-accent-2: #2d5a68;     /* Muted teal */
-  --color-local-accent-3: #f8f9fa;     /* Cool icy white */
-
+  --color-local-accent: #0f172a;       /* Slate 900 (used as primary brand) */
+  --color-local-accent-2: #334155;     /* Slate 700 */
+  --color-local-accent-3: #f8fafc;     /* Slate 50 */
+  
+  --color-brand-primary: #101828;      /* Deep rich primary */
+  --color-brand-secondary: #344054;
+  --color-brand-tertiary: #475467;
+  
   /* Mapped Tokens */
-  --bg: #f8f9fa;
+  --bg: #fcfcfd;                       /* Almost white, very clean */
+  --bg-elevated: #ffffff;
   --surface: #ffffff;
+  --surface-hover: #f8fafc;
+  --surface-active: #f1f5f9;
+  
   --panel: #ffffff;
-  --panel-strong: #ffffff;
-  --ink: #111827;                      /* High contrast dark blue-gray */
-  --muted: #64748b;                    /* Slate gray */
-  --line: #e2e8f0;                     /* Thin cool border */
-  --accent: #0f2b3c;                   /* Deep blue */
-  --accent-dark: #0b1f2b;              /* Darker deep blue */
-  --accent-soft: #f1f5f9;              /* Soft cool surface tint */
-  --success: #2b7053;
-  --warning: #b36e15;
-  --shadow: 0 2px 10px rgba(15, 43, 60, 0.03);
-  --shadow-hover: 0 4px 16px rgba(15, 43, 60, 0.06);
-
+  --panel-strong: #f8fafc;
+  
+  --ink: #0f172a;                      /* Slate 900 */
+  --muted: #64748b;                    /* Slate 500 */
+  --line: #e2e8f0;                     /* Slate 200 */
+  --line-light: #f1f5f9;               /* Slate 100 */
+  
+  --accent: #0f172a;
+  --accent-dark: #020617;
+  --accent-soft: #f8fafc;
+  
+  --success: #059669;                  /* Emerald 600 */
+  --success-bg: #ecfdf5;               /* Emerald 50 */
+  --warning: #d97706;                  /* Amber 600 */
+  --warning-bg: #fffbeb;               /* Amber 50 */
+  --error: #dc2626;                    /* Red 600 */
+  --error-bg: #fef2f2;                 /* Red 50 */
+  
+  /* Shadows - Minimal, elegant depth */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.1), 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow: 0 4px 8px -2px rgba(16, 24, 40, 0.06), 0 2px 4px -2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 8px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 8px -4px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 20px 24px -4px rgba(16, 24, 40, 0.08), 0 8px 8px -4px rgba(16, 24, 40, 0.03);
+  --shadow-hover: 0 12px 24px -6px rgba(16, 24, 40, 0.12), 0 4px 8px -4px rgba(16, 24, 40, 0.05);
+  
   /* Typography */
-  --font-vrai: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
-  --font-mendes: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-
-  /* Border Radii - simple and rounded */
-  --radius: 8px;
-  --radius-sm: 6px;
+  --font-vrai: 'Playfair Display', Georgia, serif;
+  --font-mendes: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  
+  /* Border Radii - Soft, organic feel */
+  --radius: 12px;
+  --radius-sm: 8px;
   --radius-sharp: 4px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
 
   /* Spacing - Generous whitespace */
-  --space-6: 8px;
-  --space-1: 12px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
   --space-4: 16px;
-  --space-2: 24px;
-  --space-3: 32px;
-  --space-10: 40px;
-  --space-5: 48px;
-  --space-7: 64px;
-  --space-8: 80px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
 
-  --transition: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Motion - Premium fluidity */
+  --transition-fast: 0.15s cubic-bezier(0.2, 0, 0, 1);
+  --transition: 0.25s cubic-bezier(0.2, 0, 0, 1);
+  --transition-slow: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-spring: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }

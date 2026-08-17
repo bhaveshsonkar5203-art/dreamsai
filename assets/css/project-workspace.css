@@ -87,9 +87,9 @@ body.gateway-active .homepage-gateway-overlay {
   margin: 20px auto;
   background: #ffffff;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 32px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-md);
 }
 
 .hp-gateway-header {
@@ -136,7 +136,7 @@ body.gateway-active .homepage-gateway-overlay {
 /* HOMEPAGE SUMMARY CARDS (DASHBOARD STATS) */
 .hp-summary-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 14px;
   margin-bottom: 24px;
 }
@@ -144,18 +144,18 @@ body.gateway-active .homepage-gateway-overlay {
 .hp-summary-card {
   background: #fafaf9;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 14px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: all 0.2s ease;
+  transition: all var(--transition-smooth);
 }
 
 .hp-summary-card:hover {
-  border-color: var(--accent);
+  border-color: var(--color-brand-secondary);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .hp-summary-card.accent-card {
@@ -481,18 +481,18 @@ body.gateway-active .homepage-gateway-overlay {
 .hp-project-card {
   background: #ffffff;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 22px;
   position: relative;
-  transition: all 0.25s ease;
+  transition: all var(--transition-smooth);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-xs);
 }
 
 .hp-project-card:hover {
-  border-color: var(--accent);
-  box-shadow: 0 12px 28px rgba(212, 175, 55, 0.2);
+  border-color: var(--color-brand-secondary);
+  box-shadow: var(--shadow-md);
   transform: translateY(-3px);
 }
 

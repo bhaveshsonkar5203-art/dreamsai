@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#faf9f6">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="assets/css/variables.css">
   <link rel="stylesheet" href="assets/css/base.css">
@@ -36,20 +36,20 @@
       </div>
       <nav class="sidebar-nav">
         <button id="tabDashboardBtn" class="sidebar-nav-item" onclick="showHomepageGateway()">
-          <i class="fa-solid fa-house"></i> <span>Dashboard</span>
+          <i class="fa-solid fa-house"></i> <span>Home</span>
         </button>
         <button id="tabOverviewBtn" class="sidebar-nav-item active" onclick="switchTab('dashboard')">
-          <i class="fa-solid fa-chart-pie"></i> <span>Overview</span>
+          <i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span>
         </button>
         <button id="tabBrowseBtn" class="sidebar-nav-item" onclick="switchTab('browse')">
-          <i class="fa-solid fa-gem"></i> <span>Browse</span>
+          <i class="fa-solid fa-box-open"></i> <span>Inventory</span>
         </button>
         <button id="tabSelectedBtn" class="sidebar-nav-item" onclick="switchTab('selected')">
-          <i class="fa-solid fa-bookmark"></i> <span>Selected</span>
+          <i class="fa-solid fa-hand-holding-hand"></i> <span>Pulls</span>
           <span id="browseTabBadge" class="badge"></span>
         </button>
         <button id="tabFinalTrayBtn" class="sidebar-nav-item" onclick="switchTab('finalTray')">
-          <i class="fa-solid fa-plane"></i> <span>Final List</span>
+          <i class="fa-solid fa-briefcase"></i> <span>Client Kit</span>
         </button>
         <button id="tabReturnProductsBtn" class="sidebar-nav-item" onclick="switchTab('returnProducts')">
           <i class="fa-solid fa-rotate-left"></i> <span>Returns</span>
@@ -86,17 +86,17 @@
 
                 <div class="dashboard-grid">
                   <div class="dashboard-card primary">
-                    <h4>Current Status</h4>
+                    <h4>Status</h4>
                     <div class="stat-value" id="dashStatus">Active</div>
                     <p id="dashStatusSubtitle">Ready for items to be selected.</p>
                   </div>
                   <div class="dashboard-card">
-                    <h4>Celebrity</h4>
+                    <h4>Client</h4>
                     <div class="stat-value" id="dashCelebrityName">—</div>
                     <p>Current active client</p>
                   </div>
                   <div class="dashboard-card">
-                    <h4>Selected Pieces</h4>
+                    <h4>Selected Items</h4>
                     <div class="stat-value" id="dashSelectedCount">0</div>
                     <p>Items in the current selection</p>
                   </div>
@@ -115,8 +115,8 @@
               <div class="panel controls-panel floating-panel">
                 <div class="panel-heading compact controls-heading">
                   <div>
-                    <p class="eyebrow small">Catalogue Controls</p>
-                    <h3 id="gridSummaryHeading">0 visible items</h3>
+                    <p class="eyebrow small">Filters</p>
+                    <h3 id="gridSummaryHeading">0 items</h3>
                   </div>
                   <div class="heading-actions">
                     <div class="filter-menu-wrap">
@@ -134,24 +134,24 @@
 
                       <div id="controlsContent" class="controls-content filter-dropdown hidden">
                         <button type="button" id="breakdownToggleBtn"
-                          class="btn btn-secondary btn-sm breakdown-toggle-btn" onclick="toggleBreakdown(event)">Show breakdown</button>
+                          class="btn btn-secondary btn-sm breakdown-toggle-btn" onclick="toggleBreakdown(event)">View Breakdown</button>
                         <div id="countSummary" class="count-summary hidden"></div>
                         <div class="controls">
-                          <input id="searchSerial" type="text" placeholder="Search by serial" oninput="onSearchInput()"
+                          <input id="searchSerial" type="text" placeholder="Search serials..." oninput="onSearchInput()"
                             class="search-input">
                           <div class="filter-section">
-                            <div class="filter-section-label">Filter by type</div>
+                            <div class="filter-section-label">Type</div>
                             <button type="button" class="filter-menu-trigger" onclick="toggleFilterChoice('type')">
-                              <span class="filter-trigger-label">Choose types</span>
-                              <span id="filterTypeTriggerText" class="filter-trigger-value">All types</span>
+                              <span class="filter-trigger-label">Type</span>
+                              <span id="filterTypeTriggerText" class="filter-trigger-value">All Types</span>
                             </button>
                             <div id="filterTypeOptions" class="filter-option-list filter-choice-panel hidden"></div>
                           </div>
                           <div class="filter-section">
-                            <div class="filter-section-label">Filter by brand</div>
+                            <div class="filter-section-label">Brand</div>
                             <button type="button" class="filter-menu-trigger" onclick="toggleFilterChoice('brand')">
-                              <span class="filter-trigger-label">Choose brands</span>
-                              <span id="filterBrandTriggerText" class="filter-trigger-value">All brands</span>
+                              <span class="filter-trigger-label">Brand</span>
+                              <span id="filterBrandTriggerText" class="filter-trigger-value">All Brands</span>
                             </button>
                             <div id="filterBrandOptions" class="filter-option-list filter-choice-panel hidden"></div>
                           </div>
@@ -162,19 +162,19 @@
                             <option value="type">Type</option>
                           </select>
                           <select id="filterStatus" onchange="onFilterChanged()" aria-label="Filter by status">
-                            <option value="">All status</option>
-                            <option value="unmarked">Unmarked</option>
-                            <option value="marked">Marked</option>
+                            <option value="">All</option>
+                            <option value="unmarked">Available</option>
+                            <option value="marked">Unavailable</option>
                           </select>
                           <label class="hide-marked-toggle">
                             <input id="hideMarked" type="checkbox" checked onchange="onFilterChanged()">
-                            Hide marked
+                            Hide Unavailable
                           </label>
                           <div class="filter-actions-row">
                             <button type="button" id="clearFiltersBtn" class="btn btn-secondary btn-sm"
-                              onclick="clearCatalogueFilters()">Clear</button>
+                              onclick="clearCatalogueFilters()">Clear Filters</button>
                             <button id="selectAllFilteredBtn" class="btn btn-secondary"
-                              onclick="selectAllByBrand()">Select all visible</button>
+                              onclick="selectAllByBrand()">Select Visible</button>
                           </div>
                         </div>
                       </div>
@@ -190,10 +190,10 @@
                   <p id="gridPageInfo" class="panel-meta">Page 1 of 1</p>
                   <button class="btn btn-secondary pager-btn" onclick="goToNextPage()">Next</button>
                   <select id="pageSize" onchange="changePageSize(this.value)">
-                    <option value="24">24 / page</option>
-                    <option value="36" selected>36 / page</option>
-                    <option value="48">48 / page</option>
-                    <option value="72">72 / page</option>
+                    <option value="24">24 per page</option>
+                    <option value="36" selected>36 per page</option>
+                    <option value="48">48 per page</option>
+                    <option value="72">72 per page</option>
                   </select>
                 </div>
               </div>
@@ -203,17 +203,17 @@
               <div class="panel floating-panel">
                 <div class="panel-heading compact">
                   <div>
-                    <p class="eyebrow small">Selection</p>
-                    <h3>Ready to export</h3>
+                    <p class="eyebrow small">Active Pull</p>
+                    <h3>Selected Items</h3>
                   </div>
-                  <p id="selectedSummary" class="panel-meta">0 selected items</p>
+                  <p id="selectedSummary" class="panel-meta">0 items</p>
                 </div>
 
                 <div class="bulk-toolbar"
                   style="display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
                   <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-secondary btn-sm" onclick="clearAllSelected()">Clear all</button>
-                    <button class="btn btn-secondary btn-sm" onclick="removeMarkedFromSelected()">Remove unavailable</button>
+                    <button class="btn btn-secondary btn-sm" onclick="clearAllSelected()">Clear All</button>
+                    <button class="btn btn-secondary btn-sm" onclick="removeMarkedFromSelected()">Remove Unavailable</button>
                   </div>
                 </div>
 
@@ -225,10 +225,10 @@
                   <button id="selectedNextBtn" class="btn btn-secondary pager-btn"
                     onclick="goToNextSelectedPage()">Next</button>
                   <select id="selectedPageSize" onchange="changeSelectedPageSize(this.value)">
-                    <option value="24" selected>24 / page</option>
-                    <option value="36">36 / page</option>
-                    <option value="48">48 / page</option>
-                    <option value="72">72 / page</option>
+                    <option value="24" selected>24 per page</option>
+                    <option value="36">36 per page</option>
+                    <option value="48">48 per page</option>
+                    <option value="72">72 per page</option>
                   </select>
                 </div>
 
@@ -246,8 +246,8 @@
               <div class="panel preview-panel floating-panel" style="margin-top: 24px;">
                 <div class="panel-heading">
                   <div>
-                    <p class="eyebrow small">Live preview</p>
-                    <h3>Preview generated PDF</h3>
+                    <p class="eyebrow small">Preview</p>
+                    <h3>PDF Preview</h3>
                   </div>
                   <p id="pdfMeta" class="panel-meta">No PDF generated yet</p>
                 </div>
@@ -260,8 +260,7 @@
                   <iframe id="pdfPreviewFrame" title="Jewellery PDF Preview"></iframe>
                   <div id="mobilePdfPreviewAction" class="preview-mobile-action hidden">
                     <button class="btn btn-secondary" type="button"
-                      onclick="if (typeof window.openPdfPreview === 'function') { window.openPdfPreview(); } else { alert('Preview is still loading. Please try again.'); }">Open
-                      PDF in new tab</button>
+                      onclick="if (typeof window.openPdfPreview === 'function') { window.openPdfPreview(); } else { alert('Preview is still loading. Please try again.'); }">Open in New Tab</button>
                   </div>
                 </div>
 
@@ -270,7 +269,7 @@
                   <button class="btn btn-primary"
                     style="background: #25D366; color: #000; border: none; font-weight: 700; width: 100%; cursor: pointer;"
                     onclick="if (typeof window.shareCurrentPdf === 'function') { window.shareCurrentPdf(); } else { alert('PDF share is still loading. Please refresh and try again.'); }"><i
-                      class="fa-brands fa-whatsapp"></i> Share PDF via WhatsApp</button>
+                      class="fa-brands fa-whatsapp"></i> Share via WhatsApp</button>
                 </div>
               </div>
             </section>
@@ -279,27 +278,26 @@
               <div class="panel final-tray-panel floating-panel">
                 <div class="panel-heading">
                   <div>
-                    <p class="eyebrow small">Final List</p>
-                    <h3>Create the final client list</h3>
+                    <p class="eyebrow small">Client Kit</p>
+                    <h3>Prepare Client Kit</h3>
                   </div>
-                  <p class="panel-meta">Paste serial numbers, add items, and generate a final tray PDF.</p>
+                  <p class="panel-meta">Enter serial numbers, add items, and generate a final PDF.</p>
                 </div>
 
                 <div class="final-tray-entry">
                   <textarea id="serialBulkInput" rows="5"
-                    placeholder="Paste serial codes separated by comma, semicolon, or new line. Example: RING-AB1234 NECK-XY9876"></textarea>
-                  <button class="btn btn-secondary" type="button" onclick="addBulkSerialsToFinalTray()">Add codes to
-                    tray</button>
+                    placeholder="Enter serial numbers separated by comma, semicolon, or new line. Example: RING-AB1234 NECK-XY9876"></textarea>
+                  <button class="btn btn-secondary" type="button" onclick="addBulkSerialsToFinalTray()">Add to Kit</button>
                 </div>
 
                 <div class="final-tray-search-shell">
-                  <label for="finalTraySearchInput">Search or add serial code</label>
+                  <label for="finalTraySearchInput">Search serials...</label>
                   <input id="finalTraySearchInput" type="text" autocomplete="off"
                     placeholder="Type a code to find suggestions and press Enter to add">
                   <div id="finalTraySuggestions" class="final-tray-suggestions hidden"></div>
                 </div>
 
-                <div id="finalTrayListMeta" class="panel-meta">0 codes in final tray</div>
+                <div id="finalTrayListMeta" class="panel-meta">0 items</div>
                 <div id="finalTrayList" class="final-tray-list"></div>
 
                 <div class="actions primary-actions">
@@ -319,17 +317,17 @@
                 <div class="panel-heading">
                   <div>
                     <p class="eyebrow small">Returns</p>
-                    <h3>Process returns</h3>
+                    <h3>Process Returns</h3>
                   </div>
-                  <p class="panel-meta">Items are loaded from the current final tray and updated instantly as you verify
+                  <p class="panel-meta">Items are loaded from the current export and updated instantly as you verify
                     them.</p>
                 </div>
 
                 <div class="return-products-toolbar">
-                  <input id="returnProductsSearch" type="text" placeholder="Search by product code or serial"
+                  <input id="returnProductsSearch" type="text" placeholder="Search items..."
                     oninput="window.handleReturnProductsSearch(this.value)">
                   <button class="btn btn-secondary" type="button"
-                    onclick="window.loadReturnProductsFromFinalTray(true)">Reload list</button>
+                    onclick="window.loadReturnProductsFromFinalTray(true)">Reload</button>
                 </div>
 
                 <div id="returnSummaryCards" class="return-summary-grid"></div>
@@ -344,6 +342,33 @@
           <p>Preparing PDF…</p>
         </div>
       </div> <!-- /page-shell -->
+
+      <nav class="mobile-bottom-nav">
+        <button id="bottomNavHome" class="bottom-nav-item" onclick="showHomepageGateway()">
+          <i class="fa-solid fa-house"></i>
+          <span>Home</span>
+        </button>
+        <button id="bottomNavBrowse" class="bottom-nav-item" onclick="switchTab('browse')">
+          <i class="fa-solid fa-box-open"></i>
+          <span>Inventory</span>
+        </button>
+        <button id="bottomNavSelected" class="bottom-nav-item" onclick="switchTab('selected')">
+          <div class="icon-wrapper">
+            <i class="fa-solid fa-hand-holding-hand"></i>
+            <span id="bottomNavBadge" class="badge"></span>
+          </div>
+          <span>Pulls</span>
+        </button>
+        <button id="bottomNavReturns" class="bottom-nav-item" onclick="switchTab('returnProducts')">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>Returns</span>
+        </button>
+        <button class="bottom-nav-item" onclick="toggleMobileSidebar()">
+          <i class="fa-solid fa-ellipsis"></i>
+          <span>More</span>
+        </button>
+      </nav>
+
     </div> <!-- /app-main -->
   </div> <!-- /app-layout -->
 
@@ -353,7 +378,7 @@
       <div class="panel-heading compact">
         <div>
           <p class="eyebrow small">Digital Lookbook Setup</p>
-          <h3 id="miniWebsiteModalTitle">Digital Lookbook Showcase</h3>
+          <h3 id="miniWebsiteModalTitle">Create Lookbook</h3>
         </div>
       </div>
 
@@ -370,7 +395,7 @@
         <label for="miniWebsitePurposeSelect">Lookbook Mode &amp; Audience</label>
         <select id="miniWebsitePurposeSelect">
           <option value="review">Interactive (Client can review &amp; approve)</option>
-          <option value="final">Read-only Lookbook</option>
+          <option value="final">Read-Only</option>
         </select>
       </div>
 

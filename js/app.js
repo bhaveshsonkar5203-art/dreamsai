@@ -137,11 +137,19 @@ window.getInventoryForExport = getInventoryForExport;
 function updateTabBadge() {
   renderFloatingSelectionBar();
   const badge = document.getElementById("browseTabBadge");
+  const bottomBadge = document.getElementById("bottomNavBadge");
   if (badge) {
     if (selected.length > 0) {
       badge.textContent = `${selected.length}`;
     } else {
       badge.textContent = "";
+    }
+  }
+  if (bottomBadge) {
+    if (selected.length > 0) {
+      bottomBadge.textContent = `${selected.length}`;
+    } else {
+      bottomBadge.textContent = "";
     }
   }
 }
@@ -618,7 +626,7 @@ function renderGridPager(totalItems) {
 function toggle(id) {
   const item = data.find(d => d["Serial No"] === id);
   if (item && normalizeStatus(item["Status"]) === "marked") {
-    alert("This item is already marked and is not selectable.");
+    alert("This item is unavailable and cannot be selected.");
     return;
   }
 
@@ -639,7 +647,11 @@ function renderSelected() {
   const summary = document.getElementById("selectedSummary");
 
   if (summary) {
-    summary.textContent = `${selectedItems.length} selected item${selectedItems.length === 1 ? "" : "s"}`;
+    if (selectedItems.length === 0) {
+      summary.textContent = "0 items";
+    } else {
+      summary.textContent = `${selectedItems.length} item${selectedItems.length === 1 ? "" : "s"}`;
+    }
   }
 
   const vraiCartBadge = document.getElementById("vraiNavCartCount");
@@ -656,7 +668,7 @@ function renderSelected() {
   const selectedPageItems = selectedItems.slice(selectedStart, selectedStart + selectedPageSize);
 
   if (!selectedItems.length) {
-    area.innerHTML = '<div class="selection-empty">No items selected yet. Choose pieces from the catalogue to prepare a PDF.</div>';
+    area.innerHTML = '<div class="selection-empty">No items selected. Select items from the inventory to continue.</div>';
     renderSelectedPager(0);
     return;
   }
@@ -794,15 +806,15 @@ function getFilteredItems() {
       return false;
     }
 
-    if (hideMarked && status === "marked") {
+    if (hideMarked && status === "unavailable") {
       return false;
     }
 
-    if (filterStatus === "marked" && status !== "marked") {
+    if (filterStatus === "unavailable" && status !== "unavailable") {
       return false;
     }
 
-    if (filterStatus === "unmarked" && status === "marked") {
+    if (filterStatus === "available" && status === "unavailable") {
       return false;
     }
 
@@ -834,7 +846,7 @@ window.changeSelectedPageSize = changeSelectedPageSize;
 /* GENERATE SELECTION PDF */
 async function generateSelectionPdf() {
   if (selected.length === 0) {
-    alert("Select items to prepare the PDF.");
+    alert("Please select items to prepare the PDF.");
     return;
   }
 
@@ -927,9 +939,9 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
     } catch (e) {}
   }
 
-  if (!serials.length) {
-    alert("Please select items from the catalogue or add serial codes to the Final Tray list first.");
-    setSerialFeedback("Please select items or add serial codes first.", true);
+  let itemsToExport = resolveItemsBySerials(serials);
+  if (!itemsToExport.length && (!finalTraySerials || !finalTraySerials.length)) {
+    alert("Please select items from the inventory or add serials to the Client Kit first.");
     return;
   }
 
@@ -946,12 +958,12 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
   }
 
   showSpinner(true);
-  setSerialFeedback(`Preparing Final Tray PDF for ${serials.length} item(s)...`, false);
+  setSerialFeedback(`Preparing Client Kit PDF for ${serials.length} item(s)...`, false);
 
   try {
     const exportItems = resolveItemsBySerials(serials);
     if (!exportItems.length) {
-      alert("No matching items found in inventory for the final tray serials.");
+      alert("No matching items found in inventory for the Client Kit serials.");
       setSerialFeedback("No matching items found in inventory.", true);
       return;
     }
@@ -968,19 +980,19 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
     }
 
     if (!generatedBlobs.length) {
-      throw new Error("Unable to prepare final tray PDF pages");
+      throw new Error("Unable to prepare Client Kit PDF pages");
     }
 
     collageBlobs = generatedBlobs;
     lastBlob = collageBlobs[0];
     lastExportItems = exportItems;
-    lastExportTitle = "Final Tray Catalogue";
+    lastExportTitle = "Client Kit Catalogue";
     lastExportKind = "final-tray";
     lastPdfBlob = null;
 
     await rebuildPdfPreview();
 
-    setSerialFeedback(`Done. Final tray PDF generated for ${exportItems.length} item(s).`, false);
+    setSerialFeedback(`Done. Client Kit PDF generated for ${exportItems.length} item(s).`, false);
 
     // Persist final-tray summary onto the active project so the homepage dashboard reflects it
     try {
@@ -1050,9 +1062,9 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
     }
 
   } catch (err) {
-    console.error("Error creating final tray PDF:", err);
-    alert("Error preparing final tray PDF. Please try again.");
-    setSerialFeedback("Error preparing final tray PDF.", true);
+    console.error("Error preparing Client Kit PDF:", err);
+    alert("Error preparing Client Kit PDF. Please try again.");
+    setSerialFeedback("Error preparing Client Kit PDF.", true);
   } finally {
     showSpinner(false);
   }
@@ -1220,7 +1232,7 @@ function importLookbookSelectionToFinalTray(serials) {
   renderFinalTraySerialManager();
   updateMiniWebsiteModalPreview();
 
-  setSerialFeedback(`Imported ${incoming.length} lookbook item${incoming.length === 1 ? '' : 's'} into Final Tray!`, false);
+  setSerialFeedback(`Imported ${incoming.length} lookbook item${incoming.length === 1 ? '' : 's'} into Client Kit!`, false);
 
   const shareBox = document.getElementById("postCreationShareContainer");
   if (shareBox) {
@@ -1252,7 +1264,7 @@ function addBulkSerialsToFinalTray() {
   if (added === 0 && parsed.length > 0) {
     setSerialFeedback("All parsed serials are already in the final list.", false);
   } else if (added > 0) {
-    setSerialFeedback(`Added ${added} code${added === 1 ? "" : "s"} to final tray list.`, false);
+    setSerialFeedback(`Added ${added} code${added === 1 ? "" : "s"} to Client Kit list.`, false);
   }
 
   finalTraySuggestionIndex = -1;
@@ -1433,7 +1445,7 @@ function showUnavailableProductsModal({ activeProject, availableSerials, unavail
 
       <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
         <p style="margin: 0 0 14px 0; font-size: 0.88rem; color: #44403c;">
-          ${hasAvailable ? `<strong>${unavailableItems.length}</strong> of your selected products are currently committed to other active projects and cannot be included in a new Final Tray:` : `No selected products are currently available for Final Tray sharing:`}
+          ${hasAvailable ? `<strong>${unavailableItems.length}</strong> of your selected products are currently committed to other active projects and cannot be included in a new Client Kit:` : `No selected products are currently available for Client Kit sharing:`}
         </p>
 
         ${unavailableRows}
@@ -1607,7 +1619,7 @@ async function generateUnavailableProductsPdf(activeProject, unavailableItems) {
     pdf.setFontSize(8);
     pdf.setFont("helvetica", "italic");
     pdf.setTextColor(168, 162, 158);
-    pdf.text("This document is an inventory availability notice. Available pieces will be shared in a separate Final Tray.", margin, y);
+    pdf.text("This document is an inventory availability notice. Available pieces will be shared in a separate Client Kit.", margin, y);
   }
 
   const pdfBlob = pdf.output("blob");
@@ -1626,10 +1638,10 @@ function renderFinalTraySerialManager() {
     return;
   }
 
-  metaNode.textContent = `${finalTraySerials.length} code${finalTraySerials.length === 1 ? "" : "s"} in final tray list`;
+  metaNode.textContent = `${finalTraySerials.length} code${finalTraySerials.length === 1 ? "" : "s"} in Client Kit list`;
 
-  if (!finalTraySerials.length) {
-    listNode.innerHTML = '<span class="panel-meta">No serials added yet.</span>';
+  if (!finalTraySerials || finalTraySerials.length === 0) {
+    listNode.innerHTML = '<span class="panel-meta">0 items</span>';
   } else {
     const store = window.ProjectStore || (typeof ProjectStore !== 'undefined' ? ProjectStore : null);
     const activeCtx = store && store.getActiveContext ? store.getActiveContext() : {};
@@ -1745,15 +1757,15 @@ function selectAllByBrand() {
   const filterType = document.getElementById("filterType")?.value || "";
 
   let filtered = getFilteredItems();
-  const toAdd = filtered.filter(d => normalizeStatus(d["Status"]) !== "marked");
+  const availableItems = filtered.filter(d => normalizeStatus(d["Status"]) !== "unavailable");
 
-  if (!toAdd.length) {
-    alert("No unmarked items match the current filter selection.");
+  if (availableItems.length === 0) {
+    alert("No available items match these filters.");
     return;
   }
 
   let addedCount = 0;
-  toAdd.forEach(item => {
+  availableItems.forEach(item => {
     const id = item["Serial No"];
     if (!selected.includes(id)) {
       selected.push(id);
@@ -1795,18 +1807,18 @@ function clearAllSelected() {
 function removeMarkedFromSelected() {
   const markedInSelection = selected.filter(id => {
     const item = dataBySerial.get(id);
-    return item && normalizeStatus(item["Status"]) === "marked";
+    return item && normalizeStatus(item["Status"]) === "unavailable";
   });
 
   if (markedInSelection.length === 0) {
-    alert("No marked items in selection.");
+    alert("No unavailable items in selection.");
     return;
   }
 
-  if (confirm(`Remove ${markedInSelection.length} marked item(s)?`)) {
+  if (confirm(`Remove ${markedInSelection.length} unavailable item(s)?`)) {
     selected = selected.filter(id => {
       const item = dataBySerial.get(id);
-      return !(item && normalizeStatus(item["Status"]) === "marked");
+      return !(item && normalizeStatus(item["Status"]) === "unavailable");
     });
     updateTabBadge();
     renderSelected();
@@ -1843,8 +1855,8 @@ function isMobilePreviewDevice() {
 }
 
 function openPdfPreviewInNewTab() {
-  if (!lastPdfUrl) {
-    alert("Generate a PDF first.");
+  if (!lastPdfBlob) {
+    alert("Please generate a PDF first.");
     return;
   }
 
@@ -1874,8 +1886,7 @@ function clearPdfPreview() {
   }
 
   if (placeholder) {
-    placeholder.classList.remove("hidden");
-    placeholder.innerHTML = '<strong>Generate a PDF to preview it here.</strong><span>The preview will update after a selection or final tray PDF is created.</span>';
+    placeholder.innerHTML = '<strong>Generate a PDF to preview it here.</strong><span>The preview will update after a selection or Client Kit PDF is created.</span>';
   }
 
   if (mobileAction) {
@@ -2077,7 +2088,7 @@ async function markCurrentFinalTrayAsDelivered(serials = []) {
 
     selected = selected.filter((id) => {
       const item = dataBySerial.get(id);
-      return item && normalizeStatus(item["Status"]) !== "marked";
+      return item && normalizeStatus(item["Status"]) !== "unavailable";
     });
 
     try {
@@ -2119,7 +2130,7 @@ async function markCurrentFinalTrayAsDelivered(serials = []) {
         }
       }
     } catch (projectErr) {
-      console.warn("Could not update project state after final-tray share", projectErr);
+      console.warn("Could not update project state after Client Kit share", projectErr);
     }
 
     render();
@@ -2146,7 +2157,7 @@ async function exportAndSharePdfToWhatsApp() {
           await window.generateFinalTrayFromSerials();
         }
       } else {
-        alert("Please select items from the catalogue grid first to export a PDF.");
+        alert("Please select items from the inventory grid first to export a PDF.");
         return;
       }
     }
@@ -2950,8 +2961,9 @@ function renderReturnProductsList() {
     return [item.serial, item.name, item.code, item.category].some((value) => String(value || "").toUpperCase().includes(query));
   });
 
-  if (!filtered.length) {
-    listNode.innerHTML = '<div class="selection-empty">No return products loaded yet. Load from the Final Tray to begin.</div>';
+  if (!window.currentReturnProducts || window.currentReturnProducts.length === 0) {
+    listNode.innerHTML = '<div class="selection-empty">No return products loaded yet. Load from the Client Kit to begin.</div>';
+    document.getElementById("returnSummaryCards").innerHTML = "";
     return;
   }
 
@@ -3139,13 +3151,24 @@ function switchTab(tabName) {
   Object.keys(tabs).forEach(key => {
     const btn = document.getElementById(tabs[key].btn);
     const section = document.getElementById(tabs[key].section);
+    
+    // Bottom nav mapping
+    const bottomNavIds = {
+      dashboard: "bottomNavHome",
+      browse: "bottomNavBrowse",
+      selected: "bottomNavSelected",
+      finalTray: "bottomNavFinal"
+    };
+    const bottomBtn = bottomNavIds[key] ? document.getElementById(bottomNavIds[key]) : null;
 
     if (key === tabName) {
       if (btn) btn.classList.add("active");
       if (section) section.classList.add("active");
+      if (bottomBtn) bottomBtn.classList.add("active");
     } else {
       if (btn) btn.classList.remove("active");
       if (section) section.classList.remove("active");
+      if (bottomBtn) bottomBtn.classList.remove("active");
     }
   });
 

@@ -15,12 +15,12 @@
 
 @media (max-width: 820px) {
     .page-shell {
-        padding: 22px 18px 28px;
+        padding: 16px 12px 80px; /* Increased bottom padding for bottom nav */
     }
 
     .hero-copy,
     .panel {
-        padding: 22px;
+        padding: 16px;
     }
 
     .hero-actions,
@@ -46,6 +46,17 @@
     .grid,
     .selection-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    /* Make buttons touch friendly */
+    .btn, .tab-btn {
+        min-height: 44px;
+    }
+
+    /* Stack controls on small screens */
+    .controls-content {
+        padding: 12px;
     }
 
     .preview-actions {
@@ -58,7 +69,8 @@
         font-size: 2.4rem;
     }
 
-    .hero-stats {
+    .hero-stats,
+    .dashboard-grid {
         grid-template-columns: 1fr;
     }
 
