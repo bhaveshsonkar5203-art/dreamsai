@@ -1019,6 +1019,13 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
 
     setSerialFeedback(`Done. Client Kit PDF generated for ${exportItems.length} item(s).`, false);
 
+    if (typeof buildReturnProductsStateFromFinalTray === 'function') {
+      buildReturnProductsStateFromFinalTray();
+      if (typeof persistReturnProductsState === 'function') {
+        persistReturnProductsState();
+      }
+    }
+
     const postActions = document.getElementById("finalTrayPostActions");
     if (postActions) {
       postActions.classList.remove("hidden-actions");
@@ -3062,7 +3069,7 @@ function renderReturnProductsList() {
     return [item.serial, item.name, item.code, item.category].some((value) => String(value || "").toUpperCase().includes(query));
   });
 
-  if (!window.currentReturnProducts || window.currentReturnProducts.length === 0) {
+  if (!returnProductsState || returnProductsState.length === 0) {
     listNode.innerHTML = '<div class="selection-empty">No return products loaded yet. Load from the Client Kit to begin.</div>';
     document.getElementById("returnSummaryCards").innerHTML = "";
     return;
