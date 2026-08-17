@@ -264,6 +264,7 @@ export function initProjectUI({ onProjectSwitch }) {
   window.handleCreateProjectSubmit = (e) => handleCreateProjectSubmit(e, onProjectSwitch);
   window.handleQuickNewProject = () => openNewProjectDialog();
   window.showHomepageGateway = showHomepageGateway;
+  window.unlockStudioWorkspace = unlockStudioWorkspace;
   window.updateCurrentProjectStatus = updateCurrentProjectStatus;
   window.renderHomepageProjectsGateway = () => renderHomepageProjectsGateway(homepageProjectSwitchCallback);
   window.renderDashboard = renderProjectDashboard;
@@ -878,6 +879,12 @@ export function showHomepageGateway() {
   if (container) {
     container.style.display = "block";
   }
+  const allNavItems = document.querySelectorAll(".sidebar-nav-item, .bottom-nav-item");
+  allNavItems.forEach(el => el.classList.remove("active"));
+  const homeBtn = document.getElementById("tabDashboardBtn");
+  if (homeBtn) homeBtn.classList.add("active");
+  const bottomHome = document.getElementById("bottomNavHome");
+  if (bottomHome) bottomHome.classList.add("active");
 }
 
 export function unlockStudioWorkspace() {

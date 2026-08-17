@@ -1,61 +1,58 @@
+/* ==========================================================================
+   ASCEND Atelier Studio — Product & Selection Cards Grid
+   ========================================================================== */
+
 .grid,
 .selection-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2);
+  gap: 16px;
   align-items: start;
 }
 
 @media (min-width: 640px) {
   .grid,
   .selection-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
   }
 }
 
-@media (min-width: 900px) {
+@media (min-width: 960px) {
+  .grid,
+  .selection-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1280px) {
   .grid,
   .selection-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 20px;
   }
 }
 
-@media (min-width: 1300px) {
+@media (min-width: 1600px) {
   .grid,
   .selection-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 22px;
   }
 }
 
-@media (min-width: 1700px) {
-  .grid,
-  .selection-grid {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 2200px) {
-  .grid,
-  .selection-grid {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-  }
-}
-
-.card,
-.selection-card,
-.selection-empty {
-  border-radius: var(--radius);
-}
-
+/* Card Styling */
 .card,
 .selection-card {
   position: relative;
   overflow: hidden;
   min-width: 0;
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius);
   box-shadow: var(--shadow-xs);
-  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -69,106 +66,112 @@
 
 .card:hover,
 .selection-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--line);
-  box-shadow: var(--shadow-hover);
+  transform: translateY(-3px);
+  border-color: var(--outline-variant);
+  box-shadow: var(--shadow-md);
 }
 
+/* Card Media & Image */
 .card-media {
   position: relative;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: var(--color-local-accent-3);
-  border-radius: calc(var(--radius) - 1px);
+  background: var(--surface-container-low);
+  border-bottom: 1px solid var(--border-hairline);
 }
 
 .card-media img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.35s ease;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card:hover .card-media img,
 .selection-card:hover .card-media img {
-  transform: scale(1.04);
+  transform: scale(1.06);
 }
 
+/* Card Label & Meta */
 .card-label {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 20px 8px 8px;
-  background: linear-gradient(180deg, transparent, rgba(21, 21, 21, 0.8) 90%);
-  color: var(--color-text-2);
-  font-family: var(--font-mendes);
-  font-size: 0.84rem;
-  font-weight: 500;
+  padding: 24px 10px 8px;
+  background: linear-gradient(180deg, transparent 0%, rgba(10, 10, 12, 0.85) 100%);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
   text-align: center;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
+/* Selection Indicator / Checkmark */
 .select-indicator {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-sharp);
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--line);
+  top: 10px;
+  left: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border-hairline);
   display: grid;
   place-items: center;
-  transition: all var(--transition);
+  transition: all var(--transition-fast);
   z-index: 2;
+  box-shadow: var(--shadow-xs);
 }
 
 .select-indicator svg {
   width: 12px;
   height: 12px;
   opacity: 0;
-  transition: opacity var(--transition);
+  transition: opacity var(--transition-fast);
 }
 
 .card.selected .select-indicator {
-  background: var(--color-local-accent-2);
-  border-color: var(--color-local-accent-2);
+  background: var(--primary);
+  border-color: var(--primary);
   transform: scale(1.05);
 }
 
 .card.selected .select-indicator svg {
   opacity: 1;
-  stroke: var(--color-text-2);
+  stroke: var(--on-primary);
 }
 
 .card.selected {
-  border-color: var(--color-local-accent-2);
-  box-shadow: 0 0 0 1px var(--color-local-accent-2), var(--shadow-sm);
-  background: var(--surface-active);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px var(--accent-gold), var(--shadow-sm);
 }
 
+/* Unavailable Item Treatment */
 .marked-card {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .marked-card::after {
-  content: "Marked";
+  content: "Unavailable";
   position: absolute;
-  top: 12px;
-  right: -32px;
-  width: 120px;
-  padding: 3px 0;
-  background: var(--warning);
-  color: var(--color-text-2);
-  font-size: var(--font-type-1-size);
-  font-weight: 600;
+  top: 14px;
+  right: -34px;
+  width: 125px;
+  padding: 4px 0;
+  background: var(--status-pending-text);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 700;
   text-align: center;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   transform: rotate(40deg);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   z-index: 2;
 }
 
@@ -176,25 +179,23 @@
   display: none;
 }
 
-.marked-label {
-  display: none;
-}
-
+/* Selection Remove Button */
 .selection-card .remove-btn {
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-sharp);
-  background: var(--color-local-accent);
-  color: var(--color-text-2);
-  border: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  border: 1px solid var(--border-hairline);
+  color: var(--secondary);
   display: grid;
   place-items: center;
   opacity: 0;
-  transition: all var(--transition);
+  transition: all var(--transition-fast);
   z-index: 3;
+  box-shadow: var(--shadow-xs);
 }
 
 .selection-card:hover .remove-btn {
@@ -202,32 +203,20 @@
 }
 
 .selection-card .remove-btn:hover {
-  background: #c0392b;
-  transform: scale(1.08);
+  background: var(--status-missing-bg);
+  border-color: var(--status-missing-border);
+  color: var(--status-missing-text);
+  transform: scale(1.1);
 }
 
+/* Selection Empty State */
 .selection-empty {
   grid-column: 1 / -1;
-  padding: var(--space-5);
-  border: 1px dashed var(--line);
+  padding: 48px 24px;
+  border: 1px dashed var(--border-hairline);
+  border-radius: var(--radius);
   background: var(--surface);
-  color: var(--muted);
+  color: var(--secondary);
   text-align: center;
-  font-size: var(--font-type-2-size);
-}
-
-.animate-card {
-  opacity: 0;
-  animation: popIn 0.4s ease forwards;
-}
-
-@keyframes popIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  font-size: 0.95rem;
 }

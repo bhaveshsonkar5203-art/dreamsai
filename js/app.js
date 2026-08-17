@@ -107,9 +107,20 @@ async function loadData() {
     hideMarkedNode.checked = true;
   }
 
-  const res = await fetch(`${API_URL}?t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
-  const json = await res.json();
-  data = Array.isArray(json) ? json : (json.data || []);
+  try {
+    const res = await fetch(`${API_URL}?t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
+    const json = await res.json();
+    data = Array.isArray(json) ? json : (json.data || []);
+  } catch (err) {
+    console.warn("Could not fetch remote catalog data, using fallback archive", err);
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
+    if (typeof window.getFallbackCatalogData === 'function') {
+      data = window.getFallbackCatalogData();
+    }
+  }
+
   rebuildDataIndex();
   selected = selected.filter(id => {
     const item = dataBySerial.get(id);
@@ -698,6 +709,10 @@ function renderSelected() {
     window.updateMiniWebsiteModalPreview();
   }
 }
+
+window.render = render;
+window.initFilter = initFilter;
+window.renderSelected = renderSelected;
 
 function renderSelectedPager(totalItems) {
   const pageInfo = document.getElementById("selectedPageInfo");
@@ -3046,7 +3061,8 @@ function buildReturnProductsStateFromFinalTray() {
   if (activeProject && Array.isArray(activeProject.returnProductsState) && activeProject.returnProductsState.length > 0) {
     returnProductsState = activeProject.returnProductsState;
   } else {
-    const serials = [...new Set(finalTraySerials.filter(Boolean))];
+    const serialSource = finalTraySerials.length ? finalTraySerials : (Array.isArray(selected) && selected.length ? selected : (activeProject && Array.isArray(activeProject.selectedSerials) ? activeProject.selectedSerials : []));
+    const serials = [...new Set(serialSource.filter(Boolean))];
     const items = resolveItemsBySerials(serials);
     returnProductsState = items.map((item) => {
       const serial = String(item["Serial No"] || "").trim();
@@ -3141,12 +3157,15 @@ function switchTab(tabName) {
   }
 
   const tabs = {
-    dashboard: { btn: "tabDashboardBtn", section: "dashboardTab" },
+    dashboard: { btn: "tabOverviewBtn", section: "dashboardTab" },
     browse: { btn: "tabBrowseBtn", section: "browseTab" },
     selected: { btn: "tabSelectedBtn", section: "selectedTab" },
     finalTray: { btn: "tabFinalTrayBtn", section: "finalTrayTab" },
     returnProducts: { btn: "tabReturnProductsBtn", section: "returnProductsTab" }
   };
+
+  const homeBtn = document.getElementById("tabDashboardBtn");
+  if (homeBtn) homeBtn.classList.remove("active");
 
   Object.keys(tabs).forEach(key => {
     const btn = document.getElementById(tabs[key].btn);
