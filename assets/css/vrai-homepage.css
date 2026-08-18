@@ -873,3 +873,21 @@ body.gateway-active #homepageProjectsGatewayContainer {
   }
 }
 
+@media (max-width: 380px) {
+  .homepage-gateway-overlay {
+    padding: 12px 8px 48px;
+  }
+
+  .hp-project-card {
+    padding: 16px 12px;
+  }
+
+  .hp-gateway-title h2 {
+    font-size: 1.5rem;
+  }
+
+  .hp-summary-card {
+    padding: 12px 10px;
+  }
+}
+
