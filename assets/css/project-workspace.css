@@ -67,6 +67,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .project-pill {
@@ -81,16 +83,23 @@
   color: #1f2937;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .project-pill i {
   color: var(--accent-gold, #c5a059);
   font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
 .project-title-text {
   font-weight: 700;
   color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
 }
 
 .project-code {
@@ -100,6 +109,7 @@
   background: rgba(0, 0, 0, 0.05);
   padding: 2px 6px;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .project-pill:hover {
@@ -942,4 +952,151 @@
   color: var(--secondary);
   margin: 0;
   max-width: 460px;
+}
+
+/* ==========================================================================
+   Project Modals & Dialogs (New Project, Project Drawer, Quick Edit)
+   ========================================================================== */
+.project-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 17, 23, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.project-modal-card {
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.project-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.project-modal-header h3 {
+  margin: 0;
+  font-family: var(--font-serif, serif);
+  font-size: 1.2rem;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-close-modal {
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.btn-close-modal:hover {
+  background: #f1f5f9;
+  color: #111827;
+}
+
+.btn-proceed-large {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 20px;
+  background: #111827;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-proceed-large:hover {
+  background: #1f2937;
+}
+
+/* ==========================================================================
+   Mobile Responsive Adjustments
+   ========================================================================== */
+@media (max-width: 900px) {
+  .dreamsai-project-bar {
+    padding: 8px 12px;
+  }
+
+  .project-bar-container {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .project-bar-left {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .project-bar-center {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .people-pills-group {
+    flex-wrap: nowrap;
+  }
+
+  .project-bar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dash-hero-banner {
+    padding: 18px 20px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dash-hero-status-box {
+    width: 100%;
+    align-items: flex-start;
+    box-sizing: border-box;
+  }
+
+  .dash-nav-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .dash-quick-actions {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
 }

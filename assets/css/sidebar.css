@@ -288,13 +288,16 @@
     left: -280px;
     z-index: 1000;
     box-shadow: var(--shadow-lg);
+    transition: left var(--transition-fast);
   }
 
-  .app-sidebar.open {
+  .app-sidebar.open,
+  .app-sidebar.is-open {
     left: 0;
   }
 
-  .sidebar-overlay.open {
+  .sidebar-overlay.open,
+  .sidebar-overlay.is-visible {
     display: block;
   }
 
@@ -303,6 +306,6 @@
   }
 
   .mobile-bottom-nav {
-    display: flex;
+    display: grid;
   }
 }

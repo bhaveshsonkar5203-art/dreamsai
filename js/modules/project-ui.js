@@ -1065,24 +1065,88 @@ function handleCelebrityChange(celebrityId) {
   refreshProjectModalContent();
 }
 
-function handleProjectChange(projectId, callback, targetTab = 'browse') {
-  const project = ProjectStore.getProjectById(projectId);
-  if (project) {
-    ProjectStore.setActiveContext(project.celebrityId, project.id);
-    renderProjectBar();
-    closeProjectDrawer();
-    unlockStudioWorkspace();
+let isProjectSwitchingLocked = false;
 
-    if (typeof callback === 'function') {
-      callback(project);
-    }
-    if (typeof window.switchTab === 'function') {
-      window.switchTab(targetTab);
-    }
-    if (targetTab === 'dashboard') {
-      renderProjectDashboard();
-    }
+function showProjectSwitchLoader() {
+  let loader = document.getElementById("projectSwitchLoader");
+  if (!loader) {
+    loader = document.createElement("div");
+    loader.id = "projectSwitchLoader";
+    loader.style.cssText = "position: fixed; inset: 0; background: rgba(15, 17, 23, 0.4); backdrop-filter: blur(4px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; gap: 12px; font-family: var(--font-sans);";
+    loader.innerHTML = `
+      <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: #c5a059;"></i>
+      <span style="font-weight: 600; font-size: 0.95rem; letter-spacing: 0.05em;">Switching Project...</span>
+    `;
+    document.body.appendChild(loader);
   }
+  loader.style.display = "flex";
+}
+
+function hideProjectSwitchLoader() {
+  const loader = document.getElementById("projectSwitchLoader");
+  if (loader) loader.style.display = "none";
+}
+
+function showProjectSwitchError(projectId, callback, targetTab) {
+  hideProjectSwitchLoader();
+  isProjectSwitchingLocked = false;
+  let errModal = document.getElementById("projectSwitchErrorModal");
+  if (!errModal) {
+    errModal = document.createElement("div");
+    errModal.id = "projectSwitchErrorModal";
+    errModal.className = "project-modal-overlay";
+    document.body.appendChild(errModal);
+  }
+  errModal.innerHTML = `
+    <div class="project-modal-card" style="max-width: 440px; padding: 24px; text-align: center;">
+      <i class="fa-solid fa-triangle-exclamation" style="font-size: 2.8rem; color: #ef4444; margin-bottom: 12px;"></i>
+      <h3 style="margin: 0 0 8px; font-family: var(--font-serif); font-size: 1.3rem;">Unable to Switch Project</h3>
+      <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 20px;">We encountered an issue loading project ID: <strong>${escapeHtml(projectId || 'Unknown')}</strong>.</p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn-dash-action" onclick="document.getElementById('projectSwitchErrorModal').style.display='none'">Dismiss</button>
+        <button class="btn-dash-action btn-dash-primary" onclick="document.getElementById('projectSwitchErrorModal').style.display='none'; handleProjectChange('${projectId}', null, '${targetTab}')">
+          <i class="fa-solid fa-rotate-right"></i> Retry
+        </button>
+      </div>
+    </div>
+  `;
+  errModal.style.display = "flex";
+}
+
+function handleProjectChange(projectId, callback, targetTab = 'browse') {
+  if (isProjectSwitchingLocked) return;
+  isProjectSwitchingLocked = true;
+  showProjectSwitchLoader();
+
+  setTimeout(() => {
+    try {
+      const project = ProjectStore.getProjectById(projectId);
+      if (!project) {
+        throw new Error(`Project ${projectId} not found in store.`);
+      }
+
+      ProjectStore.setActiveContext(project.celebrityId, project.id);
+      renderProjectBar();
+      closeProjectDrawer();
+      unlockStudioWorkspace();
+
+      if (typeof callback === 'function') {
+        callback(project);
+      }
+      if (typeof window.switchTab === 'function') {
+        window.switchTab(targetTab);
+      }
+      if (targetTab === 'dashboard') {
+        renderProjectDashboard();
+      }
+
+      hideProjectSwitchLoader();
+      isProjectSwitchingLocked = false;
+    } catch (err) {
+      console.error("Project Switch Failed:", err);
+      showProjectSwitchError(projectId, callback, targetTab);
+    }
+  }, 180);
 }
 
 function handleCreateCelebritySubmit(e) {

@@ -3320,6 +3320,12 @@ function switchTab(tabName) {
     renderSelected();
   }
 
+  if (tabName === "finalTray") {
+    if (typeof renderFinalTraySerialManager === 'function') {
+      renderFinalTraySerialManager();
+    }
+  }
+
   if (tabName === "returnProducts") {
     loadReturnProductsFromFinalTray();
   }

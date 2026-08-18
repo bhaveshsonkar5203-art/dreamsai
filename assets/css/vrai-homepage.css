@@ -18,11 +18,12 @@ body.gateway-active #homepageProjectsGatewayContainer {
 
 .homepage-gateway-overlay {
   width: 100%;
+  box-sizing: border-box;
   min-height: 100vh;
   background-color: var(--background);
   color: var(--on-background);
   font-family: var(--font-sans);
-  padding: 32px 32px 64px;
+  padding: 16px 12px 64px;
 }
 
 .hp-gateway-wrapper {
@@ -838,3 +839,37 @@ body.gateway-active #homepageProjectsGatewayContainer {
   padding: 0 4px;
   color: var(--secondary);
 }
+
+/* Mobile Media Queries for Homepage Gateway */
+@media (max-width: 600px) {
+  .hp-gateway-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .hp-gateway-actions {
+    width: 100%;
+  }
+
+  .btn-create-project-main {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filter-inputs-row {
+    grid-template-columns: 1fr;
+  }
+
+  .hp-toolbar-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .hp-filter-toggle-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
