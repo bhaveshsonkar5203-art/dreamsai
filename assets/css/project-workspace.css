@@ -1100,3 +1100,38 @@
     padding-bottom: 4px;
   }
 }
+
+@media (max-width: 480px) {
+  .dreamsai-project-bar {
+    padding: 6px 8px;
+  }
+
+  .project-pill {
+    padding: 4px 10px;
+    font-size: 0.76rem;
+  }
+
+  .project-title-text {
+    max-width: 140px;
+  }
+
+  .meta-pill {
+    padding: 4px 8px;
+    font-size: 0.74rem;
+  }
+
+  .btn-switch-projects {
+    padding: 5px 10px;
+    font-size: 0.72rem;
+  }
+
+  .stat-tag {
+    font-size: 0.72rem;
+    gap: 4px;
+  }
+
+  .btn-project-manage {
+    padding: 5px 12px;
+    font-size: 0.72rem;
+  }
+}

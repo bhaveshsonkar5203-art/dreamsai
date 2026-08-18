@@ -4,7 +4,8 @@
   min-height: min(64vh, calc(100vh - 240px));
   max-height: calc(100vh - 220px);
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--color-local-accent-3);
   border: 1px solid var(--line);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
@@ -12,16 +13,81 @@
   flex-direction: column;
 }
 
-#pdfPreviewFrame {
+#pdfPreviewFrame,
+#finalTrayPdfPreviewFrame {
   width: 100%;
   flex: 1 1 0;
   border: 0;
+  display: none;
   opacity: 0;
   transition: opacity var(--transition);
 }
 
-#pdfPreviewFrame.visible {
+#pdfPreviewFrame.visible,
+#finalTrayPdfPreviewFrame.visible {
+  display: block;
   opacity: 1;
+}
+
+.pdf-visual-pages {
+  width: 100%;
+  flex: 1 1 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+.pdf-visual-pages.hidden {
+  display: none !important;
+}
+
+.pdf-page-preview-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pdf-page-preview-wrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+}
+
+.pdf-page-badge {
+  align-self: flex-start;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #111827;
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  margin-bottom: 10px;
+}
+
+.pdf-page-image {
+  width: 100%;
+  height: auto;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 8px;
+  cursor: pointer;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .preview-placeholder {
@@ -38,6 +104,10 @@
   color: var(--muted);
 }
 
+.preview-placeholder.hidden {
+  display: none !important;
+}
+
 .preview-placeholder strong {
   font-family: var(--font-vrai);
   font-size: 1.2rem;
@@ -46,12 +116,15 @@
 }
 
 .preview-mobile-action {
-  position: absolute;
-  inset: auto 0 0 0;
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: center;
-  padding: 16px;
-  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 35%, rgba(255,255,255,0.98) 100%);
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 40%, rgba(255,255,255,0.98) 100%);
+  z-index: 10;
 }
 
 .preview-mobile-action.hidden {

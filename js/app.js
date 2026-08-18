@@ -1975,9 +1975,41 @@ function openPdfPreviewInNewTab() {
 }
 window.openPdfPreview = openPdfPreviewInNewTab;
 
+let visualPageUrls = [];
+
+function clearVisualPageUrls() {
+  visualPageUrls.forEach(url => URL.revokeObjectURL(url));
+  visualPageUrls = [];
+}
+
+function renderVisualPdfPages(containerId, blobs) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (!blobs || !blobs.length) {
+    container.innerHTML = "";
+    container.classList.add("hidden");
+    return;
+  }
+
+  container.innerHTML = blobs.map((b, idx) => {
+    const url = URL.createObjectURL(b);
+    visualPageUrls.push(url);
+    return `
+      <div class="pdf-page-preview-wrapper">
+        <div class="pdf-page-badge"><i class="fa-solid fa-file-lines"></i> Page ${idx + 1} of ${blobs.length}</div>
+        <img src="${url}" alt="PDF Page ${idx + 1}" class="pdf-page-image" onclick="window.openPdfPreview()" title="Click to view full PDF" />
+      </div>
+    `;
+  }).join('');
+  container.classList.remove("hidden");
+}
+
 function clearPdfPreview() {
   const frame = document.getElementById("pdfPreviewFrame");
   const placeholder = document.getElementById("previewPlaceholder");
+  const visualPreview = document.getElementById("pdfVisualPagesPreview");
+  const finalTrayVisual = document.getElementById("finalTrayVisualPagesPreview");
+  const finalTrayPanel = document.getElementById("finalTrayPreviewPanel");
   const mobileAction = document.getElementById("mobilePdfPreviewAction");
   const shareBox = document.getElementById("postCreationShareContainer");
 
@@ -1986,6 +2018,7 @@ function clearPdfPreview() {
     lastPdfUrl = "";
   }
 
+  clearVisualPageUrls();
   lastPdfBlob = null;
 
   if (frame) {
@@ -1993,8 +2026,23 @@ function clearPdfPreview() {
     frame.classList.remove("visible");
   }
 
+  if (visualPreview) {
+    visualPreview.innerHTML = "";
+    visualPreview.classList.add("hidden");
+  }
+
+  if (finalTrayVisual) {
+    finalTrayVisual.innerHTML = "";
+    finalTrayVisual.classList.add("hidden");
+  }
+
+  if (finalTrayPanel) {
+    finalTrayPanel.classList.add("hidden");
+  }
+
   if (placeholder) {
-    placeholder.innerHTML = '<strong>Generate a PDF to preview it here.</strong><span>The preview will update after a selection or Client Kit PDF is created.</span>';
+    placeholder.classList.remove("hidden");
+    placeholder.innerHTML = '<strong>Generate a PDF to preview it here.</strong><span>The preview will update after a selection or final tray PDF is created.</span>';
   }
 
   if (mobileAction) {
@@ -2022,27 +2070,37 @@ function setPdfPreview(blob) {
   lastPdfBlob = blob;
   lastPdfUrl = URL.createObjectURL(blob);
 
+  clearVisualPageUrls();
+
+  // Render crisp visual multi-page preview into both Selected tab and Final Tray tab shells
+  renderVisualPdfPages("pdfVisualPagesPreview", collageBlobs);
+  renderVisualPdfPages("finalTrayVisualPagesPreview", collageBlobs);
+
+  const finalTrayPanel = document.getElementById("finalTrayPreviewPanel");
+  if (finalTrayPanel && collageBlobs && collageBlobs.length > 0) {
+    finalTrayPanel.classList.remove("hidden");
+    const meta = document.getElementById("finalTrayPdfMeta");
+    if (meta) {
+      meta.textContent = `${lastExportTitle || 'Kit'} · ${collageBlobs.length} page${collageBlobs.length === 1 ? '' : 's'} · ${lastExportItems ? lastExportItems.length : 0} items`;
+    }
+  }
+
   if (frame) {
-    if (isMobile) {
-      frame.removeAttribute("src");
-      frame.classList.remove("visible");
-    } else {
+    if (!isMobile) {
       frame.src = lastPdfUrl;
       frame.classList.add("visible");
+    } else {
+      frame.removeAttribute("src");
+      frame.classList.remove("visible");
     }
   }
 
   if (placeholder) {
-    if (isMobile) {
-      placeholder.classList.remove("hidden");
-      placeholder.innerHTML = '<strong>Mobile preview is not supported inline here.</strong><span>Tap the button below to open the PDF in a new tab.</span>';
-    } else {
-      placeholder.classList.add("hidden");
-    }
+    placeholder.classList.add("hidden");
   }
 
   if (mobileAction) {
-    mobileAction.classList.toggle("hidden", !isMobile);
+    mobileAction.classList.remove("hidden");
   }
 
   if (shareBox) {
@@ -2078,16 +2136,11 @@ function setHtmlLookbookPreview(blob, fileName, meta, itemCount) {
   }
 
   if (placeholder) {
-    if (isMobile) {
-      placeholder.classList.remove("hidden");
-      placeholder.innerHTML = '<strong>Mobile preview is not supported inline here.</strong><span>Tap the button below to open the PDF in a new tab.</span>';
-    } else {
-      placeholder.classList.add("hidden");
-    }
+    placeholder.classList.add("hidden");
   }
 
   if (mobileAction) {
-    mobileAction.classList.toggle("hidden", !isMobile);
+    mobileAction.classList.remove("hidden");
   }
 
   if (shareBox) {

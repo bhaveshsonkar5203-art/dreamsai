@@ -235,10 +235,13 @@
                     <strong>Generate a PDF to preview it here.</strong>
                     <span>The preview will update after a selection or final tray PDF is created.</span>
                   </div>
+                  <div id="pdfVisualPagesPreview" class="pdf-visual-pages hidden"></div>
                   <iframe id="pdfPreviewFrame" title="Jewellery PDF Preview"></iframe>
                   <div id="mobilePdfPreviewAction" class="preview-mobile-action hidden">
                     <button class="btn btn-secondary" type="button"
-                      onclick="if (typeof window.openPdfPreview === 'function') { window.openPdfPreview(); } else { alert('Preview is still loading. Please try again.'); }">Open in New Tab</button>
+                      onclick="if (typeof window.openPdfPreview === 'function') { window.openPdfPreview(); } else { alert('Preview is still loading. Please try again.'); }">
+                      <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full PDF
+                    </button>
                   </div>
                 </div>
 
@@ -294,6 +297,21 @@
                     </button>
                   </div>
                 </div>
+
+                <div id="finalTrayPreviewPanel" class="panel preview-panel floating-panel hidden" style="margin-top: 24px; padding: 16px;">
+                  <div class="panel-heading" style="margin-bottom: 12px;">
+                    <div>
+                      <p class="eyebrow small">Kit Preview</p>
+                      <h4 style="margin: 0; font-family: var(--font-serif); font-size: 1.15rem;">Final Tray PDF Preview</h4>
+                    </div>
+                    <p id="finalTrayPdfMeta" class="panel-meta" style="margin: 0;">PDF Generated</p>
+                  </div>
+                  <div class="pdf-preview-shell">
+                    <div id="finalTrayVisualPagesPreview" class="pdf-visual-pages"></div>
+                    <iframe id="finalTrayPdfPreviewFrame" title="Final Tray PDF Preview"></iframe>
+                  </div>
+                </div>
+
                 <div id="serialFeedback" class="feedback"></div>
               </div>
             </section>
