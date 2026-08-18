@@ -192,29 +192,56 @@ function toggleControlsCollapse() {
 }
 
 function toggleFilterMenu(event) {
-  if (event) {
-    event.stopPropagation();
-  }
-  const menu = document.getElementById("controlsContent");
-  const btn = document.getElementById("filterToggleBtn");
-  if (!menu || !btn) {
-    return;
-  }
-
-  const willOpen = menu.classList.contains("hidden");
-  menu.classList.toggle("hidden");
-
-  if (willOpen) {
-    positionFilterMenu(menu, btn);
-  }
+  if (event) event.stopPropagation();
+  const overlay = document.getElementById("filterGalleryOverlay");
+  const backdrop = document.getElementById("filterGalleryBackdrop");
+  if (!overlay || !backdrop) return;
+  overlay.classList.remove("hidden");
+  backdrop.classList.remove("hidden");
+  // force reflow
+  void overlay.offsetWidth;
+  overlay.classList.add("open");
+  backdrop.classList.add("open");
+  renderFilterMenu();
 }
 
 function closeFilterMenu() {
-  const menu = document.getElementById("controlsContent");
-  if (menu) {
-    menu.classList.add("hidden");
-  }
+  const overlay = document.getElementById("filterGalleryOverlay");
+  const backdrop = document.getElementById("filterGalleryBackdrop");
+  if (!overlay || !backdrop) return;
+  overlay.classList.remove("open");
+  backdrop.classList.remove("open");
+  setTimeout(() => {
+    overlay.classList.add("hidden");
+    backdrop.classList.add("hidden");
+  }, 300);
 }
+
+window.onFilterGalleryScroll = function() {
+  const container = document.getElementById("filterSwipeContainer");
+  const tabBrand = document.getElementById("filterTabBrand");
+  const tabType = document.getElementById("filterTabType");
+  if (!container || !tabBrand || !tabType) return;
+  
+  const scrollRatio = container.scrollLeft / container.clientWidth;
+  if (scrollRatio > 0.5) {
+    tabBrand.classList.remove("active");
+    tabType.classList.add("active");
+  } else {
+    tabBrand.classList.add("active");
+    tabType.classList.remove("active");
+  }
+};
+
+window.scrollToFilterPage = function(page) {
+  const container = document.getElementById("filterSwipeContainer");
+  if (!container) return;
+  if (page === 'type') {
+    container.scrollTo({ left: container.clientWidth, behavior: 'smooth' });
+  } else {
+    container.scrollTo({ left: 0, behavior: 'smooth' });
+  }
+};
 
 window.closeFilterMenu = closeFilterMenu;
 
@@ -279,11 +306,50 @@ document.addEventListener("click", (event) => {
 
 window.toggleControlsCollapse = toggleControlsCollapse;
 
-function updateFilterDropdowns(changedSource = "") {
-  const filterTypeNode = document.getElementById("filterType");
-  const filterBrandNode = document.getElementById("filterBrand");
-  const filterTypeOptionsNode = document.getElementById("filterTypeOptions");
-  const filterBrandOptionsNode = document.getElementById("filterBrandOptions");
+function renderActiveFilterChips() {
+  const container = document.getElementById("activeFiltersContainer");
+  if (!container) return;
+  
+  const currentType = getActiveFilterSelections("type");
+  const currentBrand = getActiveFilterSelections("brand");
+  
+  if (currentType.length === 0 && currentBrand.length === 0) {
+    container.classList.add("hidden");
+    container.innerHTML = "";
+    return;
+  }
+  
+  container.classList.remove("hidden");
+  
+  let html = "";
+  currentBrand.forEach(b => {
+    html += `
+      <div class="filter-chip">
+        ${b}
+        <div class="filter-chip-remove" onclick="toggleCatalogueFilter('brand', '${b.replace(/'/g, "\\'")}')">
+          <i class="fa-solid fa-xmark"></i>
+        </div>
+      </div>
+    `;
+  });
+  
+  currentType.forEach(t => {
+    html += `
+      <div class="filter-chip">
+        ${t}
+        <div class="filter-chip-remove" onclick="toggleCatalogueFilter('type', '${t.replace(/'/g, "\\'")}')">
+          <i class="fa-solid fa-xmark"></i>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+function renderFilterMenu() {
+  const filterTypePageNode = document.getElementById("filterTypePage");
+  const filterBrandPageNode = document.getElementById("filterBrandPage");
   const filterTypeTriggerText = document.getElementById("filterTypeTriggerText");
   const filterBrandTriggerText = document.getElementById("filterBrandTriggerText");
   const filterStatusNode = document.getElementById("filterStatus");
@@ -334,38 +400,69 @@ function updateFilterDropdowns(changedSource = "") {
   const allTypes = Array.from(new Set(data.map(i => String(i["Type"] || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
   const allBrands = Array.from(new Set(data.map(i => String(i["Brand Name"] || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
 
-  if (filterTypeOptionsNode) {
+  if (filterTypePageNode) {
     const totalMatchingType = data.filter(i => matches(i, true, false)).length;
     if (filterTypeTriggerText) {
       const typeSummary = currentType.length ? currentType.join(', ') : 'All types';
       filterTypeTriggerText.textContent = typeSummary;
     }
-    filterTypeOptionsNode.innerHTML = `
-      <button type="button" class="filter-option-pill ${currentType.length === 0 ? 'active' : ''}" onclick="toggleCatalogueFilter('type','')">All Types (${totalMatchingType})</button>
-      ${allTypes.map(t => {
-        const count = typeCounts.get(t) || 0;
-        const active = currentType.includes(t);
-        return `<button type="button" class="filter-option-pill ${active ? 'active' : ''}" onclick="toggleCatalogueFilter('type','${t.replace(/'/g, "\\'")}' )">${t} (${count})</button>`;
-      }).join('')}
+    let html = `
+      <div class="filter-item-row ${currentType.length === 0 ? 'selected' : ''}" onclick="toggleCatalogueFilter('type','')">
+        <div class="filter-item-info">
+          <span class="filter-item-name">All Types</span>
+          <span class="filter-item-count">${totalMatchingType} items</span>
+        </div>
+        <div class="circular-checkbox"></div>
+      </div>
     `;
+    html += allTypes.map(t => {
+      const count = typeCounts.get(t) || 0;
+      const active = currentType.includes(t);
+      return `
+        <div class="filter-item-row ${active ? 'selected' : ''}" onclick="toggleCatalogueFilter('type','${t.replace(/'/g, "\\'")}' )">
+          <div class="filter-item-info">
+            <span class="filter-item-name">${t}</span>
+            <span class="filter-item-count">${count} items</span>
+          </div>
+          <div class="circular-checkbox"></div>
+        </div>
+      `;
+    }).join('');
+    filterTypePageNode.innerHTML = html;
   }
 
-  if (filterBrandOptionsNode) {
+  if (filterBrandPageNode) {
     const totalMatchingBrand = data.filter(i => matches(i, false, true)).length;
     if (filterBrandTriggerText) {
       const brandSummary = currentBrand.length ? currentBrand.join(', ') : 'All brands';
       filterBrandTriggerText.textContent = brandSummary;
     }
-    filterBrandOptionsNode.innerHTML = `
-      <button type="button" class="filter-option-pill ${currentBrand.length === 0 ? 'active' : ''}" onclick="toggleCatalogueFilter('brand','')">All Brands (${totalMatchingBrand})</button>
-      ${allBrands.map(b => {
-        const count = brandCounts.get(b) || 0;
-        const active = currentBrand.includes(b);
-        return `<button type="button" class="filter-option-pill ${active ? 'active' : ''}" onclick="toggleCatalogueFilter('brand','${b.replace(/'/g, "\\'")}' )">${b} (${count})</button>`;
-      }).join('')}
+    let html = `
+      <div class="filter-item-row ${currentBrand.length === 0 ? 'selected' : ''}" onclick="toggleCatalogueFilter('brand','')">
+        <div class="filter-item-info">
+          <span class="filter-item-name">All Brands</span>
+          <span class="filter-item-count">${totalMatchingBrand} items</span>
+        </div>
+        <div class="circular-checkbox"></div>
+      </div>
     `;
+    html += allBrands.map(b => {
+      const count = brandCounts.get(b) || 0;
+      const active = currentBrand.includes(b);
+      return `
+        <div class="filter-item-row ${active ? 'selected' : ''}" onclick="toggleCatalogueFilter('brand','${b.replace(/'/g, "\\'")}' )">
+          <div class="filter-item-info">
+            <span class="filter-item-name">${b}</span>
+            <span class="filter-item-count">${count} items</span>
+          </div>
+          <div class="circular-checkbox"></div>
+        </div>
+      `;
+    }).join('');
+    filterBrandPageNode.innerHTML = html;
   }
 
+  renderActiveFilterChips();
   renderCategoryBar(typeCounts);
   renderCountSummary(brandCounts, typeCounts);
   updateFilterActiveBadge();
@@ -510,7 +607,7 @@ window.selectCategory = selectCategory;
 
 /* FILTER INITIALIZATION */
 function initFilter() {
-  updateFilterDropdowns();
+  renderFilterMenu();
 }
 
 function renderCountSummary(brandCounts, typeCounts) {
@@ -566,7 +663,7 @@ function onFilterChanged(source = "") {
   lastSearchQuery = document.getElementById("searchSerial") ? document.getElementById("searchSerial").value.trim().toUpperCase() : "";
   lastSortBy = document.getElementById("sortBy") ? document.getElementById("sortBy").value : "";
   gridCurrentPage = 1;
-  updateFilterDropdowns(source);
+  renderFilterMenu();
   render();
 }
 window.onFilterChanged = onFilterChanged;

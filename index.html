@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="assets/css/vrai-homepage.css">
   <link rel="stylesheet" href="assets/css/project-workspace.css">
   <link rel="stylesheet" href="assets/css/sidebar.css">
+  <link rel="stylesheet" href="assets/css/filter-gallery.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -102,53 +103,6 @@
                         Filters
                         <span id="filterActiveBadge" class="filter-active-badge hidden">0</span>
                       </button>
-
-                      <div id="controlsContent" class="controls-content filter-dropdown hidden">
-                        <button type="button" id="breakdownToggleBtn"
-                          class="btn btn-secondary btn-sm breakdown-toggle-btn" onclick="toggleBreakdown(event)">View Breakdown</button>
-                        <div id="countSummary" class="count-summary hidden"></div>
-                        <div class="controls">
-                          <input id="searchSerial" type="text" placeholder="Search serials..." oninput="onSearchInput()"
-                            class="search-input">
-                          <div class="filter-section">
-                            <div class="filter-section-label">Type</div>
-                            <button type="button" class="filter-menu-trigger" onclick="toggleFilterChoice('type')">
-                              <span class="filter-trigger-label">Type</span>
-                              <span id="filterTypeTriggerText" class="filter-trigger-value">All Types</span>
-                            </button>
-                            <div id="filterTypeOptions" class="filter-option-list filter-choice-panel hidden"></div>
-                          </div>
-                          <div class="filter-section">
-                            <div class="filter-section-label">Brand</div>
-                            <button type="button" class="filter-menu-trigger" onclick="toggleFilterChoice('brand')">
-                              <span class="filter-trigger-label">Brand</span>
-                              <span id="filterBrandTriggerText" class="filter-trigger-value">All Brands</span>
-                            </button>
-                            <div id="filterBrandOptions" class="filter-option-list filter-choice-panel hidden"></div>
-                          </div>
-                          <select id="sortBy" onchange="onFilterChanged()" aria-label="Sort items">
-                            <option value="">Sort by</option>
-                            <option value="serial">Serial No.</option>
-                            <option value="brand">Brand</option>
-                            <option value="type">Type</option>
-                          </select>
-                          <select id="filterStatus" onchange="onFilterChanged()" aria-label="Filter by status">
-                            <option value="">All</option>
-                            <option value="unmarked">Available</option>
-                            <option value="marked">Unavailable</option>
-                          </select>
-                          <label class="hide-marked-toggle">
-                            <input id="hideMarked" type="checkbox" checked onchange="onFilterChanged()">
-                            Hide Unavailable
-                          </label>
-                          <div class="filter-actions-row">
-                            <button type="button" id="clearFiltersBtn" class="btn btn-secondary btn-sm"
-                              onclick="clearCatalogueFilters()">Clear Filters</button>
-                            <button id="selectAllFilteredBtn" class="btn btn-secondary"
-                              onclick="selectAllByBrand()">Select Visible</button>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -425,6 +379,40 @@
   <script src="js/modules/catalog-data.js" defer></script>
   <script src="js/modules/mini-website.js" defer></script>
   <script type="module" src="js/app.js" defer></script>
+  <!-- Filter Gallery Overlay -->
+  <div id="filterGalleryBackdrop" class="filter-gallery-backdrop" onclick="closeFilterMenu()"></div>
+  <div id="filterGalleryOverlay" class="filter-gallery-overlay hidden">
+    <div class="filter-gallery-header">
+      <button class="filter-gallery-close" onclick="closeFilterMenu()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <h2>Filters</h2>
+      <button class="filter-gallery-clear" onclick="clearCatalogueFilters()">Clear All</button>
+    </div>
+
+    <div id="activeFiltersContainer" class="active-filters-container hidden"></div>
+
+    <div class="filter-gallery-tabs">
+      <button id="filterTabBrand" class="filter-tab active" onclick="scrollToFilterPage('brand')">Brands</button>
+      <button id="filterTabType" class="filter-tab" onclick="scrollToFilterPage('type')">Types</button>
+    </div>
+
+    <div id="filterSwipeContainer" class="filter-swipe-container" onscroll="onFilterGalleryScroll()">
+      <!-- Brand Page -->
+      <div id="filterBrandPage" class="filter-page">
+        <!-- Populated dynamically by renderFilterMenu -->
+      </div>
+
+      <!-- Type Page -->
+      <div id="filterTypePage" class="filter-page">
+        <!-- Populated dynamically by renderFilterMenu -->
+      </div>
+    </div>
+
+    <div class="filter-gallery-footer">
+      <button class="btn btn-primary" onclick="closeFilterMenu()">Show Results</button>
+    </div>
+  </div>
 </body>
 
 </html>
