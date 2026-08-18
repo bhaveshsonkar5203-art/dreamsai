@@ -90,7 +90,13 @@
                     <p class="eyebrow small">Filters</p>
                     <h3 id="gridSummaryHeading">0 items</h3>
                   </div>
-                  <div class="heading-actions">
+                  <div class="heading-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button class="btn btn-secondary btn-sm" onclick="selectAllFiltered()" title="Select all items currently visible under these filters">
+                      <i class="fa-solid fa-check-double"></i> Select All
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="deselectAllFiltered()" title="Deselect all items currently visible under these filters">
+                      <i class="fa-solid fa-eraser"></i> Deselect All
+                    </button>
                     <div class="filter-menu-wrap">
                       <button id="filterToggleBtn" class="btn btn-primary filter-toggle-btn"
                         onclick="toggleFilterMenu(event)">

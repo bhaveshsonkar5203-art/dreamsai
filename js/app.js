@@ -667,6 +667,44 @@ function onFilterChanged(source = "") {
   render();
 }
 window.onFilterChanged = onFilterChanged;
+
+window.selectAllFiltered = function() {
+  const filtered = getFilteredItems();
+  let addedCount = 0;
+  filtered.forEach(item => {
+    const id = item["Serial No"];
+    if (!selected.includes(id)) {
+      selected.push(id);
+      addedCount++;
+    }
+  });
+  if (addedCount > 0) {
+    updateTabBadge();
+    render();
+    renderSelected();
+    alert(`Added ${addedCount} items to your selection.`);
+  } else {
+    alert("All matching items are already selected.");
+  }
+};
+
+window.deselectAllFiltered = function() {
+  const filtered = getFilteredItems();
+  const filteredIds = new Set(filtered.map(item => item["Serial No"]));
+  const initialLength = selected.length;
+  
+  selected = selected.filter(id => !filteredIds.has(id));
+  const removedCount = initialLength - selected.length;
+  
+  if (removedCount > 0) {
+    updateTabBadge();
+    render();
+    renderSelected();
+    alert(`Removed ${removedCount} items from your selection.`);
+  } else {
+    alert("None of the matching items are currently selected.");
+  }
+};
 let searchDebounceTimer = null;
 function onSearchInput() {
   clearTimeout(searchDebounceTimer);
