@@ -14,7 +14,8 @@ export let selectedPageSize = 24;
 export let lastSearchQuery = "";
 export let lastSortBy = "";
 export let controlsCollapsed = false;
-export let finalTraySerials = [];
+export let finalTraySerials = []; // legacy
+export let finalTrayItems = [];
 export let finalTraySuggestionIndex = -1;
 
 export function setData(newData) {
@@ -79,6 +80,10 @@ export function setControlsCollapsed(value) {
 
 export function setFinalTraySerials(values) {
   finalTraySerials = values;
+}
+
+export function setFinalTrayItems(items) {
+  finalTrayItems = items;
 }
 
 export function setFinalTraySuggestionIndex(index) {

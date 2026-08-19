@@ -33,6 +33,7 @@ let lastSearchQuery = "";
 let lastSortBy = "";
 let controlsCollapsed = false;
 let finalTraySerials = [];
+let finalTrayItems = [];
 let finalTraySuggestionIndex = -1;
 let dataBySerial = new Map();
 let returnProductsState = [];
@@ -692,9 +693,9 @@ window.selectAllFiltered = function() {
     updateTabBadge();
     render();
     renderSelected();
-    alert(`Added ${addedCount} items to your selection.`);
+    showToast(`Added ${addedCount} items to your selection.`);
   } else {
-    alert("All matching items are already selected.");
+    showToast("All matching items are already selected.");
   }
 };
 
@@ -710,9 +711,9 @@ window.deselectAllFiltered = function() {
     updateTabBadge();
     render();
     renderSelected();
-    alert(`Removed ${removedCount} items from your selection.`);
+    showToast(`Removed ${removedCount} items from your selection.`);
   } else {
-    alert("None of the matching items are currently selected.");
+    showToast("None of the matching items are currently selected.");
   }
 };
 let searchDebounceTimer = null;
@@ -792,7 +793,7 @@ function renderGridPager(totalItems) {
 function toggle(id) {
   const item = data.find(d => d["Serial No"] === id);
   if (item && window.normalizeStatus(item["Status"]) === "marked") {
-    alert("This item is unavailable and cannot be selected.");
+    showToast("This item is unavailable and cannot be selected.");
     return;
   }
 
@@ -1016,12 +1017,12 @@ window.changeSelectedPageSize = changeSelectedPageSize;
 /* GENERATE SELECTION PDF */
 async function generateSelectionPdf() {
   if (selected.length === 0) {
-    alert("Please select items to prepare the PDF.");
+    showToast("Please select items to prepare the PDF.");
     return;
   }
 
   if (selected.length > 300) {
-    alert("Large export detected. Compact PDF mode will be used to keep generation stable for high item counts.");
+    showToast("Large export detected. Compact PDF mode will be used to keep generation stable for high item counts.");
   }
 
   showSpinner(true);
@@ -1064,14 +1065,14 @@ async function generateSelectionPdf() {
 
     const pageNote = collageBlobs.length > 1 ? `${collageBlobs.length} pages prepared. ` : "";
     if (allMissingImages.length) {
-      alert(`${pageNote}PDF ready.\n\n⚠️ ${allMissingImages.length} item${allMissingImages.length === 1 ? "" : "s"} had no loadable image and show a placeholder:\n${allMissingImages.join(", ")}`);
+      showToast(`${pageNote}PDF ready.\n\n⚠️ ${allMissingImages.length} item${allMissingImages.length === 1 ? "" : "s"} had no loadable image and show a placeholder:\n${allMissingImages.join(", ")}`);
     } else if (collageBlobs.length > 1) {
-      alert(`${pageNote}Preview updated.`);
+      showToast(`${pageNote}Preview updated.`);
     }
 
   } catch (err) {
     console.error(err);
-    alert("Error preparing the PDF. Please try different images.");
+    showToast("Error preparing the PDF. Please try different images.");
   } finally {
     showSpinner(false);
   }
@@ -1111,7 +1112,7 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
 
   let itemsToExport = resolveItemsBySerials(serials);
   if (!itemsToExport.length && (!finalTraySerials || !finalTraySerials.length)) {
-    alert("Please select items from the inventory or add serials to the Client Kit first.");
+    showToast("Please select items from the inventory or add serials to the Client Kit first.");
     return;
   }
 
@@ -1124,7 +1125,7 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
   }
 
   if (serials.length > 300) {
-    alert("Large export detected. Compact PDF mode will be used to keep generation stable.");
+    showToast("Large export detected. Compact PDF mode will be used to keep generation stable.");
   }
 
   showSpinner(true);
@@ -1133,7 +1134,7 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
   try {
     const exportItems = resolveItemsBySerials(serials);
     if (!exportItems.length) {
-      alert("No matching items found in inventory for the Client Kit serials.");
+      showToast("No matching items found in inventory for the Client Kit serials.");
       setSerialFeedback("No matching items found in inventory.", true);
       return;
     }
@@ -1246,7 +1247,7 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
 
   } catch (err) {
     console.error("Error preparing Client Kit PDF:", err);
-    alert("Error preparing Client Kit PDF. Please try again.");
+    showToast("Error preparing Client Kit PDF. Please try again.");
     setSerialFeedback("Error preparing Client Kit PDF.", true);
   } finally {
     showSpinner(false);
@@ -1390,8 +1391,22 @@ function addSerialsToFinalTray(values) {
     }
     existing.add(normalized);
     finalTraySerials.push(normalized);
+    
+    // Add rich object representation
+    finalTrayItems.push({
+      serial: normalized,
+      quantity: 1,
+      customPrice: null,
+      notes: ""
+    });
+    
     addedCount += 1;
   });
+
+  // Sync with AppStore
+  if (typeof store !== 'undefined' && store.setFinalTrayItems) {
+    store.setFinalTrayItems(finalTrayItems);
+  }
 
   if (addedCount > 0 && typeof buildReturnProductsStateFromFinalTray === 'function') {
     buildReturnProductsStateFromFinalTray();
@@ -1441,6 +1456,10 @@ function removeSerialFromFinalTray(serial) {
     return;
   }
   finalTraySerials = finalTraySerials.filter((s) => s !== normalized);
+  finalTrayItems = finalTrayItems.filter((item) => item.serial !== normalized);
+  if (typeof store !== 'undefined' && store.setFinalTrayItems) {
+    store.setFinalTrayItems(finalTrayItems);
+  }
   if (Array.isArray(returnProductsState)) {
     returnProductsState = returnProductsState.filter(item => item.serial !== normalized);
     if (typeof persistReturnProductsState === 'function') {
@@ -1719,7 +1738,7 @@ window.handleGenerateUnavailablePdfClick = async function() {
 async function generateUnavailableProductsPdf(activeProject, unavailableItems) {
   const jsPdfApi = window.jspdf && window.jspdf.jsPDF;
   if (!jsPdfApi) {
-    alert("PDF generator library is loading. Please try again.");
+    showToast("PDF generator library is loading. Please try again.");
     return null;
   }
 
@@ -1836,9 +1855,9 @@ function renderFinalTraySerialManager() {
     return;
   }
 
-  metaNode.textContent = `${finalTraySerials.length} code${finalTraySerials.length === 1 ? "" : "s"} in Client Kit list`;
+  metaNode.textContent = `${finalTrayItems.length} code${finalTrayItems.length === 1 ? "" : "s"} in Client Kit list`;
 
-  if (!finalTraySerials || finalTraySerials.length === 0) {
+  if (!finalTrayItems || finalTrayItems.length === 0) {
     listNode.innerHTML = '<span class="panel-meta">0 items</span>';
   } else {
     const resolvedItemsMap = new Map();
@@ -1855,7 +1874,8 @@ function renderFinalTraySerialManager() {
       });
     }
 
-    listNode.innerHTML = finalTraySerials.map((serial) => {
+    listNode.innerHTML = finalTrayItems.map((ftItem) => {
+      const serial = ftItem.serial;
       const cleanSerial = sanitizeSerialToken(serial);
       const matchedItem = resolvedItemsMap.get(cleanSerial);
 
@@ -1877,19 +1897,36 @@ function renderFinalTraySerialManager() {
           ? `<span class="ft-card-badge ft-badge-unavailable" title="${escapeHtml(avail.reason)}"><i class="fa-solid fa-triangle-exclamation"></i> Unavailable</span>`
           : `<span class="ft-card-badge ft-badge-available"><i class="fa-solid fa-circle-check"></i> Available</span>`;
 
+        const quantityVal = ftItem.quantity || 1;
+        const notesVal = ftItem.notes || "";
+        const priceOverrideVal = ftItem.customPrice || "";
+
         return `
           <div class="final-tray-card ${isUnavailable ? 'ft-card-disabled' : ''}">
             <button type="button" class="final-tray-card-remove" data-serial="${escapeHtml(serial)}" title="Remove ${escapeHtml(serial)}">✕</button>
             <div class="ft-card-media">
               <img src="${primaryUrl}" alt="${escapeHtml(title)}" loading="lazy" ${onErrorAttr}>
             </div>
-            <div class="ft-card-info">
+            <div class="ft-card-info" style="flex: 1;">
               <div class="ft-card-header">
                 <span class="ft-card-category">${escapeHtml(brand)}</span>
                 ${statusTag}
               </div>
               <h4 class="ft-card-title">${escapeHtml(title)}</h4>
               ${footerHtml}
+              
+              <div class="ft-card-custom-inputs" style="margin-top: 12px; display: grid; grid-template-columns: 80px 1fr; gap: 8px;">
+                <label style="font-size: 0.75rem; color: #57534e;">Quantity</label>
+                <label style="font-size: 0.75rem; color: #57534e;">Stylist Notes</label>
+                
+                <input type="number" min="1" value="${quantityVal}" 
+                       onchange="updateFinalTrayItemField('${escapeHtml(serial)}', 'quantity', parseInt(this.value, 10))" 
+                       style="padding: 4px; border: 1px solid #d6d3d1; border-radius: 4px; font-size: 0.85rem;" />
+                       
+                <input type="text" value="${escapeHtml(notesVal)}" placeholder="Add custom notes..." 
+                       onchange="updateFinalTrayItemField('${escapeHtml(serial)}', 'notes', this.value)" 
+                       style="padding: 4px; border: 1px solid #d6d3d1; border-radius: 4px; font-size: 0.85rem;" />
+              </div>
             </div>
           </div>
         `;
@@ -1898,6 +1935,9 @@ function renderFinalTraySerialManager() {
         const statusTag = isUnavailable
           ? `<span class="ft-card-badge ft-badge-unavailable" title="${escapeHtml(avail.reason)}"><i class="fa-solid fa-triangle-exclamation"></i> Unavailable</span>`
           : `<span class="ft-card-badge ft-badge-unknown"><i class="fa-solid fa-code"></i> Code Item</span>`;
+          
+        const quantityVal = ftItem.quantity || 1;
+        const notesVal = ftItem.notes || "";
 
         return `
           <div class="final-tray-card ft-card-custom ${isUnavailable ? 'ft-card-disabled' : ''}">
@@ -1905,12 +1945,25 @@ function renderFinalTraySerialManager() {
             <div class="ft-card-media ft-custom-media">
               <i class="fa-solid fa-box-archive"></i>
             </div>
-            <div class="ft-card-info">
+            <div class="ft-card-info" style="flex: 1;">
               <div class="ft-card-header">
                 <span class="ft-card-category">Custom Code</span>
                 ${statusTag}
               </div>
               <h4 class="ft-card-title">${escapeHtml(serial)}</h4>
+              
+              <div class="ft-card-custom-inputs" style="margin-top: 12px; display: grid; grid-template-columns: 80px 1fr; gap: 8px;">
+                <label style="font-size: 0.75rem; color: #57534e;">Quantity</label>
+                <label style="font-size: 0.75rem; color: #57534e;">Stylist Notes</label>
+                
+                <input type="number" min="1" value="${quantityVal}" 
+                       onchange="updateFinalTrayItemField('${escapeHtml(serial)}', 'quantity', parseInt(this.value, 10))" 
+                       style="padding: 4px; border: 1px solid #d6d3d1; border-radius: 4px; font-size: 0.85rem;" />
+                       
+                <input type="text" value="${escapeHtml(notesVal)}" placeholder="Add custom notes..." 
+                       onchange="updateFinalTrayItemField('${escapeHtml(serial)}', 'notes', this.value)" 
+                       style="padding: 4px; border: 1px solid #d6d3d1; border-radius: 4px; font-size: 0.85rem;" />
+              </div>
             </div>
           </div>
         `;
@@ -1999,7 +2052,14 @@ function resolveItemsBySerials(serials) {
       const serialNo = String(match["Serial No"] || "");
       if (!seen.has(serialNo)) {
         seen.add(serialNo);
-        items.push(match);
+        const trayItem = typeof finalTrayItems !== 'undefined' ? finalTrayItems.find(i => sanitizeSerialToken(i.serial) === normalized) : null;
+        const enrichedMatch = { ...match };
+        if (trayItem) {
+          enrichedMatch._quantity = trayItem.quantity || 1;
+          enrichedMatch._customPrice = trayItem.customPrice || null;
+          enrichedMatch._notes = trayItem.notes || "";
+        }
+        items.push(enrichedMatch);
       }
     }
   });
@@ -2015,7 +2075,7 @@ function selectAllByBrand() {
   const availableItems = filtered.filter(d => window.normalizeStatus(d["Status"]) !== "unavailable");
 
   if (availableItems.length === 0) {
-    alert("No available items match these filters.");
+    showToast("No available items match these filters.");
     return;
   }
 
@@ -2037,9 +2097,9 @@ function selectAllByBrand() {
   const desc = labelParts.length > 0 ? labelParts.join(" ") : "matching";
 
   if (addedCount === 0) {
-    alert(`All ${desc} items are already in your selection.`);
+    showToast(`All ${desc} items are already in your selection.`);
   } else {
-    alert(`Added ${addedCount} ${desc} item${addedCount === 1 ? "" : "s"} to selection.`);
+    showToast(`Added ${addedCount} ${desc} item${addedCount === 1 ? "" : "s"} to selection.`);
   }
 }
 
@@ -2051,7 +2111,7 @@ function removeFromSelected(id) {
 
 function clearAllSelected() {
   if (selected.length === 0) {
-    alert("No items selected.");
+    showToast("No items selected.");
     return;
   }
   if (confirm(`Clear all ${selected.length} selected items?`)) {
@@ -2068,7 +2128,7 @@ function removeMarkedFromSelected() {
   });
 
   if (markedInSelection.length === 0) {
-    alert("No unavailable items in selection.");
+    showToast("No unavailable items in selection.");
     return;
   }
 
@@ -2086,6 +2146,48 @@ window.removeFromSelected = removeFromSelected;
 window.clearAllSelected = clearAllSelected;
 window.removeMarkedFromSelected = removeMarkedFromSelected;
 window.addBulkSerialsToFinalTray = addBulkSerialsToFinalTray;
+
+function showToast(message, isError = false) {
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.style.cssText = "position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;";
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement("div");
+  toast.className = "toast-message";
+  toast.style.cssText = \`
+    min-width: 250px;
+    background: \${isError ? '#ef4444' : '#10b981'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  \`;
+  toast.innerText = message;
+
+  container.appendChild(toast);
+
+  // Trigger animation
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  });
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(20px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+window.showToast = showToast;
 
 function setSerialFeedback(message, isError) {
   const node = document.getElementById("serialFeedback");
@@ -2113,7 +2215,7 @@ function isMobilePreviewDevice() {
 
 function openPdfPreviewInNewTab() {
   if (!lastPdfBlob) {
-    alert("Please generate a PDF first.");
+    showToast("Please generate a PDF first.");
     return;
   }
 
@@ -2343,7 +2445,7 @@ function buildPdfFileName() {
 
 async function downloadCurrentPdf() {
   if (!collageBlobs.length) {
-    alert("Generate a PDF first.");
+    showToast("Generate a PDF first.");
     return;
   }
 
@@ -2352,13 +2454,13 @@ async function downloadCurrentPdf() {
     triggerBlobDownload(pdfBlob, buildPdfFileName());
   } catch (err) {
     console.error(err);
-    alert("Unable to build PDF. Please try again.");
+    showToast("Unable to build PDF. Please try again.");
   }
 }
 
 function downloadCoverPdf() {
   if (!lastPdfBlob && !collageBlobs.length) {
-    alert("Generate a PDF first.");
+    showToast("Generate a PDF first.");
     return;
   }
 
@@ -2467,14 +2569,14 @@ async function exportAndSharePdfToWhatsApp() {
           await window.generateFinalTrayFromSerials();
         }
       } else {
-        alert("Please select items from the inventory grid first to export a PDF.");
+        showToast("Please select items from the inventory grid first to export a PDF.");
         return;
       }
     }
     await shareCurrentPdf();
   } catch (err) {
     console.error("Error in exportAndSharePdfToWhatsApp:", err);
-    alert("Unable to export PDF: " + (err.message || err));
+    showToast("Unable to export PDF: " + (err.message || err));
   }
 }
 
@@ -2537,9 +2639,9 @@ async function shareCurrentPdf(isBypassed = false) {
   if (!pdfBlob) {
     if (pendingWin) pendingWin.close();
     if (Array.isArray(selected) && selected.length > 0) {
-      alert("The PDF is still being prepared. Please wait a moment and try again.");
+      showToast("The PDF is still being prepared. Please wait a moment and try again.");
     } else {
-      alert("Please select items first, then tap Share PDF via WhatsApp again.");
+      showToast("Please select items first, then tap Share PDF via WhatsApp again.");
     }
     return;
   }
@@ -2944,7 +3046,13 @@ async function buildCollageBlob(items) {
   const images = await Promise.all(
     items.map(async item => {
       try {
-        return { id: item["Serial No"], image: await loadImageWithFallback(item) };
+        return { 
+          id: item["Serial No"], 
+          image: await loadImageWithFallback(item),
+          qty: item._quantity,
+          price: item._customPrice,
+          notes: item._notes
+        };
       } catch (err) {
         missingInCollage.push(item["Serial No"]);
         return { id: item["Serial No"], image: null };
@@ -2999,10 +3107,23 @@ async function buildCollageBlob(items) {
 
     if (entry) {
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 22px 'Arial'";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(String(entry.id || ""), x + cellW / 2, y + imgH + LABEL_H / 2);
+
+      let text = String(entry.id || "");
+      const details = [];
+      if (entry.qty && entry.qty > 1) details.push(`| Qty: ${entry.qty}`);
+      if (entry.price) details.push(`| ${entry.price}`);
+      if (entry.notes) details.push(`| ${entry.notes}`);
+      
+      if (details.length > 0) {
+        ctx.font = "bold 16px 'Arial'"; // slightly smaller font for longer text
+        text += `  ${details.join(' ')}`;
+      } else {
+        ctx.font = "bold 22px 'Arial'";
+      }
+
+      ctx.fillText(text, x + cellW / 2, y + imgH + LABEL_H / 2);
     }
 
     /* — Cell border — */
@@ -3160,7 +3281,7 @@ function renderFloatingSelectionBar() {
 
 async function shareSelectionToWhatsApp() {
   if (selected.length === 0) {
-    alert("Please select at least 1 item to share.");
+    showToast("Please select at least 1 item to share.");
     return;
   }
 
@@ -3220,7 +3341,7 @@ async function shareSelectionToWhatsApp() {
 
   const waUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
   openWhatsAppComposer(waUrl);
-  alert(`✅ PDF downloaded as "${safeFilename}".\n\nWhatsApp Web has been opened. Please click the 📎 (Paperclip / Attachment) icon in WhatsApp to attach the downloaded PDF file.`);
+  showToast(`✅ PDF downloaded as "${safeFilename}".\n\nWhatsApp Web has been opened. Please click the 📎 (Paperclip / Attachment) icon in WhatsApp to attach the downloaded PDF file.`);
 }
 
 function getReturnProductStatus(item) {
@@ -3554,7 +3675,7 @@ async function shareLookbookToWhatsApp() {
   }
 
   if (!currentSelected.length) {
-    alert("Select pieces from the catalogue first to create and share the Lookbook.");
+    showToast("Select pieces from the catalogue first to create and share the Lookbook.");
     return;
   }
 
@@ -3623,7 +3744,7 @@ function importApprovedProjectToFinalTray() {
   }
 
   if (!serialsToImport.length) {
-    alert("No lookbook items found to import. Select pieces or load an active project first.");
+    showToast("No lookbook items found to import. Select pieces or load an active project first.");
     return 0;
   }
 

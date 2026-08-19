@@ -865,7 +865,7 @@ export function submitNewProjectDialog(e, callback) {
   // Check if adding a brand new Stylist on the fly
   if (stylistId === "__NEW_STYLIST__") {
     if (!newStylistInput || !newStylistInput.value.trim()) {
-      alert("Please enter the name of the new Stylist.");
+      window.showToast("Please enter the name of the new Stylist.");
       return;
     }
     const newStylist = ProjectStore.saveStylist({

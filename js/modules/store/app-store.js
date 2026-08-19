@@ -9,8 +9,8 @@ class AppStore {
     this.state = {
       data: [],
       selected: [],
-      finalTraySerials: [],
-      returnProductsState: [],
+      finalTraySerials: [], // legacy support
+      finalTrayItems: [], // [{ serial, quantity, notes, priceOverride }]
       gridCurrentPage: 1,
       gridPageSize: 36,
       selectedCurrentPage: 1,
@@ -80,6 +80,27 @@ class AppStore {
   setFinalTraySerials(serials) {
     this.setState({ finalTraySerials: [...serials] });
   }
+
+  setFinalTrayItems(items) {
+    this.setState({ finalTrayItems: [...items] });
+  }
+
+  updateFinalTrayItem(serial, updates) {
+    const updatedItems = this.state.finalTrayItems.map(item => {
+      if (item.serial === serial) {
+        return { ...item, ...updates };
+      }
+      return item;
+    });
+    this.setState({ finalTrayItems: updatedItems });
+  }
+
+  addFinalTrayItems(newItems) {
+    const existing = new Set(this.state.finalTrayItems.map(i => i.serial));
+    const itemsToAdd = newItems.filter(i => !existing.has(i.serial));
+    this.setState({ finalTrayItems: [...this.state.finalTrayItems, ...itemsToAdd] });
+  }
+
 
   setData(dataItems) {
     this.setState({ data: [...dataItems] });

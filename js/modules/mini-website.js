@@ -653,7 +653,7 @@
       const selectedSerials = Array.from(checkboxes).map(cb => cb.value);
 
       if (selectedSerials.length === 0) {
-        alert("Please select at least one piece before submitting.");
+        window.showToast("Please select at least one piece before submitting.");
         return;
       }
 
@@ -689,12 +689,12 @@
 
         btn.innerText = "Selections Approved ✓";
         btn.style.background = "#22c55e";
-        alert("Thank you! Your approved pieces (" + selectedSerials.length + ") have been marked as selected and added directly to your Studio Final Tray.");
+        window.showToast("Thank you! Your approved pieces (" + selectedSerials.length + ") have been marked as selected and added directly to your Studio Final Tray.");
       } catch (err) {
         console.error(err);
         btn.innerText = "Approved ✓";
         btn.style.background = "#22c55e";
-        alert("Selection recorded! Approved pieces added to your Studio Final Tray.");
+        window.showToast("Selection recorded! Approved pieces added to your Studio Final Tray.");
       }
     }
   </script>
@@ -746,7 +746,7 @@
       const currentData = Array.isArray(window.data) ? window.data : [];
 
       if (!currentSelected || !currentSelected.length) {
-        alert("Select products from the catalogue first, then create the Client Lookbook.");
+        window.showToast("Select products from the catalogue first, then create the Client Lookbook.");
         return;
       }
 
@@ -822,10 +822,10 @@
         console.warn("[Lookbook API] Sync notice:", apiErr);
       }
 
-      alert(`Client Lookbook generated for ${resolvedMeta.name || "Valued Client"} with ${selectedSerials.length} piece${selectedSerials.length === 1 ? "" : "s"}. Synced to backend & preview loaded!`);
+      window.showToast(`Client Lookbook generated for ${resolvedMeta.name || "Valued Client"} with ${selectedSerials.length} piece${selectedSerials.length === 1 ? "" : "s"}. Synced to backend & preview loaded!`);
     } catch (err) {
       console.error("Error creating Client Lookbook:", err);
-      alert("Unable to create Client Lookbook. Please try again.");
+      window.showToast("Unable to create Client Lookbook. Please try again.");
     } finally {
       if (typeof showSpinner === 'function') showSpinner(false);
     }
