@@ -123,12 +123,44 @@ async function loadData() {
   }
 
   try {
-    const res = await fetch(`${API_URL}?t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow", credentials: "omit" });
-    const json = await res.json();
-    data = Array.isArray(json) ? json : (json.data || []);
+    const res = await fetch(`${API_URL}&t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
+    const text = await res.text();
+    
+    // Parse CSV
+    const splitCSV = (str) => {
+      const result = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (char === '"') inQuotes = !inQuotes;
+        else if (char === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
+        else cur += char;
+      }
+      result.push(cur.trim());
+      return result;
+    };
+
+    const lines = text.split(/\r?\n/);
+    const headers = splitCSV(lines[0]);
+    const parsedData = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const currentline = splitCSV(lines[i]);
+      const obj = {};
+      for (let j = 0; j < headers.length; j++) {
+        let val = currentline[j] || '';
+        if (val.startsWith('"') && val.endsWith('"')) val = val.substring(1, val.length - 1);
+        obj[headers[j]] = val;
+      }
+      parsedData.push(obj);
+    }
+    
+    data = parsedData.length > 0 ? parsedData : [];
   } catch (err) {
-    console.warn("Could not fetch remote catalog data, using fallback archive", err);
-    alert("Fetch error: " + err.message + "\n\nWarning: Could not fetch latest data from Google Apps Script. Falling back to local archive data. Please ensure your Google Apps Script is deployed as a NEW VERSION with 'Who has access: Anyone' and 'Execute as: Me'.");
+    console.warn("Could not fetch remote catalog CSV data, using fallback archive", err);
+    alert("Fetch error: " + err.message + "\n\nWarning: Could not fetch latest data from Google Sheets. Falling back to local archive data.");
   }
 
   if (!Array.isArray(data) || data.length === 0) {
