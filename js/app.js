@@ -3,6 +3,7 @@ import { initProjectUI, renderProjectBar } from './modules/project-ui.js';
 import './pdf/pdf.js';
 import './modules/catalog-data.js';
 import './modules/mini-website.js';
+import { formatDateDisplay } from './utils/helpers.js';
 
 let data = [];
 let selected = [];

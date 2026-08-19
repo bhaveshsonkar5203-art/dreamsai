@@ -6,6 +6,7 @@
  */
 
 import * as ProjectStore from './project-store.js';
+import { formatDateDisplay } from '../utils/helpers.js';
 
 let homepageProjectSwitchCallback = null;
 let homepageProjectFilterRenderTimer = null;
@@ -97,16 +98,7 @@ function addDaysToDateString(dateStr, days = 15) {
   return `${year}-${month}-${day}`;
 }
 
-function formatDateDisplay(dateValue) {
-  if (!dateValue) return '—';
-  const target = new Date(dateValue);
-  if (Number.isNaN(target.getTime())) return dateValue;
-  const day = target.getDate();
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = monthNames[target.getMonth()];
-  const year = target.getFullYear();
-  return `${day} ${month} ${year}`;
-}
+
 
 function getFollowUpStatus(dateValue) {
   if (!dateValue) return 'none';
