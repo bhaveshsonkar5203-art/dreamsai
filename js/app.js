@@ -1,5 +1,8 @@
 import * as ProjectStore from './modules/project-store.js';
 import { initProjectUI, renderProjectBar } from './modules/project-ui.js';
+import './pdf/pdf.js';
+import './modules/catalog-data.js';
+import './modules/mini-website.js';
 
 let data = [];
 let selected = [];
@@ -131,10 +134,10 @@ async function loadData() {
     }
   }
 
-  rebuildDataIndex();
+  window.rebuildDataIndex();
   selected = selected.filter(id => {
     const item = dataBySerial.get(id);
-    return item && normalizeStatus(item["Status"]) !== "marked";
+    return item && window.normalizeStatus(item["Status"]) !== "marked";
   });
   initFilter();
   render();
@@ -368,7 +371,7 @@ function renderFilterMenu() {
   const searchQuery = searchSerialNode ? searchSerialNode.value.trim().toUpperCase() : "";
 
   function matches(item, ignoreType = false, ignoreBrand = false) {
-    const status = normalizeStatus(item["Status"]);
+    const status = window.normalizeStatus(item["Status"]);
     if (hideMarked && status === "marked") return false;
     if (currentStatus === "marked" && status !== "marked") return false;
     if (currentStatus === "unmarked" && status === "marked") return false;
@@ -562,7 +565,7 @@ function updateSelectButtonLabel() {
   const filterBrand = getActiveFilterSelections('brand');
 
   const filtered = getFilteredItems();
-  const unmarkedCount = filtered.filter(d => normalizeStatus(d["Status"]) !== "marked").length;
+  const unmarkedCount = filtered.filter(d => window.normalizeStatus(d["Status"]) !== "marked").length;
 
   if (filterBrand.length && filterType.length) {
     btn.textContent = `Select ${filterBrand.join(', ')} + ${filterType.join(', ')} (${unmarkedCount})`;
@@ -646,7 +649,7 @@ function renderCountSummary(brandCounts, typeCounts) {
 
 function updateDashboardStats(visibleCount) {
   const total = data.length;
-  const marked = data.filter(item => normalizeStatus(item["Status"]) === "marked").length;
+  const marked = data.filter(item => window.normalizeStatus(item["Status"]) === "marked").length;
   const available = Math.max(0, total - marked);
 
   const totalNode = document.getElementById("statTotal");
@@ -737,7 +740,7 @@ function render() {
   const checkSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
   pageItems.forEach(item => {
-    const status = normalizeStatus(item["Status"]);
+    const status = window.normalizeStatus(item["Status"]);
     let isSelected = selected.includes(item["Serial No"]);
     const imageUrl = getPreviewImageUrl(item);
     const fallbackImageUrl = getPreviewFallbackImageUrl(item);
@@ -788,7 +791,7 @@ function renderGridPager(totalItems) {
 /* TOGGLE */
 function toggle(id) {
   const item = data.find(d => d["Serial No"] === id);
-  if (item && normalizeStatus(item["Status"]) === "marked") {
+  if (item && window.normalizeStatus(item["Status"]) === "marked") {
     alert("This item is unavailable and cannot be selected.");
     return;
   }
@@ -956,7 +959,7 @@ function getFilteredItems() {
   const hideMarked = hideMarkedNode ? hideMarkedNode.checked : false;
 
   let filtered = data.filter(d => {
-    const status = normalizeStatus(d["Status"]);
+    const status = window.normalizeStatus(d["Status"]);
     const itemType = String(d["Type"] || "").trim();
     const itemBrand = String(d["Brand Name"] || "").trim();
     const serial = String(d["Serial No"] || "").trim();
@@ -2009,7 +2012,7 @@ function selectAllByBrand() {
   const filterType = document.getElementById("filterType")?.value || "";
 
   let filtered = getFilteredItems();
-  const availableItems = filtered.filter(d => normalizeStatus(d["Status"]) !== "unavailable");
+  const availableItems = filtered.filter(d => window.normalizeStatus(d["Status"]) !== "unavailable");
 
   if (availableItems.length === 0) {
     alert("No available items match these filters.");
@@ -2061,7 +2064,7 @@ function clearAllSelected() {
 function removeMarkedFromSelected() {
   const markedInSelection = selected.filter(id => {
     const item = dataBySerial.get(id);
-    return item && normalizeStatus(item["Status"]) === "unavailable";
+    return item && window.normalizeStatus(item["Status"]) === "unavailable";
   });
 
   if (markedInSelection.length === 0) {
@@ -2072,7 +2075,7 @@ function removeMarkedFromSelected() {
   if (confirm(`Remove ${markedInSelection.length} unavailable item(s)?`)) {
     selected = selected.filter(id => {
       const item = dataBySerial.get(id);
-      return !(item && normalizeStatus(item["Status"]) === "unavailable");
+      return !(item && window.normalizeStatus(item["Status"]) === "unavailable");
     });
     updateTabBadge();
     renderSelected();
@@ -2395,7 +2398,7 @@ async function markCurrentFinalTrayAsDelivered(serials = []) {
 
     selected = selected.filter((id) => {
       const item = dataBySerial.get(id);
-      return item && normalizeStatus(item["Status"]) !== "unavailable";
+      return item && window.normalizeStatus(item["Status"]) !== "unavailable";
     });
 
     try {
@@ -3668,9 +3671,7 @@ window.downloadCurrentPdf = downloadCurrentPdf;
 window.downloadCoverPdf = downloadCoverPdf;
 window.shareCurrentPdf = shareCurrentPdf;
 window.exportAndSharePdfToWhatsApp = exportAndSharePdfToWhatsApp;
-window.openMiniWebsiteModal = openMiniWebsiteModal;
-window.createMiniWebsiteFromModal = createMiniWebsiteFromModal;
-window.closeMiniWebsiteModal = closeMiniWebsiteModal;
+
 window.addBulkSerialsToFinalTray = addBulkSerialsToFinalTray;
 window.generateFinalTrayFromSerials = generateFinalTrayFromSerials;
 window.shareFinalTrayPdf = shareFinalTrayPdf;
