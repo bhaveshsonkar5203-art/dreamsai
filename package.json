@@ -4,9 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node server.js",
-    "build": "echo 'No compilation step needed for static server'",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "start": "node server.js"
+  },
+  "devDependencies": {
+    "vite": "^5.4.21"
   },
   "dependencies": {
     "express": "^4.21.2",
