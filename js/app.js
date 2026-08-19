@@ -123,7 +123,7 @@ async function loadData() {
   }
 
   try {
-    const res = await fetch(`${API_URL}?t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
+    const res = await fetch(`${API_URL}?t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow", credentials: "omit" });
     const json = await res.json();
     data = Array.isArray(json) ? json : (json.data || []);
   } catch (err) {
