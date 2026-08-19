@@ -406,6 +406,8 @@ export function renderProjectBar() {
   `;
 }
 
+let _hasMigratedFollowUpDates = false;
+
 /**
  * Renders the homepage gateway as a polished campaign dashboard with project overviews, filters, and quick actions.
  */
@@ -427,15 +429,18 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
   const allProjects = ProjectStore.getProjects();
 
   // Auto-derive followUpDate for existing projects that have finalTraySharedDate but no followUpDate
-  allProjects.forEach(p => {
-    if (p.finalTraySharedDate && !p.followUpDate) {
-      const derived = addDaysToDateString(p.finalTraySharedDate, 15);
-      if (derived) {
-        p.followUpDate = derived;
-        ProjectStore.updateProject(p.id, { followUpDate: derived });
+  if (!_hasMigratedFollowUpDates) {
+    _hasMigratedFollowUpDates = true;
+    allProjects.forEach(p => {
+      if (p.finalTraySharedDate && !p.followUpDate) {
+        const derived = addDaysToDateString(p.finalTraySharedDate, 15);
+        if (derived) {
+          p.followUpDate = derived;
+          ProjectStore.updateProject(p.id, { followUpDate: derived });
+        }
       }
-    }
-  });
+    });
+  }
 
   const filteredProjects = getFilteredHomepageProjects(allProjects);
   const { project: activeProject } = ProjectStore.getActiveContext();

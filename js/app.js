@@ -147,9 +147,14 @@ async function getInventoryForExport() {
     return data;
   }
 
-  const res = await fetch(API_URL);
-  const json = await res.json();
-  return Array.isArray(json) ? json : (json.data || []);
+  try {
+    const res = await fetch(`${API_URL}?t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
+    const json = await res.json();
+    return Array.isArray(json) ? json : (json.data || []);
+  } catch (err) {
+    console.error("Failed to fetch inventory for export", err);
+    return [];
+  }
 }
 
 window.getInventoryForExport = getInventoryForExport;
@@ -671,14 +676,16 @@ window.onFilterChanged = onFilterChanged;
 window.selectAllFiltered = function() {
   const filtered = getFilteredItems();
   let addedCount = 0;
+  const newSelected = [...selected];
   filtered.forEach(item => {
     const id = item["Serial No"];
-    if (!selected.includes(id)) {
-      selected.push(id);
+    if (!newSelected.includes(id)) {
+      newSelected.push(id);
       addedCount++;
     }
   });
   if (addedCount > 0) {
+    selected = newSelected;
     updateTabBadge();
     render();
     renderSelected();
@@ -789,7 +796,7 @@ function toggle(id) {
   if (selected.includes(id)) {
     selected = selected.filter(x => x !== id);
   } else {
-    selected.push(id);
+    selected = [...selected, id];
   }
   syncCurrentSelectionToProject();
   updateTabBadge();
@@ -1397,12 +1404,14 @@ function importLookbookSelectionToFinalTray(serials) {
   const incoming = Array.isArray(serials) ? serials.filter(Boolean) : [];
   if (!incoming.length) return 0;
 
+  let newSelected = [...selected];
   incoming.forEach(id => {
     const normalized = sanitizeSerialToken(id);
-    if (normalized && !selected.includes(normalized)) {
-      selected.push(normalized);
+    if (normalized && !newSelected.includes(normalized)) {
+      newSelected.push(normalized);
     }
   });
+  selected = newSelected;
 
   const added = addSerialsToFinalTray(incoming);
 
@@ -2008,13 +2017,15 @@ function selectAllByBrand() {
   }
 
   let addedCount = 0;
+  const newSelected = [...selected];
   availableItems.forEach(item => {
     const id = item["Serial No"];
-    if (!selected.includes(id)) {
-      selected.push(id);
+    if (!newSelected.includes(id)) {
+      newSelected.push(id);
       addedCount++;
     }
   });
+  if (addedCount > 0) selected = newSelected;
 
   render();
   updateTabBadge();
