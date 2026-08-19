@@ -1034,7 +1034,9 @@ async function generateSelectionPdf() {
     try {
       generatedBlobs = await buildAllCollagesOnServer(selected);
     } catch (serverErr) {
-      console.warn("Server collage failed, using browser fallback", serverErr);
+      if (!serverErr.message.includes("Unknown action")) {
+        console.warn("Server collage failed, using browser fallback", serverErr);
+      }
       const chunks = chunkArray(selected, 6);
       generatedBlobs = [];
       for (const chunkIds of chunks) {
