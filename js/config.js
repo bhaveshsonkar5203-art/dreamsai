@@ -1,2 +1,2 @@
-export const API_URL = "https://docs.google.com/spreadsheets/d/1LyutujfUiynj4TXhpLFZDtA6FPUBwPUCEwYlPPRmlQc/export?format=csv&gid=736303850";
+export const API_URL = "https://script.google.com/macros/s/AKfycbyv3VAI-398eZMRHwYExW0O1lcape0NjAHjQjKp0exYqIAifT5UPydooxGE4HwnmRo/exec";
 export const APP_BUILD_TAG = "script-20260410-guard-logs-1";
