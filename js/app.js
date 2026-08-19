@@ -127,8 +127,17 @@ async function loadData() {
     const json = await res.json();
     data = Array.isArray(json) ? json : (json.data || []);
   } catch (err) {
-    console.warn("Could not fetch remote catalog data, using fallback archive", err);
-    alert("Fetch error: " + err.message + "\n\nWarning: Could not fetch latest data from Google Apps Script. Falling back to local archive data.");
+    console.warn("Direct fetch failed, attempting CORS proxy fallback...", err);
+    try {
+      const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(`${API_URL}?t=${new Date().getTime()}`);
+      const proxyRes = await fetch(proxyUrl, { cache: "no-store" });
+      const proxyJson = await proxyRes.json();
+      data = Array.isArray(proxyJson) ? proxyJson : (proxyJson.data || []);
+      console.log("Successfully loaded latest data via CORS proxy!");
+    } catch (proxyErr) {
+      console.error("Proxy fetch also failed. Using fallback archive.", proxyErr);
+      alert("Fetch error: " + err.message + "\n\nWarning: Could not fetch latest data from Google Apps Script. Falling back to local archive data.");
+    }
   }
 
   if (!Array.isArray(data) || data.length === 0) {
