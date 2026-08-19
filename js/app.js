@@ -128,7 +128,7 @@ async function loadData() {
     data = Array.isArray(json) ? json : (json.data || []);
   } catch (err) {
     console.warn("Could not fetch remote catalog data, using fallback archive", err);
-    alert("Warning: Could not fetch latest data from Google Apps Script. Falling back to local archive data. Please ensure your Google Apps Script is deployed with 'Who has access: Anyone' and 'Execute as: Me'.");
+    alert("Fetch error: " + err.message + "\n\nWarning: Could not fetch latest data from Google Apps Script. Falling back to local archive data. Please ensure your Google Apps Script is deployed as a NEW VERSION with 'Who has access: Anyone' and 'Execute as: Me'.");
   }
 
   if (!Array.isArray(data) || data.length === 0) {
