@@ -2161,19 +2161,21 @@ function showToast(message, isError = false) {
 
   const toast = document.createElement("div");
   toast.className = "toast-message";
-  toast.style.cssText = \`
+  toast.style.cssText = `
     min-width: 250px;
-    background: \${isError ? '#ef4444' : '#10b981'};
+    background: ${isError ? '#ef4444' : '#10b981'};
     color: white;
     padding: 12px 20px;
     border-radius: 6px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
     font-size: 14px;
     font-weight: 500;
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.3s ease, transform 0.3s ease;
-  \`;
+  `;
   toast.innerText = message;
 
   container.appendChild(toast);

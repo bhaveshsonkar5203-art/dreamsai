@@ -1,5 +1,7 @@
-(function () {
-  let PDF_TRACE_SEQ = 0;
+import { jsPDF as _jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+
+let PDF_TRACE_SEQ = 0;
   function pdfTrace(step, payload) {
     PDF_TRACE_SEQ += 1;
     const id = String(PDF_TRACE_SEQ).padStart(3, "0");
@@ -273,7 +275,7 @@
       throw new Error("Generate pages first");
     }
 
-    const jsPdfApi = window.jspdf && window.jspdf.jsPDF;
+    const jsPdfApi = _jsPDF;
     if (!jsPdfApi) {
       throw new Error("PDF library not loaded");
     }
@@ -343,7 +345,7 @@
     const totalPages = Number(options?.totalPages || 1);
     const itemCount = items.length || Number(options?.itemCount || 0);
 
-    const jsPdfApi = window.jspdf && window.jspdf.jsPDF;
+    const jsPdfApi = _jsPDF;
     if (!jsPdfApi) throw new Error("PDF library not loaded");
 
     const pdf = new jsPdfApi({ orientation: "portrait", unit: "pt", format: "a4" });
@@ -370,5 +372,4 @@
     buildPdfBlob: buildPdfBlob,
     buildCoverPdfBlob: buildCoverPdfBlob
   };
-})();
 
