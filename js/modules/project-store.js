@@ -7,7 +7,7 @@
 import { API_URL } from '../config.js';
 export { API_URL };
 
-import { db, collection, setDoc, getDocs, doc } from './firebase-config.js';
+import { db, collection, setDoc, getDocs, getDoc, doc } from './firebase-config.js';
 
 const STORAGE_KEYS = {
   STYLISTS: "dreamsai_celebrity_stylists_v6",
@@ -294,6 +294,21 @@ export async function fetchDataFromFirebase() {
       safeSetItem(STORAGE_KEYS.CELEBRITIES, remoteCelebs);
     }
 
+    try {
+      const activeCtxSnap = await getDoc(doc(db, "app_state", "active_context"));
+      if (activeCtxSnap.exists()) {
+        const remoteCtx = activeCtxSnap.data();
+        if (remoteCtx && remoteCtx.celebrityId) {
+          safeSetItem(STORAGE_KEYS.ACTIVE_CONTEXT, {
+            celebrityId: remoteCtx.celebrityId,
+            projectId: remoteCtx.projectId
+          });
+        }
+      }
+    } catch (errCtx) {
+      console.warn("[FirebaseSync] Note reading active context:", errCtx);
+    }
+
     console.log("[FirebaseSync] Successfully pulled and merged data from Firestore.");
     if (typeof window !== 'undefined' && typeof window.renderHomepageProjectsGateway === 'function') {
       window.renderHomepageProjectsGateway();
@@ -387,7 +402,7 @@ export function getProjectById(projectId) {
   return projects.find(p => p.id === projectId) || null;
 }
 
-export function createProject({ celebrityId, stylistId = null, title, season = "Fall / Winter 2026", purpose = "Red Carpet Pull", notes = "" }) {
+export function createProject({ celebrityId, stylistId = null, title, season = "Fall / Winter 2026", purpose = "Red Carpet Pull", notes = "", selectedSerials = null }) {
   const projects = getProjects();
   const celebrity = getCelebrityById(celebrityId);
   const celebrityName = celebrity ? celebrity.name : "Celebrity";
@@ -397,6 +412,14 @@ export function createProject({ celebrityId, stylistId = null, title, season = "
 
   const now = new Date();
   const projectCode = `LB-${now.getFullYear()}-${(projects.length + 1).toString().padStart(3, '0')}`;
+
+  // Preserve initial selections if passed or currently selected in global workspace
+  let initialSerials = [];
+  if (Array.isArray(selectedSerials) && selectedSerials.length > 0) {
+    initialSerials = [...selectedSerials];
+  } else if (typeof window !== 'undefined' && Array.isArray(window.selected) && window.selected.length > 0) {
+    initialSerials = [...window.selected];
+  }
 
   const newProject = {
     id: "proj_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
@@ -410,14 +433,14 @@ export function createProject({ celebrityId, stylistId = null, title, season = "
     notes: notes.trim(),
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
-    selectedSerials: [],
+    selectedSerials: initialSerials,
     pdfRecords: [],
     activityLog: [
       {
         id: "act_" + Date.now(),
         timestamp: now.toISOString(),
         action: "Curation Initiated",
-        details: `Created lookbook "${title}" for Celebrity ${celebrityName}${activeStylist ? ` by Stylist ${activeStylist.name}` : ''}.`
+        details: `Created lookbook "${title}" for Celebrity ${celebrityName}${activeStylist ? ` by Stylist ${activeStylist.name}` : ''}${initialSerials.length ? ` with ${initialSerials.length} initial selected items` : ''}.`
       }
     ]
   };
@@ -516,6 +539,9 @@ export function addProjectPdfRecord(projectId, { pdfTitle, pdfKind, itemCount, d
 
   safeSetItem(STORAGE_KEYS.PROJECTS, projects);
 
+  // Sync updated project with PDF record to Firebase
+  setDoc(doc(db, "projects", projects[idx].id), projects[idx]).catch(e => console.warn("Firebase sync error", e));
+
   logProjectActivity(projectId, "PDF Exported", `Generated ${pdfKind} PDF (${pdfTitle}) with ${itemCount} items.`);
 
   return pdfRecord;
@@ -546,7 +572,11 @@ export function getActiveContext() {
 }
 
 export function setActiveContext(celebrityId, projectId) {
-  const ctx = { celebrityId, projectId };
+  const ctx = { celebrityId, projectId, updatedAt: new Date().toISOString() };
   safeSetItem(STORAGE_KEYS.ACTIVE_CONTEXT, ctx);
+
+  // Sync active context state to Firebase Firestore
+  setDoc(doc(db, "app_state", "active_context"), ctx).catch(e => console.warn("Firebase sync active context error", e));
+
   return getActiveContext();
 }
