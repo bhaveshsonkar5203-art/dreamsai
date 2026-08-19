@@ -97,6 +97,10 @@
                     <button class="btn btn-secondary btn-sm" onclick="deselectAllFiltered()" title="Deselect all items currently visible under these filters">
                       <i class="fa-solid fa-eraser"></i> Deselect All
                     </button>
+                    <label class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 4px; cursor: pointer;" title="Hide products that are unavailable">
+                      <input type="checkbox" id="hideMarked" checked onchange="window.onFilterChanged('hideMarked')">
+                      Hide Unavailable
+                    </label>
                     <div class="filter-menu-wrap">
                       <button id="filterToggleBtn" class="btn btn-primary filter-toggle-btn"
                         onclick="toggleFilterMenu(event)">

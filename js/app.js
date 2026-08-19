@@ -139,7 +139,8 @@ async function loadData() {
   window.rebuildDataIndex();
   selected = selected.filter(id => {
     const item = dataBySerial.get(id);
-    return item && window.normalizeStatus(item["Status"]) !== "marked";
+    const status = window.normalizeStatus(item["Status"]);
+    return item && status !== "marked" && status !== "unavailable";
   });
   initFilter();
   render();
@@ -374,9 +375,9 @@ function renderFilterMenu() {
 
   function matches(item, ignoreType = false, ignoreBrand = false) {
     const status = window.normalizeStatus(item["Status"]);
-    if (hideMarked && status === "marked") return false;
-    if (currentStatus === "marked" && status !== "marked") return false;
-    if (currentStatus === "unmarked" && status === "marked") return false;
+    if (hideMarked && (status === "marked" || status === "unavailable")) return false;
+    if (currentStatus === "marked" && (status !== "marked" && status !== "unavailable")) return false;
+    if (currentStatus === "unmarked" && (status === "marked" || status === "unavailable")) return false;
     if (searchQuery && !String(item["Serial No"] || "").toUpperCase().includes(searchQuery)) return false;
 
     if (!ignoreType && currentType.length && !currentType.includes(String(item["Type"] || "").trim())) return false;
@@ -567,7 +568,10 @@ function updateSelectButtonLabel() {
   const filterBrand = getActiveFilterSelections('brand');
 
   const filtered = getFilteredItems();
-  const unmarkedCount = filtered.filter(d => window.normalizeStatus(d["Status"]) !== "marked").length;
+  const unmarkedCount = filtered.filter(d => {
+    const status = window.normalizeStatus(d["Status"]);
+    return status !== "marked" && status !== "unavailable";
+  }).length;
 
   if (filterBrand.length && filterType.length) {
     btn.textContent = `Select ${filterBrand.join(', ')} + ${filterType.join(', ')} (${unmarkedCount})`;
@@ -651,7 +655,10 @@ function renderCountSummary(brandCounts, typeCounts) {
 
 function updateDashboardStats(visibleCount) {
   const total = data.length;
-  const marked = data.filter(item => window.normalizeStatus(item["Status"]) === "marked").length;
+  const marked = data.filter(item => {
+    const status = window.normalizeStatus(item["Status"]);
+    return status === "marked" || status === "unavailable";
+  }).length;
   const available = Math.max(0, total - marked);
 
   const totalNode = document.getElementById("statTotal");
@@ -751,7 +758,7 @@ function render() {
       : "";
 
     html += `
-      <div class="card ${isSelected ? 'selected' : ''} ${status === "marked" ? "marked-card" : ""}" onclick='toggle("${item["Serial No"]}")'>
+      <div class="card ${isSelected ? 'selected' : ''} ${(status === "marked" || status === "unavailable") ? "marked-card" : ""}" onclick='toggle("${item["Serial No"]}")'>
         <div class="card-media">
           <img src="${imageUrl}" loading="lazy" ${onErrorAttr}>
           <div class="select-indicator">${checkSvg}</div>
@@ -793,7 +800,8 @@ function renderGridPager(totalItems) {
 /* TOGGLE */
 function toggle(id) {
   const item = data.find(d => d["Serial No"] === id);
-  if (item && window.normalizeStatus(item["Status"]) === "marked") {
+  const status = window.normalizeStatus(item["Status"]);
+  if (item && (status === "marked" || status === "unavailable")) {
     showToast("This item is unavailable and cannot be selected.");
     return;
   }
@@ -978,7 +986,7 @@ function getFilteredItems() {
       return false;
     }
 
-    if (hideMarked && status === "unavailable") {
+    if (hideMarked && (status === "unavailable" || status === "marked")) {
       return false;
     }
 
@@ -1247,6 +1255,23 @@ async function generateFinalTrayFromSerials(isBypassed = false) {
     } catch (e) {
       console.warn("Could not persist final tray project summary", e);
     }
+
+    // Mark items as Unavailable in local inventory
+    if (window.data && Array.isArray(window.data)) {
+      let changed = false;
+      serials.forEach(s => {
+        const item = window.data.find(d => d["Serial No"] === s);
+        if (item) {
+          item["Status"] = "Unavailable";
+          if (window.dataIndex) window.dataIndex.set(s, item);
+          changed = true;
+        }
+      });
+      if (changed && typeof onFilterChanged === 'function') {
+        onFilterChanged();
+      }
+    }
+
 
   } catch (err) {
     console.error("Error preparing Client Kit PDF:", err);

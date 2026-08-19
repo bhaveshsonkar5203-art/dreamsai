@@ -1,6 +1,9 @@
 (function () {
   function normalizeStatus(status) {
     const value = String(status || "").trim().toLowerCase();
+    if (value.includes("unavailable")) {
+      return "unavailable";
+    }
     if (value.includes("marked")) {
       return "marked";
     }
