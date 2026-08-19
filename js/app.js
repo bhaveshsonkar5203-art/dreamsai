@@ -139,8 +139,9 @@ async function loadData() {
   window.rebuildDataIndex();
   selected = selected.filter(id => {
     const item = dataBySerial.get(id);
+    if (!item) return false;
     const status = window.normalizeStatus(item["Status"]);
-    return item && status !== "marked" && status !== "unavailable";
+    return status !== "marked" && status !== "unavailable";
   });
   initFilter();
   render();
@@ -374,6 +375,7 @@ function renderFilterMenu() {
   const searchQuery = searchSerialNode ? searchSerialNode.value.trim().toUpperCase() : "";
 
   function matches(item, ignoreType = false, ignoreBrand = false) {
+    if (!item) return false;
     const status = window.normalizeStatus(item["Status"]);
     if (hideMarked && (status === "marked" || status === "unavailable")) return false;
     if (currentStatus === "marked" && (status !== "marked" && status !== "unavailable")) return false;
@@ -569,6 +571,7 @@ function updateSelectButtonLabel() {
 
   const filtered = getFilteredItems();
   const unmarkedCount = filtered.filter(d => {
+    if (!d) return false;
     const status = window.normalizeStatus(d["Status"]);
     return status !== "marked" && status !== "unavailable";
   }).length;
@@ -656,6 +659,7 @@ function renderCountSummary(brandCounts, typeCounts) {
 function updateDashboardStats(visibleCount) {
   const total = data.length;
   const marked = data.filter(item => {
+    if (!item) return false;
     const status = window.normalizeStatus(item["Status"]);
     return status === "marked" || status === "unavailable";
   }).length;
@@ -749,6 +753,7 @@ function render() {
   const checkSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
   pageItems.forEach(item => {
+    if (!item) return;
     const status = window.normalizeStatus(item["Status"]);
     let isSelected = selected.includes(item["Serial No"]);
     const imageUrl = getPreviewImageUrl(item);
@@ -800,8 +805,9 @@ function renderGridPager(totalItems) {
 /* TOGGLE */
 function toggle(id) {
   const item = data.find(d => d["Serial No"] === id);
+  if (!item) return;
   const status = window.normalizeStatus(item["Status"]);
-  if (item && (status === "marked" || status === "unavailable")) {
+  if (status === "marked" || status === "unavailable") {
     showToast("This item is unavailable and cannot be selected.");
     return;
   }
@@ -2100,7 +2106,7 @@ function selectAllByBrand() {
   const filterType = document.getElementById("filterType")?.value || "";
 
   let filtered = getFilteredItems();
-  const availableItems = filtered.filter(d => window.normalizeStatus(d["Status"]) !== "unavailable");
+  const availableItems = filtered.filter(d => d && window.normalizeStatus(d["Status"]) !== "unavailable");
 
   if (availableItems.length === 0) {
     showToast("No available items match these filters.");
