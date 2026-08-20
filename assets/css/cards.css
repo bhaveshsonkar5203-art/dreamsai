@@ -454,22 +454,23 @@
    Return Products List Styling
    ========================================================================== */
 .return-products-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
   gap: 16px;
   margin-top: 16px;
 }
 
 .return-product-card {
   display: flex;
-  align-items: center;
-  gap: 20px;
+  align-items: flex-start;
+  gap: 16px;
   background: var(--surface, #ffffff);
   border: 1px solid var(--border-hairline, #e2e8f0);
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 .return-product-card:hover {
@@ -478,8 +479,8 @@
 }
 
 .return-product-card img {
-  width: 90px;
-  height: 90px;
+  width: 80px;
+  height: 80px;
   object-fit: cover;
   border-radius: 8px;
   background-color: #f8f9fa;
@@ -492,25 +493,33 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .return-product-title {
   font-family: var(--font-serif, serif);
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--primary, #111827);
   margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .return-product-subtext {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--secondary, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .return-product-badges {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-top: 6px;
+  flex-wrap: wrap;
 }
 
 .return-status-pill, .return-condition-pill {
@@ -533,16 +542,17 @@
 .return-product-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 150px;
+  gap: 6px;
+  min-width: 140px;
+  flex-shrink: 0;
 }
 
 .return-product-actions select,
 .return-product-actions button {
   width: 100%;
-  padding: 8px 12px;
+  padding: 7px 10px;
   border-radius: 6px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   border: 1px solid var(--border-hairline, #e2e8f0);
   background: var(--surface, #ffffff);
@@ -575,22 +585,21 @@
 }
 
 @media (max-width: 768px) {
-  .return-product-card {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
+  .return-products-list {
+    grid-template-columns: 1fr;
   }
-  .return-product-card img {
-    width: 100%;
-    height: 180px;
+  .return-product-card {
+    flex-wrap: wrap;
   }
   .return-product-actions {
     flex-direction: row;
     flex-wrap: wrap;
+    width: 100%;
+    min-width: 100%;
   }
   .return-product-actions select,
   .return-product-actions button {
     flex: 1;
-    min-width: calc(50% - 8px);
+    min-width: calc(50% - 6px);
   }
 }
