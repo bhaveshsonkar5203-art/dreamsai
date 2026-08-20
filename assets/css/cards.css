@@ -450,3 +450,147 @@
   border-color: #1eb857;
   color: #ffffff;
 }
+/* ==========================================================================
+   Return Products List Styling
+   ========================================================================== */
+.return-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.return-product-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-hairline, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.return-product-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.return-product-card img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  flex-shrink: 0;
+  border: 1px solid var(--border-hairline, #e2e8f0);
+}
+
+.return-product-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.return-product-title {
+  font-family: var(--font-serif, serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--primary, #111827);
+  margin-bottom: 2px;
+}
+
+.return-product-subtext {
+  font-size: 0.85rem;
+  color: var(--secondary, #6b7280);
+}
+
+.return-product-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.return-status-pill, .return-condition-pill {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.return-status-pill.received { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.return-status-pill.missing { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.return-status-pill.pending { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
+.return-condition-pill.good { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.return-condition-pill.damaged { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+.return-product-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 150px;
+}
+
+.return-product-actions select,
+.return-product-actions button {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid var(--border-hairline, #e2e8f0);
+  background: var(--surface, #ffffff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.return-product-actions select:focus {
+  outline: none;
+  border-color: var(--primary, #111827);
+}
+
+.return-product-actions button.secondary {
+  background: #f8f9fa;
+  color: #111827;
+}
+
+.return-product-actions button.secondary:hover {
+  background: #e2e8f0;
+}
+
+.return-product-actions button.btn-missing-action {
+  background: #fff0f0;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.return-product-actions button.btn-missing-action:hover {
+  background: #fee2e2;
+}
+
+@media (max-width: 768px) {
+  .return-product-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .return-product-card img {
+    width: 100%;
+    height: 180px;
+  }
+  .return-product-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .return-product-actions select,
+  .return-product-actions button {
+    flex: 1;
+    min-width: calc(50% - 8px);
+  }
+}
