@@ -225,6 +225,7 @@ export function mergeProjects(localProjects = [], remoteProjects = []) {
       finalTraySharedDate: base.finalTraySharedDate || localProj.finalTraySharedDate || remoteProj.finalTraySharedDate || '',
       followUpDate: base.followUpDate || localProj.followUpDate || remoteProj.followUpDate || '',
       returnDueDate: base.returnDueDate || localProj.returnDueDate || remoteProj.returnDueDate || '',
+      activeTab: base.activeTab || localProj.activeTab || remoteProj.activeTab || 'browse',
       selectedSerials: (Array.isArray(base.selectedSerials) && base.selectedSerials.length > 0)
         ? base.selectedSerials
         : ((Array.isArray(localProj.selectedSerials) && localProj.selectedSerials.length > 0) ? localProj.selectedSerials : (remoteProj.selectedSerials || [])),
@@ -439,6 +440,7 @@ export function createProject({ celebrityId, stylistId = null, title, season = "
     purpose: purpose || "Red Carpet Pull",
     status: "Curating",
     notes: notes.trim(),
+    activeTab: "browse",
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     selectedSerials: initialSerials,

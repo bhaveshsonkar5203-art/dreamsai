@@ -3635,6 +3635,11 @@ function switchTab(tabName) {
     window.unlockStudioWorkspace();
   }
 
+  const ctx = ProjectStore.getActiveContext();
+  if (ctx && ctx.project) {
+    ProjectStore.updateProject(ctx.project.id, { activeTab: tabName });
+  }
+
   const tabs = {
     dashboard: { btn: "tabOverviewBtn", section: "dashboardTab" },
     browse: { btn: "tabBrowseBtn", section: "browseTab" },

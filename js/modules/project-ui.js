@@ -255,7 +255,7 @@ export function initProjectUI({ onProjectSwitch }) {
   window.handleStylistSelectChange = handleStylistSelectChange;
   window.submitNewProjectDialog = (e) => submitNewProjectDialog(e, onProjectSwitch);
   window.handleCelebrityChange = handleCelebrityChange;
-  window.handleProjectChange = (projId, callback, targetTab = 'browse') => handleProjectChange(projId, callback || onProjectSwitch, targetTab);
+  window.handleProjectChange = (projId, callback, targetTab = null) => handleProjectChange(projId, callback || onProjectSwitch, targetTab);
   window.handleCreateCelebritySubmit = handleCreateCelebritySubmit;
   window.handleCreateProjectSubmit = (e) => handleCreateProjectSubmit(e, onProjectSwitch);
   window.handleQuickNewProject = () => openNewProjectDialog();
@@ -674,7 +674,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
     const hasAnyDates = Boolean(sharedDate || followUpDate || returnDueDate);
 
     return `
-            <div class="hp-project-card ${isActive ? 'active-project' : ''}" onclick="window.handleProjectChange('${p.id}', null, 'browse')" role="button" tabindex="0" aria-label="Open ${escapeHtml(p.title)} inventory">
+            <div class="hp-project-card ${isActive ? 'active-project' : ''}" onclick="window.handleProjectChange('${p.id}', null, null)" role="button" tabindex="0" aria-label="Open ${escapeHtml(p.title)} inventory">
               <div class="hp-card-stylist-block">
                 <span class="hp-meta-label">STYLIST</span>
                 <span class="hp-stylist-val">${escapeHtml(stylistName)}</span>
@@ -1110,7 +1110,7 @@ function showProjectSwitchError(projectId, callback, targetTab) {
   errModal.style.display = "flex";
 }
 
-function handleProjectChange(projectId, callback, targetTab = 'browse') {
+function handleProjectChange(projectId, callback, targetTab = null) {
   if (isProjectSwitchingLocked) return;
   isProjectSwitchingLocked = true;
   showProjectSwitchLoader();
@@ -1122,6 +1122,8 @@ function handleProjectChange(projectId, callback, targetTab = 'browse') {
         throw new Error(`Project ${projectId} not found in store.`);
       }
 
+      const tabToLoad = targetTab || project.activeTab || 'dashboard';
+
       ProjectStore.setActiveContext(project.celebrityId, project.id);
       renderProjectBar();
       closeProjectDrawer();
@@ -1131,9 +1133,9 @@ function handleProjectChange(projectId, callback, targetTab = 'browse') {
         callback(project);
       }
       if (typeof window.switchTab === 'function') {
-        window.switchTab(targetTab);
+        window.switchTab(tabToLoad);
       }
-      if (targetTab === 'dashboard') {
+      if (tabToLoad === 'dashboard') {
         renderProjectDashboard();
       }
 
