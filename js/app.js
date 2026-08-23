@@ -42,15 +42,28 @@ let returnProductsFilter = "";
 
 import { API_URL, APP_BUILD_TAG } from './config.js';
 
-function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+function getItemType(item) {
+  if (!item) return "";
+  for (const k of ["Type", "type", "Category", "category", "Jewellery Type", "jewellery_type", "Product Type", "product_type"]) {
+    if (item[k] !== undefined && item[k] !== null && String(item[k]).trim() !== "") {
+      return String(item[k]).trim();
+    }
+  }
+  return "";
 }
+
+function getItemBrand(item) {
+  if (!item) return "";
+  for (const k of ["Brand Name", "Brand", "brand", "brand_name", "Jewellery Brand", "jewellery_brand", "House", "house"]) {
+    if (item[k] !== undefined && item[k] !== null && String(item[k]).trim() !== "") {
+      return String(item[k]).trim();
+    }
+  }
+  return "";
+}
+
+window.getItemType = getItemType;
+window.getItemBrand = getItemBrand;
 
 function traceFinalTray(step, details) {
   const stamp = new Date().toISOString();
@@ -474,16 +487,6 @@ function renderFilterMenu() {
   const hideMarked = hideMarkedNode ? hideMarkedNode.checked : false;
   const searchQuery = searchSerialNode ? searchSerialNode.value.trim().toUpperCase() : "";
 
-  function getItemType(item) {
-    if (!item) return "";
-    return String(item["Type"] || item["Category"] || item["Jewellery Type"] || item["type"] || "").trim();
-  }
-
-  function getItemBrand(item) {
-    if (!item) return "";
-    return String(item["Brand Name"] || item["Brand"] || item["Jewellery Brand"] || item["brand"] || "").trim();
-  }
-
   function matches(item, ignoreType = false, ignoreBrand = false) {
     if (!item) return false;
     const status = window.normalizeStatus(item["Status"]);
@@ -704,7 +707,7 @@ function renderCategoryBar(typeCounts) {
   const filterTypeNode = document.getElementById("filterType");
   const activeType = filterTypeNode ? filterTypeNode.value : "";
 
-  const allTypesSet = new Set(data.map(item => String(item["Type"] || item["Category"] || item["Jewellery Type"] || item["type"] || "").trim()).filter(Boolean));
+  const allTypesSet = new Set(data.map(item => getItemType(item)).filter(Boolean));
   const types = [...allTypesSet].sort((a, b) => a.localeCompare(b));
 
   let totalCount = 0;
@@ -1086,8 +1089,8 @@ function getFilteredItems() {
 
   let filtered = data.filter(d => {
     const status = window.normalizeStatus(d["Status"]);
-    const itemType = String(d["Type"] || d["Category"] || d["Jewellery Type"] || d["type"] || "").trim();
-    const itemBrand = String(d["Brand Name"] || d["Brand"] || d["Jewellery Brand"] || d["brand"] || "").trim();
+    const itemType = getItemType(d);
+    const itemBrand = getItemBrand(d);
     const serial = String(d["Serial No"] || "").trim();
     const typeMatch = !filterType.length || filterType.includes(itemType);
     const brandMatch = !filterBrand.length || filterBrand.includes(itemBrand);

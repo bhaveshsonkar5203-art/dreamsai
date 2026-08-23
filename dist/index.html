@@ -11,23 +11,54 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script type="module" crossorigin src="/dreamsai/assets/main-DRcGddWt.js"></script>
-  <link rel="stylesheet" crossorigin href="/dreamsai/assets/main-cbAZ3f6y.css">
+
+  <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
+        "jspdf": "https://esm.sh/jspdf@2.5.1",
+        "html2canvas": "https://esm.sh/html2canvas@1.4.1"
+      }
+    }
+  </script>
+  <script type="module" crossorigin src="/dreamsai/assets/main-DcTXDV2b.js"></script>
+  <link rel="stylesheet" crossorigin href="/dreamsai/assets/main-CV4XxYPk.css">
 </head>
 
 <body>
 
-  <div class="app-layout">
+  <div id="departmentSelectionScreen" class="department-selection-screen hidden">
+    <div class="department-selection-content">
+      <div class="department-header">
+        <h1>Choose Department</h1>
+        <p>Select a department to view inventory and brands.</p>
+      </div>
+      <div id="departmentCardsContainer" class="department-cards-container">
+        <!-- Rendered dynamically -->
+        <div class="spinner"><div class="loader"></div><p>Loading departments...</p></div>
+      </div>
+      
+      <div class="department-footer">
+        <!-- Project gateway now accessed via the main application sidebar after selecting a department -->
+      </div>
+    </div>
+  </div>
+
+  <div class="app-layout" id="appLayoutContainer">
     <aside class="app-sidebar" id="appSidebar">
       <div class="sidebar-brand">
         <a href="#" class="sidebar-brand-logo">ASCEND</a>
         <span class="sidebar-brand-badge">Atelier Studio</span>
       </div>
       <nav class="sidebar-nav">
+        <button id="tabDepartmentsBtn" class="sidebar-nav-item" onclick="if(window.showDepartmentSelection) window.showDepartmentSelection();" style="color: #d4af37;">
+          <i class="fa-solid fa-arrow-left"></i> <span>Back to Departments</span>
+        </button>
         <button id="tabDashboardBtn" class="sidebar-nav-item" onclick="showHomepageGateway()">
-          <i class="fa-solid fa-house"></i> <span>Home</span>
+          <i class="fa-solid fa-house"></i> <span>Projects</span>
         </button>
         <button id="tabOverviewBtn" class="sidebar-nav-item active" onclick="switchTab('dashboard')">
           <i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span>
