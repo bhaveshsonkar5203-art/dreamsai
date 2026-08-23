@@ -174,9 +174,9 @@ window.selectDepartment = function(deptName) {
   const ds = document.getElementById("departmentSelectionScreen");
   if (ds) ds.classList.add('hidden');
   
-  // Show app layout
-  if (typeof window.switchTab === 'function') {
-    window.switchTab('browse');
+  // Show Projects Gateway
+  if (typeof window.showHomepageGateway === 'function') {
+    window.showHomepageGateway();
   }
   
   loadData();
