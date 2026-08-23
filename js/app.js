@@ -44,9 +44,17 @@ import { API_URL, APP_BUILD_TAG } from './config.js';
 
 function getItemType(item) {
   if (!item) return "";
-  for (const k of ["Type", "type", "Category", "category", "Jewellery Type", "jewellery_type", "Product Type", "product_type"]) {
+  for (const k of ["Type", "type", "Category", "category", "Jewellery Type", "jewellery_type", "Product Type", "product_type", "Item Type", "item_type", "Sub Category", "sub_category"]) {
     if (item[k] !== undefined && item[k] !== null && String(item[k]).trim() !== "") {
       return String(item[k]).trim();
+    }
+  }
+  // Generic fallback: check any key on item containing "type" or "cat"
+  for (const k of Object.keys(item)) {
+    const lowerKey = k.toLowerCase();
+    if ((lowerKey.includes("type") || lowerKey.includes("cat")) && !lowerKey.includes("url") && !lowerKey.includes("date")) {
+      const val = String(item[k] || "").trim();
+      if (val) return val;
     }
   }
   return "";
@@ -370,11 +378,17 @@ window.onFilterGalleryScroll = function() {
 
 window.scrollToFilterPage = function(page) {
   const container = document.getElementById("filterSwipeContainer");
+  const tabBrand = document.getElementById("filterTabBrand");
+  const tabType = document.getElementById("filterTabType");
   if (!container) return;
   if (page === 'type') {
-    container.scrollTo({ left: container.clientWidth, behavior: 'smooth' });
+    container.scrollTo({ left: container.clientWidth || 600, behavior: 'smooth' });
+    if (tabBrand) tabBrand.classList.remove("active");
+    if (tabType) tabType.classList.add("active");
   } else {
     container.scrollTo({ left: 0, behavior: 'smooth' });
+    if (tabBrand) tabBrand.classList.add("active");
+    if (tabType) tabType.classList.remove("active");
   }
 };
 
