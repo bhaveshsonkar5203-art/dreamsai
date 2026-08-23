@@ -1645,9 +1645,17 @@ export function renderProjectDashboard() {
   const followUpStatus = getFollowUpStatus(followUpDate);
   const isReturnOverdue = isDateOverdue(returnDueDate);
 
-  const totalProducts = productStats.sent || (productStats.returned + productStats.pending + productStats.missing) || 50;
-  const returnedCount = productStats.returned || 42;
-  const returnRate = totalProducts > 0 ? Math.round((returnedCount / totalProducts) * 100) : 84;
+  // Read real return products state from current project or active state
+  const returnState = (p && Array.isArray(p.returnProductsState) && p.returnProductsState.length > 0)
+    ? p.returnProductsState
+    : (Array.isArray(window.returnProductsState) ? window.returnProductsState : []);
+
+  const totalProducts = returnState.length || productStats.sent || (productStats.returned + productStats.pending + productStats.missing) || 0;
+  const returnedCount = returnState.length ? returnState.filter(i => i.returnStatus === 'received').length : productStats.returned;
+  const pendingReturnCount = returnState.length ? returnState.filter(i => i.returnStatus === 'pending').length : productStats.pending;
+  const missingReturnCount = returnState.length ? returnState.filter(i => i.returnStatus === 'missing').length : productStats.missing;
+  const damagedCount = returnState.length ? returnState.filter(i => i.condition === 'damaged').length : 0;
+  const returnRate = totalProducts > 0 ? Math.round((returnedCount / totalProducts) * 100) : 0;
 
   const pay = p.payment || { invoiceAmount: 12500, amountReceived: 5000, status: 'Partial' };
   const invoiceAmt = Number(pay.invoiceAmount || 12500);
@@ -1744,12 +1752,13 @@ export function renderProjectDashboard() {
         </div>
 
         <!-- Returns Tracking -->
-        <div onclick="window.openQuickUpdateReturnModal('${p.id}')" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.06)';" onmouseleave="this.style.transform='none'; this.style.boxShadow='none';">
+        <div onclick="window.filterReturnProductsBy('all', 'all')" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.06)';" onmouseleave="this.style.transform='none'; this.style.boxShadow='none';" title="Click to open Returns Processing Workspace">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <i class="fa-solid fa-rotate-left" style="font-size: 20px; color: #000;"></i>
               <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #76777d;">Returns Tracking</span>
             </div>
+            <span style="font-size: 11px; font-weight: 600; color: #3b82f6;">View All &rarr;</span>
           </div>
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
@@ -1846,36 +1855,48 @@ export function renderProjectDashboard() {
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 10px;">
               <i class="fa-solid fa-box-open" style="font-size: 20px; color: #000;"></i>
-              <h3 style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #515f74; margin: 0;">Flagged Items</h3>
+              <h3 style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #515f74; margin: 0;">Flagged Items (${pendingReturnCount + missingReturnCount + damagedCount})</h3>
             </div>
-            <span style="background: #ffdad6; color: #93000a; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">Action Required</span>
+            <span style="background: ${missingReturnCount > 0 || damagedCount > 0 ? '#ffdad6' : '#fefce8'}; color: ${missingReturnCount > 0 || damagedCount > 0 ? '#93000a' : '#854d0e'}; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">Action Required</span>
           </div>
 
           <div style="flex: 1; space-y: 12px;">
-            <div style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 6px; background: #f9f9fa; border: 1px solid #f1f5f9;">
-              <div style="width: 40px; height: 40px; border-radius: 4px; background: #e2e2e3; display: flex; align-items: center; justify-content: center; color: #515f74;">
-                <i class="fa-solid fa-shoe-prints"></i>
-              </div>
-              <div style="flex: 1;">
-                <h4 style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1c1d;">Margiela Tabi Boots</h4>
-                <span style="font-size: 12px; color: #76777d;">MM-2938</span>
-              </div>
-              <span style="font-size: 11px; font-weight: 700; color: #991b1b; background: #fef2f2; padding: 4px 8px; border-radius: 4px;">Overdue</span>
-            </div>
+            ${(() => {
+              const flagged = returnState.filter(i => i.returnStatus === 'pending' || i.returnStatus === 'missing' || i.condition === 'damaged');
+              if (flagged.length === 0) {
+                return `
+                  <div style="text-align: center; padding: 20px 10px; color: #166534; background: #f0fdf4; border-radius: 6px;">
+                    <i class="fa-solid fa-circle-check" style="font-size: 1.5rem; margin-bottom: 6px;"></i>
+                    <p style="margin: 0; font-size: 0.88rem; font-weight: 600;">All products returned in good condition!</p>
+                  </div>
+                `;
+              }
+              return flagged.slice(0, 3).map(item => {
+                const isMissing = item.returnStatus === 'missing';
+                const isDamaged = item.condition === 'damaged';
+                const statusText = isMissing ? 'Missing' : (isDamaged ? 'Damaged' : 'Pending');
+                const statusBg = isMissing ? '#fef2f2' : (isDamaged ? '#fff1f2' : '#fefce8');
+                const statusColor = isMissing ? '#991b1b' : (isDamaged ? '#be123c' : '#854d0e');
+                const filterStatus = isMissing ? 'missing' : 'pending';
+                const filterCond = isDamaged ? 'damaged' : 'all';
 
-            <div style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 6px; background: #f9f9fa; border: 1px solid #f1f5f9;">
-              <div style="width: 40px; height: 40px; border-radius: 4px; background: #e2e2e3; display: flex; align-items: center; justify-content: center; color: #515f74;">
-                <i class="fa-solid fa-vest"></i>
-              </div>
-              <div style="flex: 1;">
-                <h4 style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1c1d;">Silk Organza Cape</h4>
-                <span style="font-size: 12px; color: #76777d;">MM-1042</span>
-              </div>
-              <span style="font-size: 11px; font-weight: 700; color: #854d0e; background: #fefce8; padding: 4px 8px; border-radius: 4px;">Pending</span>
-            </div>
+                return `
+                  <div onclick="window.filterReturnProductsBy('${filterStatus}', '${filterCond}')" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 6px; background: #f9f9fa; border: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f1f5f9';" onmouseleave="this.style.background='#f9f9fa';" title="Click to view in Returns Tab">
+                    <div style="width: 40px; height: 40px; border-radius: 4px; background: #e2e2e3; display: flex; align-items: center; justify-content: center; color: #515f74; overflow: hidden;">
+                      ${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}" style="width:100%; height:100%; object-fit:cover;">` : '<i class="fa-solid fa-gem"></i>'}
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                      <h4 style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1c1d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.name || item.serial)}</h4>
+                      <span style="font-size: 12px; color: #76777d;">Code: ${escapeHtml(item.code || item.serial)}</span>
+                    </div>
+                    <span style="font-size: 11px; font-weight: 700; color: ${statusColor}; background: ${statusBg}; padding: 4px 8px; border-radius: 4px;">${statusText}</span>
+                  </div>
+                `;
+              }).join('');
+            })()}
           </div>
 
-          <button onclick="window.openQuickUpdateReturnModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f8fafc';" onmouseleave="this.style.background='#ffffff';">Manage Returns</button>
+          <button onclick="window.filterReturnProductsBy('pending', 'all')" style="margin-top: 20px; width: 100%; padding: 10px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f8fafc';" onmouseleave="this.style.background='#ffffff';">Manage Returns Workspace</button>
         </div>
 
         <!-- Panel 3: Social & PR Tasks -->

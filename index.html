@@ -322,9 +322,20 @@
                     them.</p>
                 </div>
 
-                <div class="return-products-toolbar">
-                  <input id="returnProductsSearch" type="text" placeholder="Search items..."
+                <div class="return-products-toolbar" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                  <input id="returnProductsSearch" type="text" placeholder="Search items..." style="flex: 1; min-width: 200px;"
                     oninput="window.handleReturnProductsSearch(this.value)">
+                  <select id="returnStatusFilter" onchange="window.handleReturnProductsStatusFilter(this.value)" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-hairline, #e2e8f0); background: #ffffff; font-size: 0.85rem; font-weight: 500;">
+                    <option value="all">All Return Statuses</option>
+                    <option value="pending">Pending Return</option>
+                    <option value="received">Received</option>
+                    <option value="missing">Missing</option>
+                  </select>
+                  <select id="returnConditionFilter" onchange="window.handleReturnProductsConditionFilter(this.value)" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-hairline, #e2e8f0); background: #ffffff; font-size: 0.85rem; font-weight: 500;">
+                    <option value="all">All Conditions</option>
+                    <option value="good">Good Condition</option>
+                    <option value="damaged">Damaged</option>
+                  </select>
                   <button class="btn btn-secondary" type="button"
                     onclick="window.loadReturnProductsFromFinalTray(true)">Reload</button>
                 </div>

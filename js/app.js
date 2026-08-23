@@ -3551,18 +3551,51 @@ function getReturnProductSummary() {
   return { total, received, pending, missing, damaged };
 }
 
+let returnProductsStatusFilter = "all";
+let returnProductsConditionFilter = "all";
+
+function handleReturnProductsStatusFilter(value) {
+  returnProductsStatusFilter = value || "all";
+  renderReturnProductsList();
+}
+
+function handleReturnProductsConditionFilter(value) {
+  returnProductsConditionFilter = value || "all";
+  renderReturnProductsList();
+}
+
+window.handleReturnProductsStatusFilter = handleReturnProductsStatusFilter;
+window.handleReturnProductsConditionFilter = handleReturnProductsConditionFilter;
+
+function filterReturnProductsBy(status, condition = "all") {
+  returnProductsStatusFilter = status || "all";
+  returnProductsConditionFilter = condition || "all";
+  
+  const statusSelect = document.getElementById("returnStatusFilter");
+  const conditionSelect = document.getElementById("returnConditionFilter");
+  if (statusSelect) statusSelect.value = returnProductsStatusFilter;
+  if (conditionSelect) conditionSelect.value = returnProductsConditionFilter;
+
+  switchTab('returnProducts');
+}
+
+window.filterReturnProductsBy = filterReturnProductsBy;
+
 function renderReturnProductsSummary() {
   const summaryNode = document.getElementById("returnSummaryCards");
   if (!summaryNode) return;
   const summary = getReturnProductSummary();
   summaryNode.innerHTML = [
-    { label: "Total Sent", value: summary.total },
-    { label: "Received", value: summary.received },
-    { label: "Pending", value: summary.pending },
-    { label: "Missing", value: summary.missing },
-    { label: "Damaged", value: summary.damaged }
+    { label: "Total Sent", value: summary.total, statusFilter: "all", condFilter: "all" },
+    { label: "Received", value: summary.received, statusFilter: "received", condFilter: "all" },
+    { label: "Pending", value: summary.pending, statusFilter: "pending", condFilter: "all" },
+    { label: "Missing", value: summary.missing, statusFilter: "missing", condFilter: "all" },
+    { label: "Damaged", value: summary.damaged, statusFilter: "all", condFilter: "damaged" }
   ].map((card) => `
-    <div class="return-summary-card">
+    <div class="return-summary-card ${returnProductsStatusFilter === card.statusFilter && (card.condFilter === 'all' || returnProductsConditionFilter === card.condFilter) ? 'is-active-filter' : ''}" 
+         onclick="window.filterReturnProductsBy('${card.statusFilter}', '${card.condFilter}')" 
+         style="cursor: pointer;" 
+         title="Click to filter by ${card.label}">
       <strong>${card.value}</strong>
       <span>${card.label}</span>
     </div>
@@ -3575,13 +3608,38 @@ function renderReturnProductsList() {
 
   const filtered = returnProductsState.filter((item) => {
     const query = (returnProductsFilter || "").trim().toUpperCase();
-    if (!query) return true;
-    return [item.serial, item.name, item.code, item.category].some((value) => String(value || "").toUpperCase().includes(query));
+    if (query) {
+      const matchesQuery = [item.serial, item.name, item.code, item.category].some((value) => String(value || "").toUpperCase().includes(query));
+      if (!matchesQuery) return false;
+    }
+
+    if (returnProductsStatusFilter !== "all" && item.returnStatus !== returnProductsStatusFilter) {
+      return false;
+    }
+
+    if (returnProductsConditionFilter !== "all" && item.condition !== returnProductsConditionFilter) {
+      return false;
+    }
+
+    return true;
   });
 
   if (!returnProductsState || returnProductsState.length === 0) {
     listNode.innerHTML = '<div class="selection-empty">No return products loaded yet. Load from the Client Kit to begin.</div>';
     document.getElementById("returnSummaryCards").innerHTML = "";
+    return;
+  }
+
+  if (filtered.length === 0) {
+    listNode.innerHTML = `
+      <div class="selection-empty" style="text-align: center; padding: 40px 20px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
+        <i class="fa-solid fa-filter" style="font-size: 2rem; color: #94a3b8; margin-bottom: 12px;"></i>
+        <h4 style="margin: 0 0 6px 0; color: #334155;">No items match the selected filter.</h4>
+        <p style="margin: 0 0 16px 0; color: #64748b; font-size: 0.88rem;">Try clearing or changing your status and condition filters.</p>
+        <button class="btn btn-secondary btn-sm" onclick="window.filterReturnProductsBy('all', 'all')" style="padding: 6px 16px; border-radius: 4px; font-weight: 600;">Reset Filters</button>
+      </div>
+    `;
+    renderReturnProductsSummary();
     return;
   }
 
