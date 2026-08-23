@@ -65,6 +65,16 @@ function getItemBrand(item) {
 window.getItemType = getItemType;
 window.getItemBrand = getItemBrand;
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function traceFinalTray(step, details) {
   const stamp = new Date().toISOString();
   if (details === undefined) {
