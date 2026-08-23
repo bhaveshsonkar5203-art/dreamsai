@@ -257,6 +257,8 @@ export function initProjectUI({ onProjectSwitch }) {
   window.handleCelebrityChange = handleCelebrityChange;
   window.handleProjectChange = (projId, callback, targetTab = null) => handleProjectChange(projId, callback || onProjectSwitch, targetTab);
   window.handleCreateCelebritySubmit = handleCreateCelebritySubmit;
+  window.toggleNewStylistForm = toggleNewStylistForm;
+  window.handleCreateStylistSubmit = handleCreateStylistSubmit;
   window.handleCreateProjectSubmit = (e) => handleCreateProjectSubmit(e, onProjectSwitch);
   window.handleQuickNewProject = () => openNewProjectDialog();
   window.showHomepageGateway = showHomepageGateway;
