@@ -1336,6 +1336,16 @@ window.openQuickEditProjectModal = function (projectId) {
             </div>
             <div class="form-group" style="margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div>
+                <label style="font-weight:700; font-size:0.85rem;">Stylist Phone / WhatsApp:</label>
+                <input type="tel" id="qeStylistPhone" class="pm-select" placeholder="+91 98765 43210" />
+              </div>
+              <div>
+                <label style="font-weight:700; font-size:0.85rem;">Stylist Email Address:</label>
+                <input type="email" id="qeStylistEmail" class="pm-select" placeholder="stylist@atelier.com" />
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
                 <label style="font-weight:700; font-size:0.85rem;">Head Stylist:</label>
                 <input type="text" id="qeHeadStylist" class="pm-select" required />
               </div>
@@ -1399,8 +1409,11 @@ window.openQuickEditProjectModal = function (projectId) {
     modal = document.getElementById("quickEditProjectModal");
   }
 
+  const sty = p.stylistId ? ProjectStore.getStylistById(p.stylistId) : null;
   document.getElementById("qeProjectId").value = p.id;
   document.getElementById("qeTitle").value = p.title;
+  document.getElementById("qeStylistPhone").value = (sty && sty.phone) ? sty.phone : (p.stylistPhone || "");
+  document.getElementById("qeStylistEmail").value = (sty && sty.email) ? sty.email : (p.stylistEmail || "");
   document.getElementById("qeHeadStylist").value = p.headStylist || "Natasha K";
   document.getElementById("qeBrand").value = p.jewelleryBrand || "Ascend Fine Jewellery";
   document.getElementById("qeSharedDate").value = p.finalTraySharedDate || "";
@@ -1421,9 +1434,14 @@ window.handleQuickEditProjectSubmit = function (e) {
   const pid = document.getElementById("qeProjectId").value;
   if (!pid) return;
 
+  const phoneVal = document.getElementById("qeStylistPhone").value.trim();
+  const emailVal = document.getElementById("qeStylistEmail").value.trim();
+
   const updates = {
     title: document.getElementById("qeTitle").value.trim(),
     headStylist: document.getElementById("qeHeadStylist").value.trim(),
+    stylistPhone: phoneVal,
+    stylistEmail: emailVal,
     jewelleryBrand: document.getElementById("qeBrand").value.trim(),
     finalTraySharedDate: document.getElementById("qeSharedDate").value,
     followUpDate: document.getElementById("qeFollowUpDate").value,
@@ -1436,6 +1454,17 @@ window.handleQuickEditProjectSubmit = function (e) {
       status: document.getElementById("qePaymentStatus").value
     }
   };
+
+  const p = ProjectStore.getProjectById(pid);
+  if (p && p.stylistId) {
+    const stylists = ProjectStore.getStylists();
+    const s = stylists.find(x => x.id === p.stylistId);
+    if (s) {
+      s.phone = phoneVal;
+      s.email = emailVal;
+      try { localStorage.setItem("dreamsai_celebrity_stylists_v6", JSON.stringify(stylists)); } catch(err){}
+    }
+  }
 
   ProjectStore.updateProject(pid, updates);
   document.getElementById("quickEditProjectModal").style.display = "none";
