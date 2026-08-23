@@ -15,6 +15,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: false
+    open: false,
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    }
   }
 });
