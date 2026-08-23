@@ -100,7 +100,6 @@ function initializeDefaultData() {
     safeSetItem(STORAGE_KEYS.PROJECTS, sortProjectsDescending(projects));
   }
 }
-}
 
 // Initialize on load
 initializeDefaultData();
