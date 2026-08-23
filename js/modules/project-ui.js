@@ -1100,13 +1100,17 @@ function refreshProjectModalContent() {
 function renderProjectDetailsHtml(project) {
   const stylist = ProjectStore.getStylistById(project.stylistId);
   const stylistName = stylist ? stylist.name : "Unassigned";
+  const stylistPhone = (stylist && stylist.phone) ? stylist.phone : (project.stylistPhone || "Not set");
+  const stylistEmail = (stylist && stylist.email) ? stylist.email : (project.stylistEmail || "Not set");
 
   return `
     <div class="pd-header">
       <div>
         <h3>${escapeHtml(project.title)} <small>(${escapeHtml(project.code)})</small></h3>
         <p class="pd-subtitle">
-          <span><i class="fa-solid fa-user-tie"></i> Stylist: <strong>${escapeHtml(stylistName)}</strong></span>
+          <span><i class="fa-solid fa-user-tie"></i> Stylist: <strong>${escapeHtml(stylistName)}</strong></span> &nbsp;|&nbsp;
+          <span><i class="fa-brands fa-whatsapp" style="color:#25d366;"></i> ${escapeHtml(stylistPhone)}</span> &nbsp;|&nbsp;
+          <span><i class="fa-solid fa-envelope" style="color:#0284c7;"></i> ${escapeHtml(stylistEmail)}</span>
         </p>
       </div>
       <div class="pd-status-control">
