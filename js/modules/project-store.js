@@ -7,6 +7,7 @@
 import { API_URL } from '../config.js';
 export { API_URL };
 
+import { selectedDepartment } from '../state.js';
 import { db, collection, setDoc, getDocs, getDoc, doc } from './firebase-config.js';
 
 const STORAGE_KEYS = {
@@ -397,6 +398,11 @@ export function saveCelebrity({ name, category = "A-List Actress & Icon", house 
 export function getProjects(celebrityId = null, stylistId = null) {
   let projects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
   projects = sortProjectsDescending(projects);
+  
+  if (selectedDepartment) {
+    projects = projects.filter(p => !p.department || p.department === selectedDepartment);
+  }
+
   if (celebrityId) {
     projects = projects.filter(p => p.celebrityId === celebrityId);
   }
@@ -438,6 +444,7 @@ export function createProject({ celebrityId, stylistId = null, title, season = "
     title: title.trim() || `${celebrityName} Curation`,
     season: season || "FW-2026",
     purpose: purpose || "Red Carpet Pull",
+    department: selectedDepartment,
     status: "Curating",
     notes: notes.trim(),
     activeTab: "browse",

@@ -1,4 +1,6 @@
 export let data = [];
+export let availableDepartments = [];
+export let selectedDepartment = null;
 export let selected = [];
 export let lastBlob = null;
 export let collageBlobs = [];
@@ -20,6 +22,14 @@ export let finalTraySuggestionIndex = -1;
 
 export function setData(newData) {
   data = newData;
+}
+
+export function setAvailableDepartments(deps) {
+  availableDepartments = deps;
+}
+
+export function setSelectedDepartment(dep) {
+  selectedDepartment = dep;
 }
 
 export function setSelected(newSelection) {

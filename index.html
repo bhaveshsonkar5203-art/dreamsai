@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="assets/css/project-workspace.css">
   <link rel="stylesheet" href="assets/css/sidebar.css">
   <link rel="stylesheet" href="assets/css/filter-gallery.css">
+  <link rel="stylesheet" href="assets/css/departments.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script type="importmap">
     {
@@ -39,15 +40,35 @@
 
 <body>
 
-  <div class="app-layout">
+  <div id="departmentSelectionScreen" class="department-selection-screen hidden">
+    <div class="department-selection-content">
+      <div class="department-header">
+        <h1>Choose Department</h1>
+        <p>Select a department to view inventory and brands.</p>
+      </div>
+      <div id="departmentCardsContainer" class="department-cards-container">
+        <!-- Rendered dynamically -->
+        <div class="spinner"><div class="loader"></div><p>Loading departments...</p></div>
+      </div>
+      
+      <div class="department-footer">
+        <!-- Project gateway now accessed via the main application sidebar after selecting a department -->
+      </div>
+    </div>
+  </div>
+
+  <div class="app-layout" id="appLayoutContainer">
     <aside class="app-sidebar" id="appSidebar">
       <div class="sidebar-brand">
         <a href="#" class="sidebar-brand-logo">ASCEND</a>
         <span class="sidebar-brand-badge">Atelier Studio</span>
       </div>
       <nav class="sidebar-nav">
+        <button id="tabDepartmentsBtn" class="sidebar-nav-item" onclick="if(window.showDepartmentSelection) window.showDepartmentSelection();" style="color: #d4af37;">
+          <i class="fa-solid fa-arrow-left"></i> <span>Back to Departments</span>
+        </button>
         <button id="tabDashboardBtn" class="sidebar-nav-item" onclick="showHomepageGateway()">
-          <i class="fa-solid fa-house"></i> <span>Home</span>
+          <i class="fa-solid fa-house"></i> <span>Projects</span>
         </button>
         <button id="tabOverviewBtn" class="sidebar-nav-item active" onclick="switchTab('dashboard')">
           <i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span>

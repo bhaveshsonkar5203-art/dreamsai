@@ -103,11 +103,91 @@ if (typeof window.renderDashboard === 'function') {
   window.renderDashboard();
 }
 
+import { availableDepartments, setAvailableDepartments, selectedDepartment, setSelectedDepartment } from './state.js';
+
 /* FETCH DATA */
 initFinalTrayUi();
-loadData();
+getDepartments();
+
+function getIconForDepartment(name) {
+  const n = name.toLowerCase();
+  if (n.includes('jewellery')) return 'fa-gem';
+  if (n.includes('footwear') || n.includes('shoe')) return 'fa-shoe-prints';
+  if (n.includes('clothing') || n.includes('apparel')) return 'fa-shirt';
+  return 'fa-box';
+}
+
+async function getDepartments() {
+  try {
+    const res = await fetch(`${API_URL}?t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
+    const json = await res.json();
+    
+    if (json.departments && Array.isArray(json.departments)) {
+      setAvailableDepartments(json.departments);
+      renderDepartmentCards(json.departments);
+    } else {
+      throw new Error("No departments array in response");
+    }
+  } catch (err) {
+    console.error("Failed to fetch departments", err);
+    document.getElementById("departmentCardsContainer").innerHTML = `
+      <div style="color: red;">
+        Unable to load departments. Please check your connection and try again.<br><br>
+        <button class="btn btn-primary" onclick="window.location.reload()">Retry</button>
+      </div>
+    `;
+  }
+}
+
+function renderDepartmentCards(departments) {
+  const container = document.getElementById("departmentCardsContainer");
+  if (!container) return;
+  
+  if (departments.length === 0) {
+    container.innerHTML = `<p>No departments available yet.</p>`;
+    return;
+  }
+
+  container.innerHTML = departments.map(dept => `
+    <div class="department-card" onclick="window.selectDepartment('${escapeHtml(dept.name)}')">
+      <i class="fa-solid ${getIconForDepartment(dept.name)} dept-icon"></i>
+      <h3>${escapeHtml(dept.name)}</h3>
+      <p>Explore inventory</p>
+    </div>
+  `).join("");
+}
+
+window.showDepartmentSelection = function() {
+  document.body.classList.add('department-selection-active');
+  document.body.classList.remove('gateway-active');
+  const ds = document.getElementById("departmentSelectionScreen");
+  if (ds) ds.classList.remove('hidden');
+  
+  // Also hide gateway if it exists
+  const gateway = document.getElementById("homepageProjectsGatewayContainer");
+  if (gateway) gateway.style.display = "none";
+};
+
+window.selectDepartment = function(deptName) {
+  setSelectedDepartment(deptName);
+  document.body.classList.remove('department-selection-active');
+  const ds = document.getElementById("departmentSelectionScreen");
+  if (ds) ds.classList.add('hidden');
+  
+  // Show app layout
+  if (typeof window.switchTab === 'function') {
+    window.switchTab('browse');
+  }
+  
+  loadData();
+};
+
+// Show department selection on startup
+window.showDepartmentSelection();
 
 async function loadData() {
+  if (!selectedDepartment) return; // Wait until a department is selected
+
   const statSelectedNode = document.getElementById("statSelected");
   if (statSelectedNode) {
     statSelectedNode.innerText = selected.length;
@@ -122,17 +202,23 @@ async function loadData() {
     hideMarkedNode.checked = true;
   }
 
+  // Show a loading state in the grid
+  const grid = document.getElementById("grid");
+  if (grid) {
+    grid.innerHTML = `<div class="spinner"><div class="loader"></div><p>Loading ${escapeHtml(selectedDepartment)} inventory...</p></div>`;
+  }
+
   try {
-    const res = await fetch(`${API_URL}?t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
+    const res = await fetch(`${API_URL}?department=${encodeURIComponent(selectedDepartment)}&t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
     const json = await res.json();
-    data = Array.isArray(json) ? json : (json.data || []);
+    data = Array.isArray(json) ? json : (json.inventory || json.data || []);
   } catch (err) {
     console.warn("Direct fetch failed, attempting CORS proxy fallback...", err);
     try {
-      const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(`${API_URL}?t=${new Date().getTime()}`);
+      const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(`${API_URL}?department=${encodeURIComponent(selectedDepartment)}&t=${new Date().getTime()}`);
       const proxyRes = await fetch(proxyUrl, { cache: "no-store" });
       const proxyJson = await proxyRes.json();
-      data = Array.isArray(proxyJson) ? proxyJson : (proxyJson.data || []);
+      data = Array.isArray(proxyJson) ? proxyJson : (proxyJson.inventory || proxyJson.data || []);
       console.log("Successfully loaded latest data via CORS proxy!");
     } catch (proxyErr) {
       console.error("Proxy fetch also failed. Using fallback archive.", proxyErr);
@@ -155,8 +241,12 @@ async function loadData() {
   });
   initFilter();
   render();
-  renderFinalTraySerialManager();
-  updateMiniWebsiteModalPreview();
+  if (typeof renderFinalTraySerialManager === 'function') {
+    renderFinalTraySerialManager();
+  }
+  if (typeof updateMiniWebsiteModalPreview === 'function') {
+    updateMiniWebsiteModalPreview();
+  }
 }
 
 async function getInventoryForExport() {

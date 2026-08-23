@@ -903,10 +903,21 @@ export function submitNewProjectDialog(e, callback) {
 
 export function showHomepageGateway() {
   document.body.classList.add("gateway-active");
+  document.body.classList.remove("department-selection-active");
+  
+  const ds = document.getElementById("departmentSelectionScreen");
+  if (ds) ds.classList.add("hidden");
+
   const container = document.getElementById("homepageProjectsGatewayContainer");
   if (container) {
     container.style.display = "block";
   }
+  
+  // Re-render the gateway to ensure it reflects the currently selected department's projects
+  if (typeof renderHomepageProjectsGateway === 'function') {
+    renderHomepageProjectsGateway(homepageProjectSwitchCallback);
+  }
+
   const allNavItems = document.querySelectorAll(".sidebar-nav-item, .bottom-nav-item");
   allNavItems.forEach(el => el.classList.remove("active"));
   const homeBtn = document.getElementById("tabDashboardBtn");
