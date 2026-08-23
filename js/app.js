@@ -3756,6 +3756,12 @@ function buildReturnProductsStateFromFinalTray() {
     };
   });
 
+  // Sync select inputs in DOM with current filter values
+  const statusSelect = document.getElementById("returnStatusFilter");
+  const conditionSelect = document.getElementById("returnConditionFilter");
+  if (statusSelect) statusSelect.value = returnProductsStatusFilter;
+  if (conditionSelect) conditionSelect.value = returnProductsConditionFilter;
+
   refreshReturnProductsUi();
   applyReturnProductInventoryRules();
 }
