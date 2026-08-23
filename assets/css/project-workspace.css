@@ -193,6 +193,25 @@
   gap: 16px;
 }
 
+.project-bar-bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 2px 6px;
+  line-height: 1;
+  border: 1.5px solid #ffffff;
+}
+
+.has-reminders-pulse {
+  border-color: #fde047 !important;
+  animation: bellPulse 2s infinite ease-in-out;
+}
+
 .project-bar-stats {
   display: flex;
   align-items: center;

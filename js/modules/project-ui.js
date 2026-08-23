@@ -389,6 +389,31 @@ export function renderProjectBar() {
           </span>
         </div>
 
+        ${(() => {
+          const activeDept = ProjectStore.selectedDepartment || (typeof window.getSelectedDepartment === 'function' ? window.getSelectedDepartment() : '');
+          const allProjects = ProjectStore.getProjects();
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const dueCount = allProjects.filter(p => {
+            if (!p.followUpDate) return false;
+            const fDate = new Date(p.followUpDate);
+            if (isNaN(fDate.getTime())) return false;
+            fDate.setHours(0, 0, 0, 0);
+            return today >= fDate;
+          }).length;
+
+          return `
+            <button class="btn-project-manage fashion-btn ${dueCount > 0 ? 'has-reminders-pulse' : ''}" 
+                    onclick="window.showDepartmentFollowUpModal('${escapeHtml(activeDept || '')}')" 
+                    title="${dueCount > 0 ? `${dueCount} Follow-up Reminders Due` : 'Follow-up Reminders'}"
+                    style="position: relative; padding: 6px 12px;">
+              <i class="fa-solid fa-bell" style="color: ${dueCount > 0 ? '#fb923c' : 'inherit'};"></i>
+              ${dueCount > 0 ? `<span class="project-bar-bell-badge">${dueCount}</span>` : ''}
+            </button>
+          `;
+        })()}
+
         <button class="btn-project-manage fashion-btn" onclick="openProjectDrawer()" title="Open Project Manager">
           <i class="fa-solid fa-sliders"></i>
           <span>Manager</span>
