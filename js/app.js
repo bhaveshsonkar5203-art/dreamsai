@@ -474,6 +474,16 @@ function renderFilterMenu() {
   const hideMarked = hideMarkedNode ? hideMarkedNode.checked : false;
   const searchQuery = searchSerialNode ? searchSerialNode.value.trim().toUpperCase() : "";
 
+  function getItemType(item) {
+    if (!item) return "";
+    return String(item["Type"] || item["Category"] || item["Jewellery Type"] || item["type"] || "").trim();
+  }
+
+  function getItemBrand(item) {
+    if (!item) return "";
+    return String(item["Brand Name"] || item["Brand"] || item["Jewellery Brand"] || item["brand"] || "").trim();
+  }
+
   function matches(item, ignoreType = false, ignoreBrand = false) {
     if (!item) return false;
     const status = window.normalizeStatus(item["Status"]);
@@ -482,8 +492,8 @@ function renderFilterMenu() {
     if (currentStatus === "unmarked" && (status === "marked" || status === "unavailable")) return false;
     if (searchQuery && !String(item["Serial No"] || "").toUpperCase().includes(searchQuery)) return false;
 
-    if (!ignoreType && currentType.length && !currentType.includes(String(item["Type"] || "").trim())) return false;
-    if (!ignoreBrand && currentBrand.length && !currentBrand.includes(String(item["Brand Name"] || "").trim())) return false;
+    if (!ignoreType && currentType.length && !currentType.includes(getItemType(item))) return false;
+    if (!ignoreBrand && currentBrand.length && !currentBrand.includes(getItemBrand(item))) return false;
 
     return true;
   }
@@ -492,7 +502,7 @@ function renderFilterMenu() {
   const typeCounts = new Map();
   data.forEach(item => {
     if (matches(item, true, false)) {
-      const type = String(item["Type"] || "").trim();
+      const type = getItemType(item);
       if (type) {
         typeCounts.set(type, (typeCounts.get(type) || 0) + 1);
       }
@@ -503,15 +513,15 @@ function renderFilterMenu() {
   const brandCounts = new Map();
   data.forEach(item => {
     if (matches(item, false, true)) {
-      const brand = String(item["Brand Name"] || "").trim();
+      const brand = getItemBrand(item);
       if (brand) {
         brandCounts.set(brand, (brandCounts.get(brand) || 0) + 1);
       }
     }
   });
 
-  const allTypes = Array.from(new Set(data.map(i => String(i["Type"] || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
-  const allBrands = Array.from(new Set(data.map(i => String(i["Brand Name"] || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  const allTypes = Array.from(new Set(data.map(i => getItemType(i)).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  const allBrands = Array.from(new Set(data.map(i => getItemBrand(i)).filter(Boolean))).sort((a, b) => a.localeCompare(b));
 
   if (filterTypePageNode) {
     const totalMatchingType = data.filter(i => matches(i, true, false)).length;
@@ -694,7 +704,7 @@ function renderCategoryBar(typeCounts) {
   const filterTypeNode = document.getElementById("filterType");
   const activeType = filterTypeNode ? filterTypeNode.value : "";
 
-  const allTypesSet = new Set(data.map(item => String(item["Type"] || "").trim()).filter(Boolean));
+  const allTypesSet = new Set(data.map(item => String(item["Type"] || item["Category"] || item["Jewellery Type"] || item["type"] || "").trim()).filter(Boolean));
   const types = [...allTypesSet].sort((a, b) => a.localeCompare(b));
 
   let totalCount = 0;
@@ -1076,8 +1086,8 @@ function getFilteredItems() {
 
   let filtered = data.filter(d => {
     const status = window.normalizeStatus(d["Status"]);
-    const itemType = String(d["Type"] || "").trim();
-    const itemBrand = String(d["Brand Name"] || "").trim();
+    const itemType = String(d["Type"] || d["Category"] || d["Jewellery Type"] || d["type"] || "").trim();
+    const itemBrand = String(d["Brand Name"] || d["Brand"] || d["Jewellery Brand"] || d["brand"] || "").trim();
     const serial = String(d["Serial No"] || "").trim();
     const typeMatch = !filterType.length || filterType.includes(itemType);
     const brandMatch = !filterBrand.length || filterBrand.includes(itemBrand);
