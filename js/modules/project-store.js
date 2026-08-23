@@ -43,60 +43,94 @@ function initializeDefaultData() {
   let projects = safeGetItem(STORAGE_KEYS.PROJECTS, null);
 
   if (!stylists || !Array.isArray(stylists) || stylists.length === 0) {
-    stylists = [
-      {
-        id: "sty_ananya_01",
-        name: "Ananya Sharma",
-        title: "Lead Red Carpet Stylist",
-        specialty: "High Fine & Couture Jewellery",
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "sty_rohan_02",
-        name: "Rohan Mehta",
-        title: "Celebrity Fashion Director",
-        specialty: "Runway & Award Season",
-        createdAt: new Date().toISOString()
-      }
-    ];
+    stylists = [];
     safeSetItem(STORAGE_KEYS.STYLISTS, stylists);
   }
 
   if (!celebrities || !Array.isArray(celebrities) || celebrities.length === 0) {
-    celebrities = [
-      {
-        id: "cel_shreya_001",
-        name: "Shreya",
-        category: "A-List Actress & Icon",
-        house: "Red Carpet Gala",
-        phone: "+91 9876543210",
-        email: "shreya@atelier.com",
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "cel_rahul_002",
-        name: "Rahul",
-        category: "Fashion Icon & Artist",
-        house: "Vogue Showcase",
-        phone: "+91 9812345678",
-        email: "rahul@vogue.com",
-        createdAt: new Date().toISOString()
-      }
-    ];
+    celebrities = [];
     safeSetItem(STORAGE_KEYS.CELEBRITIES, celebrities);
   }
 
-  // Clean up any previously stored dummy projects from localStorage
-  let rawProjects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
-  if (Array.isArray(rawProjects) && rawProjects.length > 0) {
-    const cleanedProjects = rawProjects.filter(p => p && p.id !== "proj_shreya_mon_001" && p.id !== "proj_rahul_vogue_002");
-    if (cleanedProjects.length !== rawProjects.length) {
-      safeSetItem(STORAGE_KEYS.PROJECTS, cleanedProjects);
-    }
-  }
-
   if (!projects || !Array.isArray(projects) || projects.length === 0) {
+    const now = new Date();
+    const monDate = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const returnDue = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Yesterday (Overdue)
+    const followUp = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const sharedDate = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // projects = [
+    //   {
+    //     id: "proj_shreya_mon_001",
+    //     celebrityId: "cel_shreya_001",
+    //     stylistId: "sty_ananya_01",
+    //     headStylist: "Natasha K",
+    //     jewelleryBrand: "Ascend Fine Jewellery",
+    //     code: "LB-2026-FW01",
+    //     title: "Red Carpet Gala Pull (Shreya)",
+    //     season: "Fall / Winter 2026",
+    //     purpose: "Red Carpet Gala",
+    //     status: "Active",
+    //     projectStatus: "Waiting for Return",
+    //     notes: "Requirement provided by Shreya. Curated by Stylist Ananya Sharma.",
+    //     finalTraySharedDate: sharedDate,
+    //     followUpDate: followUp,
+    //     returnDueDate: returnDue,
+    //     productStats: { sent: 18, returned: 14, pending: 3, missing: 1 },
+    //     deliverables: { completed: 3, total: 5 },
+    //     socialPosting: { status: "Pending", postingDate: "2026-08-05" },
+    //     payment: { invoiceAmount: 150000, amountReceived: 100000, status: "Partial" },
+    //     createdAt: monDate,
+    //     updatedAt: monDate,
+    //     selectedSerials: [],
+    //     pdfRecords: [
+    //       {
+    //         id: "pdf_001",
+    //         pdfTitle: "Shreya_Gala_Curation_Mon.pdf",
+    //         pdfKind: "Celebrity Lookbook",
+    //         generatedAt: monDate,
+    //         itemCount: 0
+    //       }
+    //     ],
+    //     activityLog: [
+    //       {
+    //         id: "act_001",
+    //         timestamp: monDate,
+    //         action: "Curation Initiated",
+    //         details: "Lookbook created for Celebrity Shreya by Stylist Ananya Sharma."
+    //       }
+    //     ]
+    //   },
+    //   {
+    //     id: "proj_rahul_vogue_002",
+    //     celebrityId: "cel_rahul_002",
+    //     stylistId: "sty_rohan_02",
+    //     headStylist: "Vikram R",
+    //     jewelleryBrand: "Luxe Heritage Jewels",
+    //     code: "LB-2026-FW02",
+    //     title: "Vogue Cover Showcase (Rahul)",
+    //     season: "Fall / Winter 2026",
+    //     purpose: "Editorial Shoot",
+    //     status: "Lookbook Sent",
+    //     projectStatus: "Active",
+    //     notes: "High priority editorial lookbook shoot.",
+    //     finalTraySharedDate: new Date().toISOString().split('T')[0],
+    //     followUpDate: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    //     returnDueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    //     productStats: { sent: 12, returned: 12, pending: 0, missing: 0 },
+    //     deliverables: { completed: 4, total: 4 },
+    //     socialPosting: { status: "Posted", postingDate: "2026-07-30" },
+    //     payment: { invoiceAmount: 220000, amountReceived: 220000, status: "Paid" },
+    //     createdAt: now.toISOString(),
+    //     updatedAt: now.toISOString(),
+    //     selectedSerials: [],
+    //     pdfRecords: [],
+    //     activityLog: []
+    //   }
+    // ];
+
     projects = [];
+
     safeSetItem(STORAGE_KEYS.PROJECTS, sortProjectsDescending(projects));
   }
 }
@@ -118,7 +152,7 @@ export function sortProjectsDescending(projects = []) {
 export function mergeProjects(localProjects = [], remoteProjects = []) {
   const localMap = new Map();
   (Array.isArray(localProjects) ? localProjects : []).forEach(p => {
-    if (p && p.id && p.id !== "proj_shreya_mon_001" && p.id !== "proj_rahul_vogue_002") {
+    if (p && p.id) {
       localMap.set(p.id, p);
     }
   });
@@ -128,7 +162,7 @@ export function mergeProjects(localProjects = [], remoteProjects = []) {
   // Deduplicate remoteProjects by picking the newest one for each ID
   const remoteMap = new Map();
   (Array.isArray(remoteProjects) ? remoteProjects : []).forEach(remoteProj => {
-    if (!remoteProj || !remoteProj.id || remoteProj.id === "proj_shreya_mon_001" || remoteProj.id === "proj_rahul_vogue_002") return;
+    if (!remoteProj || !remoteProj.id) return;
     const existing = remoteMap.get(remoteProj.id);
     if (!existing) {
       remoteMap.set(remoteProj.id, remoteProj);
@@ -210,7 +244,7 @@ export async function fetchDataFromFirebase() {
     const projectsSnap = await getDocs(collection(db, "projects"));
     const remoteProjects = [];
     projectsSnap.forEach((d) => remoteProjects.push(d.data()));
-    
+
     if (remoteProjects.length > 0) {
       const localProjects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
       const mergedProjects = mergeProjects(localProjects, remoteProjects);
@@ -333,7 +367,7 @@ export function saveCelebrity({ name, category = "A-List Actress & Icon", house 
 export function getProjects(celebrityId = null, stylistId = null) {
   let projects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
   projects = sortProjectsDescending(projects);
-  
+
   if (selectedDepartment) {
     projects = projects.filter(p => !p.department || p.department === selectedDepartment);
   }
