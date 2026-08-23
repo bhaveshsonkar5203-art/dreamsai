@@ -313,13 +313,15 @@ export function getStylistById(id) {
   return stylists.find(s => s.id === id) || null;
 }
 
-export function saveStylist({ name, title = "Personal Stylist", specialty = "Couture Jewellery" }) {
+export function saveStylist({ name, title = "Personal Stylist", specialty = "Couture Jewellery", phone = "", email = "" }) {
   const stylists = getStylists();
   const newStylist = {
     id: "sty_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
     name: name.trim(),
     title: title.trim(),
     specialty: specialty.trim(),
+    phone: phone.trim(),
+    email: email.trim(),
     createdAt: new Date().toISOString()
   };
   stylists.unshift(newStylist);

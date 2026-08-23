@@ -1050,7 +1050,18 @@ function refreshProjectModalContent() {
             <option value="A-List Actress & Icon">A-List Actress & Icon</option>
             <option value="Red Carpet Musician">Red Carpet Musician</option>
           </select>
+          <input type="tel" id="newCelebrityPhone" placeholder="Mobile / WhatsApp (e.g. +91 98765 43210)" class="pm-select-sm" />
+          <input type="email" id="newCelebrityEmail" placeholder="Email Address" class="pm-select-sm" />
           <button type="submit" class="btn-primary-sm">Save Celebrity</button>
+        </form>
+
+        <button class="btn-secondary-sm full-width" style="margin-top: 6px;" onclick="toggleNewStylistForm()">+ Add New Stylist</button>
+
+        <form id="newStylistForm" style="display: none;" onsubmit="handleCreateStylistSubmit(event)" class="pm-inline-form">
+          <input type="text" id="newStylistName" placeholder="Stylist Name (e.g. Ananya Sharma)" required />
+          <input type="tel" id="newStylistPhone" placeholder="Mobile / WhatsApp (e.g. +91 98765 43210)" class="pm-select-sm" required />
+          <input type="email" id="newStylistEmail" placeholder="Email Address (e.g. stylist@atelier.com)" class="pm-select-sm" />
+          <button type="submit" class="btn-primary-sm">Save Stylist</button>
         </form>
 
         <hr class="pm-divider" />
@@ -1211,17 +1222,42 @@ function handleProjectChange(projectId, callback, targetTab = null) {
   }, 180);
 }
 
+function toggleNewStylistForm() {
+  const form = document.getElementById("newStylistForm");
+  if (form) {
+    form.style.display = form.style.display === "none" ? "block" : "none";
+  }
+}
+
+function handleCreateStylistSubmit(e) {
+  e.preventDefault();
+  const nameInput = document.getElementById("newStylistName");
+  const phoneInput = document.getElementById("newStylistPhone");
+  const emailInput = document.getElementById("newStylistEmail");
+  if (!nameInput || !nameInput.value.trim()) return;
+
+  ProjectStore.saveStylist({
+    name: nameInput.value,
+    phone: phoneInput ? phoneInput.value : "",
+    email: emailInput ? emailInput.value : ""
+  });
+
+  refreshProjectModalContent();
+}
+
 function handleCreateCelebritySubmit(e) {
   e.preventDefault();
   const nameInput = document.getElementById("newCelebrityName");
   const categorySelect = document.getElementById("newCelebrityCategory");
   const phoneInput = document.getElementById("newCelebrityPhone");
+  const emailInput = document.getElementById("newCelebrityEmail");
   if (!nameInput || !nameInput.value.trim()) return;
 
   const newCelebrity = ProjectStore.saveCelebrity({
     name: nameInput.value,
     category: categorySelect ? categorySelect.value : "A-List Actress & Icon",
-    phone: phoneInput ? phoneInput.value : ""
+    phone: phoneInput ? phoneInput.value : "",
+    email: emailInput ? emailInput.value : ""
   });
 
   const stylists = ProjectStore.getStylists();
@@ -1615,9 +1651,17 @@ function showFollowUpReminderModal(dueProjects, deptName = '') {
         </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
           <span class="prod-badge ${badgeClass}" style="margin:0;">${badgeText}</span>
-          <button class="btn-qa btn-qa-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="window.closeFollowUpReminderModal(); window.selectDepartment('${escapeHtml(deptName || p.department || '')}'); window.handleProjectChange('${p.id}');">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Project
-          </button>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button class="btn-qa" style="padding: 4px 8px; font-size: 0.76rem; background: #25d366; color: #fff; border: none; border-radius: 4px;" onclick="window.sendStylistFollowUpWhatsApp('${p.id}')" title="Send WhatsApp Reminder">
+              <i class="fa-brands fa-whatsapp"></i> WhatsApp
+            </button>
+            <button class="btn-qa" style="padding: 4px 8px; font-size: 0.76rem; background: #0284c7; color: #fff; border: none; border-radius: 4px;" onclick="window.sendStylistFollowUpEmail('${p.id}')" title="Send Email Reminder">
+              <i class="fa-solid fa-envelope"></i> Email
+            </button>
+            <button class="btn-qa btn-qa-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="window.closeFollowUpReminderModal(); window.selectDepartment('${escapeHtml(deptName || p.department || '')}'); window.handleProjectChange('${p.id}');">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open
+            </button>
+          </div>
         </div>
       </div>
     `;

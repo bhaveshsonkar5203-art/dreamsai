@@ -2864,6 +2864,9 @@ async function shareCurrentPdf(isBypassed = false) {
     if (markResult && markResult.ok) {
       setSerialFeedback(`Marked ${markResult.updatedCount || finalTraySerials.length} item(s) as delivered.`, false);
     }
+    if (typeof window.sendStylistFinalTrayNotification === 'function') {
+      window.sendStylistFinalTrayNotification();
+    }
   }
 
   const fileName = buildPdfFileName();
@@ -3839,6 +3842,17 @@ function updateReturnProductStatus(serial, status) {
   refreshReturnProductsUi();
   applyReturnProductInventoryRules();
   persistReturnProductsState();
+
+  // Check if all items in return tray are now returned (received)
+  if (returnProductsState.length > 0) {
+    const allReturned = returnProductsState.every(i => i.returnStatus === 'received');
+    if (allReturned) {
+      const { project } = ProjectStore.getActiveContext();
+      if (project && typeof window.sendStylistReturnCompletedNotification === 'function') {
+        window.sendStylistReturnCompletedNotification(project.id);
+      }
+    }
+  }
 }
 
 function updateReturnProductCondition(serial, condition) {
@@ -4087,7 +4101,109 @@ window.goToNextPage = goToNextPage;
 window.changePageSize = changePageSize;
 window.goToPrevSelectedPage = goToPrevSelectedPage;
 window.goToNextSelectedPage = goToNextSelectedPage;
-window.changeSelectedPageSize = changeSelectedPageSize;
+window.sendStylistFinalTrayNotification = function(projectId) {
+  const { project, stylist, celebrity } = ProjectStore.getActiveContext();
+  const p = projectId ? ProjectStore.getProjectById(projectId) : project;
+  const sty = (p && p.stylistId) ? ProjectStore.getStylistById(p.stylistId) : stylist;
+  const cel = (p && p.celebrityId) ? ProjectStore.getCelebrityById(p.celebrityId) : celebrity;
+
+  const phone = (sty && sty.phone) ? sty.phone.replace(/[^0-9+]/g, '') : '';
+  const stylistName = sty ? sty.name : (p ? p.headStylist : 'Stylist');
+  const celName = cel ? cel.name : 'Celebrity';
+
+  const text = encodeURIComponent(
+    `✨ *ASCEND ATELIER STUDIO — FINAL CURATION TRAY SHARED*\n\n` +
+    `Hello ${stylistName},\n` +
+    `The final curation tray for *${p ? p.title : 'Campaign'}* (Celebrity: ${celName}) has been finalized and shared.\n\n` +
+    `📋 Project Code: ${p ? p.code : ''}\n` +
+    `🗓 Date: ${new Date().toLocaleDateString()}\n` +
+    `📅 15-Day Follow-up Scheduled: ${p && p.followUpDate ? p.followUpDate : 'In 15 Days'}\n\n` +
+    `Please review the curated selection.`
+  );
+
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const waUrl = phone 
+    ? (isMobile ? `https://api.whatsapp.com/send?phone=${phone}&text=${text}` : `https://web.whatsapp.com/send?phone=${phone}&text=${text}`)
+    : (isMobile ? `https://api.whatsapp.com/send?text=${text}` : `https://web.whatsapp.com/send?text=${text}`);
+
+  window.open(waUrl, '_blank', 'noopener,noreferrer');
+};
+
+window.sendStylistReturnCompletedNotification = function(projectId) {
+  const p = ProjectStore.getProjectById(projectId);
+  if (!p) return;
+  const sty = ProjectStore.getStylistById(p.stylistId);
+  const cel = ProjectStore.getCelebrityById(p.celebrityId);
+
+  const phone = (sty && sty.phone) ? sty.phone.replace(/[^0-9+]/g, '') : '';
+  const stylistName = sty ? sty.name : (p.headStylist || 'Stylist');
+  const celName = cel ? cel.name : 'Celebrity';
+
+  const text = encodeURIComponent(
+    `✅ *ASCEND ATELIER STUDIO — ALL PRODUCTS RETURNED*\n\n` +
+    `Hello ${stylistName},\n` +
+    `All items for *${p.title}* (${celName}) have been safely received back at the studio in good condition!\n\n` +
+    `📦 Status: Return Completed (0 Pending / 0 Missing)\n` +
+    `Thank you for your seamless coordination!`
+  );
+
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const waUrl = phone 
+    ? (isMobile ? `https://api.whatsapp.com/send?phone=${phone}&text=${text}` : `https://web.whatsapp.com/send?phone=${phone}&text=${text}`)
+    : (isMobile ? `https://api.whatsapp.com/send?text=${text}` : `https://web.whatsapp.com/send?text=${text}`);
+
+  window.open(waUrl, '_blank', 'noopener,noreferrer');
+};
+
+window.sendStylistFollowUpWhatsApp = function(projectId) {
+  const p = ProjectStore.getProjectById(projectId);
+  if (!p) return;
+  const sty = ProjectStore.getStylistById(p.stylistId);
+  const cel = ProjectStore.getCelebrityById(p.celebrityId);
+
+  const phone = (sty && sty.phone) ? sty.phone.replace(/[^0-9+]/g, '') : '';
+  const stylistName = sty ? sty.name : (p.headStylist || 'Stylist');
+  const celName = cel ? cel.name : 'Celebrity';
+
+  const text = encodeURIComponent(
+    `🔔 *ASCEND ATELIER STUDIO — 15-DAY FOLLOW-UP REMINDER*\n\n` +
+    `Hello ${stylistName},\n` +
+    `This is a friendly follow-up reminder for campaign *${p.title}* (${celName}).\n\n` +
+    `🗓 Follow-up Due Date: ${p.followUpDate || 'Today'}\n` +
+    `📦 Return Due Date: ${p.returnDueDate || 'Pending'}\n\n` +
+    `Please reply with an update on PR placement & return scheduling.`
+  );
+
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const waUrl = phone 
+    ? (isMobile ? `https://api.whatsapp.com/send?phone=${phone}&text=${text}` : `https://web.whatsapp.com/send?phone=${phone}&text=${text}`)
+    : (isMobile ? `https://api.whatsapp.com/send?text=${text}` : `https://web.whatsapp.com/send?text=${text}`);
+
+  window.open(waUrl, '_blank', 'noopener,noreferrer');
+};
+
+window.sendStylistFollowUpEmail = function(projectId) {
+  const p = ProjectStore.getProjectById(projectId);
+  if (!p) return;
+  const sty = ProjectStore.getStylistById(p.stylistId);
+  const cel = ProjectStore.getCelebrityById(p.celebrityId);
+
+  const email = (sty && sty.email) ? sty.email : '';
+  const stylistName = sty ? sty.name : (p.headStylist || 'Stylist');
+  const celName = cel ? cel.name : 'Celebrity';
+
+  const subject = encodeURIComponent(`ASCEND Atelier — Follow-up Reminder: ${p.title}`);
+  const body = encodeURIComponent(
+    `Hello ${stylistName},\n\n` +
+    `This is a 15-day campaign follow-up reminder for project "${p.title}" featuring ${celName}.\n\n` +
+    `• Follow-up Date: ${p.followUpDate || 'Today'}\n` +
+    `• Expected Return Date: ${p.returnDueDate || 'Pending'}\n\n` +
+    `Please let us know if you require an extension or update on the pull items.\n\n` +
+    `Best regards,\nASCEND Atelier Studio Team`
+  );
+
+  window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+};
 
 
 
