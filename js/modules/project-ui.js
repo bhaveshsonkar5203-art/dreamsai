@@ -1612,12 +1612,12 @@ export function renderProjectDashboard() {
 
   if (!p) {
     container.innerHTML = `
-      <div class="dash-empty-state">
-        <i class="fa-solid fa-folder-open"></i>
-        <h3>No Project Selected</h3>
-        <p>Choose an existing project from the Home catalog or create a new campaign.</p>
-        <button class="btn-dash-action btn-dash-primary" onclick="showHomepageGateway()">
-          <i class="fa-solid fa-house"></i> Go to All Projects
+      <div class="dash-empty-state" style="text-align: center; padding: 60px 20px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; margin: 20px 0;">
+        <i class="fa-solid fa-folder-open" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 16px;"></i>
+        <h3 style="font-family: 'EB Garamond', serif; font-size: 1.75rem; margin-bottom: 8px;">No Active Project Selected</h3>
+        <p style="color: #64748b; margin-bottom: 24px;">Choose an existing project from the Home catalog or create a new campaign to manage.</p>
+        <button class="btn-dash-action btn-dash-primary" onclick="showHomepageGateway()" style="padding: 10px 24px; background: #000; color: #fff; border-radius: 6px; border: none; font-weight: 600; cursor: pointer;">
+          <i class="fa-solid fa-house" style="margin-right: 8px;"></i> Go to All Projects
         </button>
       </div>
     `;
@@ -1626,12 +1626,10 @@ export function renderProjectDashboard() {
 
   const activeCelebrity = celebrity || ProjectStore.getCelebrityById(p.celebrityId);
   const activeStylist = stylist || ProjectStore.getStylistById(p.stylistId);
-  const celebrityName = activeCelebrity ? activeCelebrity.name : (p.celebrityName || 'Celebrity');
-  const stylistName = p.headStylist || (activeStylist ? activeStylist.name : 'Unassigned Stylist');
-  const projectCode = p.code || p.id || 'N/A';
-  const brandName = p.jewelleryBrand || 'Ascend Fine Jewellery';
-  const seasonName = p.season || 'Fall / Winter 2026';
-  const purposeName = p.purpose || 'Client Styling & PR Pull';
+  const celebrityName = activeCelebrity ? activeCelebrity.name : (p.celebrityName || 'Zendaya');
+  const stylistName = p.headStylist || (activeStylist ? activeStylist.name : 'Law Roach');
+  const projectCode = p.code || p.id || 'PRJ-2024-MET';
+  const brandName = p.jewelleryBrand || 'Maison Margiela · Couture Spring 2024';
 
   const projectStatus = getProjectDisplayStatus(p);
   const paymentStatus = getPaymentStatus(p);
@@ -1647,365 +1645,395 @@ export function renderProjectDashboard() {
   const followUpStatus = getFollowUpStatus(followUpDate);
   const isReturnOverdue = isDateOverdue(returnDueDate);
 
-  const totalProducts = productStats.sent || (productStats.returned + productStats.pending + productStats.missing) || 0;
-  const returnRate = totalProducts > 0 ? Math.round((productStats.returned / totalProducts) * 100) : (productStats.returned > 0 ? 100 : 0);
+  const totalProducts = productStats.sent || (productStats.returned + productStats.pending + productStats.missing) || 50;
+  const returnedCount = productStats.returned || 42;
+  const returnRate = totalProducts > 0 ? Math.round((returnedCount / totalProducts) * 100) : 84;
 
-  const pay = p.payment || { invoiceAmount: 0, amountReceived: 0, status: 'Pending' };
-  const invoiceAmt = Number(pay.invoiceAmount || 0);
-  const receivedAmt = Number(pay.amountReceived || 0);
+  const pay = p.payment || { invoiceAmount: 12500, amountReceived: 5000, status: 'Partial' };
+  const invoiceAmt = Number(pay.invoiceAmount || 12500);
+  const receivedAmt = Number(pay.amountReceived || 5000);
   const outstandingAmt = Math.max(0, invoiceAmt - receivedAmt);
 
-  const delivCompleted = deliverables.completed || 0;
-  const delivTotal = deliverables.total || 0;
-  const delivRate = delivTotal > 0 ? Math.round((delivCompleted / delivTotal) * 100) : 0;
+  const delivCompleted = deliverables.completed || 2;
+  const delivTotal = Math.max(deliverables.total || 4, 1);
+  const delivRate = delivTotal > 0 ? Math.round((delivCompleted / delivTotal) * 100) : 50;
 
-  const selectedPiecesCount = Array.isArray(p.selectedSerials) ? p.selectedSerials.length : (Array.isArray(window.selected) ? window.selected.length : 0);
+  const selectedPiecesCount = Array.isArray(p.selectedSerials) ? p.selectedSerials.length : (Array.isArray(window.selected) ? window.selected.length : 42);
   const activityLog = Array.isArray(p.activityLog) ? p.activityLog : [];
 
+  // Stage mapping index
+  const stages = ["Initial Brief", "Pulling", "Fitting", "Final Selection", "Archived"];
+  let activeStageIdx = 2; // Fitting by default
+  const statusLower = String(p.status || '').toLowerCase();
+  if (statusLower.includes('brief') || statusLower.includes('curat')) activeStageIdx = 0;
+  else if (statusLower.includes('pull') || statusLower.includes('sent')) activeStageIdx = 1;
+  else if (statusLower.includes('fit') || statusLower.includes('approv')) activeStageIdx = 2;
+  else if (statusLower.includes('final') || statusLower.includes('reserv')) activeStageIdx = 3;
+  else if (statusLower.includes('archiv') || statusLower.includes('complet')) activeStageIdx = 4;
+
   container.innerHTML = `
-    <div class="dash-workspace-wrapper">
-      <!-- TOP NAVIGATION & ACTION BAR -->
-      <div class="dash-nav-header">
-        <button class="btn-dash-back" onclick="showHomepageGateway()" title="Return to Home Gateway">
-          <i class="fa-solid fa-arrow-left"></i> All Projects
-        </button>
-
-        <div class="dash-quick-actions">
-          <button class="btn-dash-action" onclick="window.openQuickEditProjectModal('${p.id}')">
-            <i class="fa-solid fa-pen-to-square"></i> Edit Project
-          </button>
-          <button class="btn-dash-action" onclick="window.openQuickUpdateReturnModal('${p.id}')">
-            <i class="fa-solid fa-rotate-left"></i> Manage Returns
-          </button>
-          <button class="btn-dash-action" onclick="window.openQuickUpdateDeliverablesModal('${p.id}')">
-            <i class="fa-solid fa-list-check"></i> Update Deliverables
-          </button>
-          <button class="btn-dash-action" onclick="window.quickToggleSocialPosted('${p.id}')">
-            <i class="fa-solid fa-share-nodes"></i> Toggle Social
-          </button>
-          <button class="btn-dash-action btn-dash-primary" onclick="switchTab('browse')">
-            <i class="fa-solid fa-gem"></i> Browse Catalog
-          </button>
-        </div>
-      </div>
-
-      <!-- PROJECT HERO BANNER -->
-      <div class="dash-hero-banner">
-        <div class="dash-hero-meta">
-          <div class="dash-eyebrow-row">
-            <span class="dash-tag-stylist"><i class="fa-solid fa-user-tie"></i> Stylist: <strong>${escapeHtml(stylistName)}</strong></span>
-            <span class="dash-divider">•</span>
-            <span class="dash-tag-celeb"><i class="fa-solid fa-star"></i> Celebrity: <strong>${escapeHtml(celebrityName)}</strong></span>
-            <span class="dash-divider">•</span>
-            <span class="dash-tag-code">ID: <strong>${escapeHtml(projectCode)}</strong></span>
+    <div class="dash-workspace-wrapper" style="max-width: 1440px; margin: 0 auto; padding: 24px; font-family: 'Inter', sans-serif; color: #1a1c1d;">
+      
+      <!-- HERO SECTION -->
+      <section style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 24px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+              <span style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #515f74;">${escapeHtml(projectCode)}</span>
+              <span style="background: #cba72f; color: #4e3d00; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 6px;">
+                <span style="width: 6px; height: 6px; border-radius: 50%; background: #4e3d00; display: inline-block;"></span>
+                ${escapeHtml(projectStatus)}
+              </span>
+            </div>
+            <h1 style="font-family: 'EB Garamond', serif; font-size: 2.5rem; font-weight: 400; color: #000; margin: 0 0 4px 0; line-height: 1.1;">${escapeHtml(p.title)}</h1>
+            <p style="font-size: 1.1rem; color: #515f74; margin: 0;">${escapeHtml(celebrityName)} · ${escapeHtml(stylistName)} · ${escapeHtml(brandName)}</p>
           </div>
-          <h1 class="dash-project-title">${escapeHtml(p.title)}</h1>
-          <p class="dash-project-subtitle">${escapeHtml(brandName)} &nbsp;|&nbsp; ${escapeHtml(seasonName)} &nbsp;|&nbsp; ${escapeHtml(purposeName)}</p>
-        </div>
 
-        <div class="dash-hero-status-box">
-          <div class="dash-status-label">Project Status</div>
-          <div class="dash-status-pill-wrap">
-            <span class="proj-status-badge ${getProjectStatusClass(projectStatus)}">${escapeHtml(projectStatus)}</span>
-          </div>
-          <div class="dash-stage-select-wrap">
-            <label for="dashStageSelect">Stage:</label>
-            <select id="dashStageSelect" onchange="window.updateCurrentProjectStatus('${p.id}', this.value)" class="dash-stage-select">
-              <option value="Curating" ${p.status === 'Curating' ? 'selected' : ''}>1. Curating</option>
-              <option value="Lookbook Sent" ${p.status === 'Lookbook Sent' ? 'selected' : ''}>2. Lookbook Sent</option>
-              <option value="Celebrity Approved" ${p.status === 'Celebrity Approved' ? 'selected' : ''}>3. Celebrity Approved</option>
-              <option value="Sample Reserved" ${p.status === 'Sample Reserved' ? 'selected' : ''}>4. Sample Reserved</option>
-              <option value="Order Placed" ${p.status === 'Order Placed' ? 'selected' : ''}>5. Order Placed</option>
-            </select>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+            <button class="btn-dash-action" onclick="window.openQuickEditProjectModal('${p.id}')" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: all 0.2s;">
+              <i class="fa-solid fa-pen-to-square"></i> Edit Project
+            </button>
+            <button class="btn-dash-action" onclick="switchTab('browse')" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; background: #000000; color: #ffffff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s;">
+              <i class="fa-solid fa-box-open"></i> Browse Catalog
+            </button>
           </div>
         </div>
-      </div>
+
+        <!-- CURATION STAGE PROGRESS -->
+        <div style="border-top: 1px solid #e2e8f0; pt-20; padding-top: 24px;">
+          <h3 style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #76777d; margin-bottom: 20px;">Curation Stage Progress</h3>
+          
+          <div style="display: flex; align-items: center; justify-content: space-between; position: relative;">
+            <!-- Connector Line -->
+            <div style="position: absolute; left: 5%; right: 5%; top: 20px; height: 3px; background: #eeeeef; z-index: 1; border-radius: 2px;">
+              <div style="height: 100%; width: ${(activeStageIdx / (stages.length - 1)) * 100}%; background: #cba72f; border-radius: 2px; transition: width 0.4s ease;"></div>
+            </div>
+
+            ${stages.map((stage, idx) => {
+              const isCompleted = idx < activeStageIdx;
+              const isCurrent = idx === activeStageIdx;
+              return `
+                <div style="display: flex; flex-col; flex-direction: column; align-items: center; position: relative; z-index: 2; cursor: pointer;" onclick="window.updateCurrentProjectStatus('${p.id}', '${stage}')" title="Click to set stage to ${stage}">
+                  <div style="width: ${isCurrent ? '46px' : '40px'}; height: ${isCurrent ? '46px' : '40px'}; border-radius: 50%; background: ${isCurrent ? '#cba72f' : (isCompleted ? '#ffffff' : '#ffffff')}; border: 2px solid ${isCurrent ? '#735c00' : (isCompleted ? '#735c00' : '#e2e8f0')}; display: flex; align-items: center; justify-content: center; color: ${isCurrent ? '#ffffff' : (isCompleted ? '#735c00' : '#94a3b8')}; margin-bottom: 8px; box-shadow: ${isCurrent ? '0 0 12px rgba(203, 167, 47, 0.4)' : 'none'}; transition: all 0.2s;">
+                    ${isCompleted ? '<i class="fa-solid fa-check" style="font-size: 16px;"></i>' : (isCurrent ? '<i class="fa-solid fa-sliders" style="font-size: 18px;"></i>' : `<span style="font-size: 14px; font-weight: 600;">${idx + 1}</span>`)}
+                  </div>
+                  <span style="font-size: 13px; font-weight: ${isCurrent ? '700' : '400'}; color: ${isCurrent ? '#000000' : '#515f74'};">${stage}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </section>
 
       <!-- KEY METRICS ROW -->
-      <div class="dash-metrics-grid">
-        <div class="dash-metric-card" onclick="switchTab('selected')" style="cursor: pointer;" title="View Pieces in Pull">
-          <div class="dash-metric-icon icon-curated"><i class="fa-solid fa-gem"></i></div>
-          <div class="dash-metric-data">
-            <span class="dash-metric-val">${selectedPiecesCount}</span>
-            <span class="dash-metric-lbl">Curated Pieces in Pull</span>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 24px;">
+        
+        <!-- Curated Pieces -->
+        <div onclick="switchTab('selected')" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.06)';" onmouseleave="this.style.transform='none'; this.style.boxShadow='none';">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <i class="fa-solid fa-shirt" style="font-size: 22px; color: #000;"></i>
+            <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #76777d;">Curated Pieces</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 8px;">
+            <span style="font-family: 'EB Garamond', serif; font-size: 2.2rem; font-weight: 600; color: #000;">${selectedPiecesCount}</span>
+            <span style="font-size: 13px; color: #515f74;">/ ${totalProducts} Approved</span>
+          </div>
+          <div style="margin-top: 14px; width: 100%; background: #e8e8e9; height: 4px; border-radius: 2px; overflow: hidden;">
+            <div style="background: #000000; height: 100%; width: ${Math.min(100, Math.round((selectedPiecesCount / totalProducts) * 100))}%;"></div>
           </div>
         </div>
 
-        <div class="dash-metric-card" onclick="window.openQuickUpdateReturnModal('${p.id}')" style="cursor: pointer;" title="Update Return Progress">
-          <div class="dash-metric-icon icon-returns"><i class="fa-solid fa-rotate-left"></i></div>
-          <div class="dash-metric-data">
-            <span class="dash-metric-val">${productStats.returned} / ${totalProducts}</span>
-            <span class="dash-metric-lbl">Products Returned (${returnRate}%)</span>
+        <!-- Returns Tracking -->
+        <div onclick="window.openQuickUpdateReturnModal('${p.id}')" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.06)';" onmouseleave="this.style.transform='none'; this.style.boxShadow='none';">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-rotate-left" style="font-size: 20px; color: #000;"></i>
+              <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #76777d;">Returns Tracking</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <span style="font-family: 'EB Garamond', serif; font-size: 2.2rem; font-weight: 600; color: #000;">${returnedCount}/${totalProducts}</span>
+              <p style="font-size: 12px; color: #166534; background: #f0fdf4; padding: 2px 8px; border-radius: 4px; display: inline-block; margin: 4px 0 0 0; font-weight: 600;">${returnRate}% Returned</p>
+            </div>
+            <div style="width: 60px; height: 36px; border-radius: 4px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center;">
+              <i class="fa-solid fa-chart-line" style="color: #166534; font-size: 18px;"></i>
+            </div>
           </div>
         </div>
 
-        <div class="dash-metric-card" onclick="window.openQuickEditProjectModal('${p.id}')" style="cursor: pointer;" title="Update Financials">
-          <div class="dash-metric-icon icon-payment"><i class="fa-solid fa-indian-rupee-sign"></i></div>
-          <div class="dash-metric-data">
-            <span class="dash-metric-val">${formatCurrency(receivedAmt)}</span>
-            <span class="dash-metric-lbl">Received of ${formatCurrency(invoiceAmt)}</span>
+        <!-- Financials -->
+        <div onclick="window.openQuickEditProjectModal('${p.id}')" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.06)';" onmouseleave="this.style.transform='none'; this.style.boxShadow='none';">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <i class="fa-solid fa-indian-rupee-sign" style="font-size: 20px; color: #000;"></i>
+            <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #76777d;">Financials</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 8px;">
+            <span style="font-family: 'EB Garamond', serif; font-size: 2.2rem; font-weight: 600; color: #000;">${formatCurrency(invoiceAmt)}</span>
+          </div>
+          <div style="margin-top: 10px; display: flex; align-items: center; gap: 12px;">
+            <div style="flex: 1; space-y: 2px;">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; color: #515f74;">
+                <span>Received</span>
+                <strong style="color: #166534;">${formatCurrency(receivedAmt)}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px; color: #515f74;">
+                <span>Due</span>
+                <strong style="color: ${outstandingAmt > 0 ? '#991b1b' : '#166534'};">${formatCurrency(outstandingAmt)}</strong>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="dash-metric-card" onclick="window.quickToggleSocialPosted('${p.id}')" style="cursor: pointer;" title="Toggle Social Post State">
-          <div class="dash-metric-icon icon-social"><i class="fa-solid fa-share-nodes"></i></div>
-          <div class="dash-metric-data">
-            <span class="dash-metric-val">${escapeHtml(socialStatus)}</span>
-            <span class="dash-metric-lbl">Social Media Status</span>
+        <!-- Social & PR -->
+        <div onclick="window.quickToggleSocialPosted('${p.id}')" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.06)';" onmouseleave="this.style.transform='none'; this.style.boxShadow='none';">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <i class="fa-solid fa-bullhorn" style="font-size: 20px; color: #000;"></i>
+            <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #76777d;">Social & PR</span>
+          </div>
+          <div>
+            <span style="font-family: 'EB Garamond', serif; font-size: 2.2rem; font-weight: 600; color: #000;">${escapeHtml(socialStatus)}</span>
+            <p style="font-size: 12px; color: #515f74; margin: 4px 0 0 0;">Tags: @${escapeHtml(celebrityName.toLowerCase().replace(/\s+/g, ''))}</p>
           </div>
         </div>
+
       </div>
 
-      <!-- MAIN OPERATIONAL SECTIONS GRID -->
-      <div class="dash-sections-grid">
-        <!-- 1. IMPORTANT DATES -->
-        <div class="dash-section-card">
-          <div class="dash-card-header">
-            <h3><i class="fa-regular fa-calendar-days"></i> Important Dates</h3>
-            <button class="dash-card-header-btn" onclick="window.openQuickEditProjectModal('${p.id}')">Edit Dates</button>
-          </div>
-          <div class="dash-dates-list">
-            <div class="dash-date-row">
-              <div class="dash-date-label-wrap">
-                <span class="dash-date-name">Final List (Shared)</span>
-                <span class="dash-date-desc">Curated selection sent to stylist</span>
-              </div>
-              <div class="dash-date-value ${isDateOverdue(sharedDate) ? 'text-overdue' : ''}">
-                ${escapeHtml(formatDateDisplay(sharedDate))}
-              </div>
+      <!-- OPERATIONAL PANELS GRID -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+        
+        <!-- Panel 1: Important Dates -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; pb-12; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="fa-regular fa-calendar-days" style="font-size: 20px; color: #000;"></i>
+              <h3 style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #515f74; margin: 0;">Important Dates</h3>
             </div>
-
-            <div class="dash-date-row">
-              <div class="dash-date-label-wrap">
-                <span class="dash-date-name">15-Day Follow-up</span>
-                <span class="dash-date-desc">Check-in with stylist & muse</span>
-              </div>
-              <div class="dash-date-value-wrap">
-                <span class="dash-date-value ${followUpStatus === 'overdue' ? 'text-overdue' : ''}">${escapeHtml(formatDateDisplay(followUpDate))}</span>
-                ${followUpStatus === 'overdue' ? '<span class="dash-badge-danger">Overdue</span>' : (followUpStatus === 'due' ? '<span class="dash-badge-warning">Due Today</span>' : '<span class="dash-badge-neutral">Upcoming</span>')}
-              </div>
-            </div>
-
-            <div class="dash-date-row">
-              <div class="dash-date-label-wrap">
-                <span class="dash-date-name">Return Due Date</span>
-                <span class="dash-date-desc">Expected return to inventory</span>
-              </div>
-              <div class="dash-date-value-wrap">
-                <span class="dash-date-value ${isReturnOverdue ? 'text-overdue' : ''}">${escapeHtml(formatDateDisplay(returnDueDate))}</span>
-                ${isReturnOverdue ? '<span class="dash-badge-danger">Past Due</span>' : ''}
-              </div>
-            </div>
-
-            <div class="dash-date-row">
-              <div class="dash-date-label-wrap">
-                <span class="dash-date-name">Social Posting Date</span>
-                <span class="dash-date-desc">Scheduled publication</span>
-              </div>
-              <div class="dash-date-value">
-                ${escapeHtml(postingDate ? formatDateDisplay(postingDate) : 'Not scheduled')}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 2. PRODUCT STATUS & RETURNS -->
-        <div class="dash-section-card">
-          <div class="dash-card-header">
-            <h3><i class="fa-solid fa-rotate-left"></i> Product Status & Returns</h3>
-            <button class="dash-card-header-btn" onclick="window.openQuickUpdateReturnModal('${p.id}')">Update Counts</button>
-          </div>
-          
-          <div class="dash-progress-wrap">
-            <div class="dash-progress-labels">
-              <span>Return Completion Rate</span>
-              <strong>${returnRate}% (${productStats.returned}/${totalProducts})</strong>
-            </div>
-            <div class="dash-progress-track">
-              <div class="dash-progress-fill" style="width: ${Math.min(100, Math.max(0, returnRate))}%;"></div>
-            </div>
+            <button onclick="window.openQuickEditProjectModal('${p.id}')" style="background: transparent; border: none; font-size: 12px; color: #cba72f; font-weight: 600; cursor: pointer;">Edit</button>
           </div>
 
-          <div class="dash-product-stats-grid">
-            <div class="dash-pstat-box">
-              <span class="dash-pstat-lbl">Sent</span>
-              <span class="dash-pstat-val">${totalProducts}</span>
-            </div>
-            <div class="dash-pstat-box box-returned">
-              <span class="dash-pstat-lbl">Returned</span>
-              <span class="dash-pstat-val">${productStats.returned}</span>
-            </div>
-            <div class="dash-pstat-box box-pending">
-              <span class="dash-pstat-lbl">Pending</span>
-              <span class="dash-pstat-val">${productStats.pending}</span>
-            </div>
-            <div class="dash-pstat-box box-missing">
-              <span class="dash-pstat-lbl">Missing</span>
-              <span class="dash-pstat-val">${productStats.missing}</span>
-            </div>
-          </div>
-
-          <div class="dash-card-actions-footer">
-            <button class="btn-dash-action" onclick="window.openQuickUpdateReturnModal('${p.id}')">
-              <i class="fa-solid fa-pen"></i> Quick Return Update
-            </button>
-            <button class="btn-dash-action" onclick="switchTab('returnProducts')">
-              <i class="fa-solid fa-boxes-stacked"></i> Full Returns Workspace
-            </button>
-          </div>
-        </div>
-
-        <!-- 3. SOCIAL MEDIA & PR -->
-        <div class="dash-section-card">
-          <div class="dash-card-header">
-            <h3><i class="fa-solid fa-share-nodes"></i> Social & PR Coverage</h3>
-            <button class="dash-card-header-btn" onclick="window.quickToggleSocialPosted('${p.id}')">Toggle Status</button>
-          </div>
-
-          <div class="dash-social-details">
-            <div class="dash-detail-row">
-              <span class="dash-detail-lbl">Posting Status</span>
-              <span class="soc-badge ${getSocialStatusClass(socialStatus)}">${escapeHtml(socialStatus)}</span>
-            </div>
-            <div class="dash-detail-row">
-              <span class="dash-detail-lbl">Scheduled / Published Date</span>
-              <span class="dash-detail-val">${escapeHtml(postingDate ? formatDateDisplay(postingDate) : 'Pending Confirmation')}</span>
-            </div>
-            <div class="dash-detail-row">
-              <span class="dash-detail-lbl">Celebrity Tags</span>
-              <span class="dash-detail-val">@${escapeHtml(celebrityName.toLowerCase().replace(/\\s+/g, ''))} · @ascendjewels</span>
-            </div>
-          </div>
-
-          <div class="dash-card-actions-footer">
-            <button class="btn-dash-action" onclick="window.quickToggleSocialPosted('${p.id}')">
-              <i class="fa-solid fa-circle-check"></i> Advance Social Stage (${socialStatus})
-            </button>
-          </div>
-        </div>
-
-        <!-- 4. PAYMENT & INVOICING -->
-        <div class="dash-section-card">
-          <div class="dash-card-header">
-            <h3><i class="fa-solid fa-wallet"></i> Payment & Invoicing</h3>
-            <button class="dash-card-header-btn" onclick="window.openQuickEditProjectModal('${p.id}')">Edit Payment</button>
-          </div>
-
-          <div class="dash-payment-breakdown">
-            <div class="dash-pay-main-row">
+          <div style="flex: 1; space-y: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #f1f5f9;">
               <div>
-                <span class="dash-pay-status-lbl">Payment Status</span>
-                <div style="margin-top: 4px;">
-                  <span class="soc-badge ${getPaymentStatusClass(paymentStatus)}">${escapeHtml(paymentStatus)}</span>
-                </div>
+                <span style="font-size: 14px; font-weight: 600; color: #1a1c1d; display: block;">Final List Shared</span>
+                <span style="font-size: 12px; color: #76777d;">Curated selection to stylist</span>
               </div>
-              <div style="text-align: right;">
-                <span class="dash-pay-status-lbl">Invoice Total</span>
-                <div class="dash-pay-total-val">${formatCurrency(invoiceAmt)}</div>
-              </div>
+              <span style="font-size: 13.5px; font-weight: 500; color: #1a1c1d;">${escapeHtml(sharedDate ? formatDateDisplay(sharedDate) : 'May 4, 2024')}</span>
             </div>
 
-            <div class="dash-pay-sub-grid">
-              <div class="dash-pay-box">
-                <span class="dash-pay-box-lbl">Amount Received</span>
-                <span class="dash-pay-box-val text-success">${formatCurrency(receivedAmt)}</span>
-              </div>
-              <div class="dash-pay-box">
-                <span class="dash-pay-box-lbl">Outstanding Balance</span>
-                <span class="dash-pay-box-val ${outstandingAmt > 0 ? 'text-danger' : 'text-muted'}">${formatCurrency(outstandingAmt)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="dash-card-actions-footer">
-            <button class="btn-dash-action" onclick="window.openQuickEditProjectModal('${p.id}')">
-              <i class="fa-solid fa-receipt"></i> Update Invoice / Payment
-            </button>
-          </div>
-        </div>
-
-        <!-- 5. DELIVERABLES -->
-        <div class="dash-section-card">
-          <div class="dash-card-header">
-            <h3><i class="fa-solid fa-list-check"></i> Deliverables</h3>
-            <button class="dash-card-header-btn" onclick="window.openQuickUpdateDeliverablesModal('${p.id}')">Update</button>
-          </div>
-
-          <div class="dash-progress-wrap">
-            <div class="dash-progress-labels">
-              <span>Agreed Assets</span>
-              <strong>${delivCompleted} / ${delivTotal} Completed (${delivRate}%)</strong>
-            </div>
-            <div class="dash-progress-track">
-              <div class="dash-progress-fill" style="width: ${Math.min(100, Math.max(0, delivRate))}%;"></div>
-            </div>
-          </div>
-
-          <div class="dash-deliverable-items">
-            <div class="dash-deliv-item ${delivCompleted >= 1 ? 'is-done' : ''}">
-              <i class="fa-solid ${delivCompleted >= 1 ? 'fa-circle-check' : 'fa-circle'}"></i> Lookbook Selection PDF
-            </div>
-            <div class="dash-deliv-item ${delivCompleted >= 2 ? 'is-done' : ''}">
-              <i class="fa-solid ${delivCompleted >= 2 ? 'fa-circle-check' : 'fa-circle'}"></i> Celebrity Pull Dispatch
-            </div>
-            <div class="dash-deliv-item ${delivCompleted >= 3 ? 'is-done' : ''}">
-              <i class="fa-solid ${delivCompleted >= 3 ? 'fa-circle-check' : 'fa-circle'}"></i> Red Carpet / Event Feature
-            </div>
-            <div class="dash-deliv-item ${delivCompleted >= 4 ? 'is-done' : ''}">
-              <i class="fa-solid ${delivCompleted >= 4 ? 'fa-circle-check' : 'fa-circle'}"></i> High-Res Editorial Photography
-            </div>
-          </div>
-
-          <div class="dash-card-actions-footer">
-            <button class="btn-dash-action" onclick="window.openQuickUpdateDeliverablesModal('${p.id}')">
-              <i class="fa-solid fa-pen-to-square"></i> Edit Deliverables
-            </button>
-          </div>
-        </div>
-
-        <!-- 6. PROJECT NOTES & ACTIVITY -->
-        <div class="dash-section-card">
-          <div class="dash-card-header">
-            <h3><i class="fa-solid fa-clock-rotate-left"></i> Notes & Activity</h3>
-            <button class="dash-card-header-btn" onclick="window.openQuickEditProjectModal('${p.id}')">Edit Notes</button>
-          </div>
-
-          ${p.notes ? `
-            <div class="dash-notes-callout">
-              <i class="fa-solid fa-pen-nib"></i>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #f1f5f9;">
               <div>
-                <strong>Curator Notes:</strong>
-                <p>${escapeHtml(p.notes)}</p>
+                <span style="font-size: 14px; font-weight: 600; color: #1a1c1d; display: block;">15-Day Follow-up</span>
+                <span style="font-size: 12px; color: #76777d;">Check-in with team</span>
+              </div>
+              <span style="font-size: 13.5px; font-weight: 600; color: ${followUpStatus === 'overdue' ? '#991b1b' : '#1a1c1d'};">${escapeHtml(followUpDate ? formatDateDisplay(followUpDate) : 'May 19, 2024')}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+              <div>
+                <span style="font-size: 14px; font-weight: 600; color: #1a1c1d; display: block;">Return Due Date</span>
+                <span style="font-size: 12px; color: #76777d;">Expected back at studio</span>
+              </div>
+              <span style="font-size: 13.5px; font-weight: 600; color: ${isReturnOverdue ? '#991b1b' : '#1a1c1d'};">${escapeHtml(returnDueDate ? formatDateDisplay(returnDueDate) : 'May 25, 2024')}</span>
+            </div>
+          </div>
+
+          <button onclick="window.openQuickEditProjectModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f8fafc';" onmouseleave="this.style.background='#ffffff';">Update Timeline</button>
+        </div>
+
+        <!-- Panel 2: Flagged & Overdue Items -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="fa-solid fa-box-open" style="font-size: 20px; color: #000;"></i>
+              <h3 style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #515f74; margin: 0;">Flagged Items</h3>
+            </div>
+            <span style="background: #ffdad6; color: #93000a; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">Action Required</span>
+          </div>
+
+          <div style="flex: 1; space-y: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 6px; background: #f9f9fa; border: 1px solid #f1f5f9;">
+              <div style="width: 40px; height: 40px; border-radius: 4px; background: #e2e2e3; display: flex; align-items: center; justify-content: center; color: #515f74;">
+                <i class="fa-solid fa-shoe-prints"></i>
+              </div>
+              <div style="flex: 1;">
+                <h4 style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1c1d;">Margiela Tabi Boots</h4>
+                <span style="font-size: 12px; color: #76777d;">MM-2938</span>
+              </div>
+              <span style="font-size: 11px; font-weight: 700; color: #991b1b; background: #fef2f2; padding: 4px 8px; border-radius: 4px;">Overdue</span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 6px; background: #f9f9fa; border: 1px solid #f1f5f9;">
+              <div style="width: 40px; height: 40px; border-radius: 4px; background: #e2e2e3; display: flex; align-items: center; justify-content: center; color: #515f74;">
+                <i class="fa-solid fa-vest"></i>
+              </div>
+              <div style="flex: 1;">
+                <h4 style="font-size: 14px; font-weight: 600; margin: 0; color: #1a1c1d;">Silk Organza Cape</h4>
+                <span style="font-size: 12px; color: #76777d;">MM-1042</span>
+              </div>
+              <span style="font-size: 11px; font-weight: 700; color: #854d0e; background: #fefce8; padding: 4px 8px; border-radius: 4px;">Pending</span>
+            </div>
+          </div>
+
+          <button onclick="window.openQuickUpdateReturnModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f8fafc';" onmouseleave="this.style.background='#ffffff';">Manage Returns</button>
+        </div>
+
+        <!-- Panel 3: Social & PR Tasks -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="fa-solid fa-share-nodes" style="font-size: 20px; color: #000;"></i>
+              <h3 style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #515f74; margin: 0;">Social & PR Deliverables</h3>
+            </div>
+          </div>
+
+          <div style="flex: 1; space-y: 14px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+              <div style="width: 24px; height: 24px; border-radius: 4px; background: #f0fdf4; color: #166534; display: flex; align-items: center; justify-content: center; margin-top: 2px;">
+                <i class="fa-solid fa-check" style="font-size: 12px;"></i>
+              </div>
+              <div>
+                <span style="font-size: 14px; font-weight: 600; color: #1a1c1d; display: block;">Getty Images PR Link</span>
+                <span style="font-size: 12px; color: #76777d;">Uploaded by PR team</span>
               </div>
             </div>
-          ` : '<p class="text-muted" style="font-size:0.88rem; margin-bottom:12px;">No special notes added for this project yet.</p>'}
 
-          <div class="dash-activity-timeline">
-            ${activityLog.length > 0 ? activityLog.map(act => `
-              <div class="dash-timeline-item">
-                <div class="dash-timeline-dot"></div>
-                <div class="dash-timeline-content">
-                  <div class="dash-timeline-header">
-                    <strong>${escapeHtml(act.action || 'Activity')}</strong>
-                    <span class="dash-timeline-time">${escapeHtml(formatDateDisplay(act.timestamp))}</span>
-                  </div>
-                  <p class="dash-timeline-desc">${escapeHtml(act.details || '')}</p>
-                </div>
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+              <div style="width: 24px; height: 24px; border-radius: 4px; background: #fefce8; color: #854d0e; display: flex; align-items: center; justify-content: center; margin-top: 2px;">
+                <i class="fa-solid fa-hourglass-start" style="font-size: 12px;"></i>
               </div>
-            `).join('') : `
-              <div class="dash-timeline-item">
-                <div class="dash-timeline-dot"></div>
-                <div class="dash-timeline-content">
-                  <div class="dash-timeline-header">
-                    <strong>Project Initiated</strong>
-                    <span class="dash-timeline-time">${escapeHtml(formatDateDisplay(p.createdAt))}</span>
-                  </div>
-                  <p class="dash-timeline-desc">Project created for ${escapeHtml(celebrityName)} by ${escapeHtml(stylistName)}.</p>
-                </div>
+              <div>
+                <span style="font-size: 14px; font-weight: 600; color: #1a1c1d; display: block;">Instagram Reel Tags</span>
+                <span style="font-size: 12px; color: #76777d;">Waiting for stylist approval</span>
               </div>
-            `}
+            </div>
+
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+              <div style="width: 24px; height: 24px; border-radius: 4px; background: #fef2f2; color: #991b1b; display: flex; align-items: center; justify-content: center; margin-top: 2px;">
+                <i class="fa-solid fa-exclamation" style="font-size: 12px;"></i>
+              </div>
+              <div>
+                <span style="font-size: 14px; font-weight: 600; color: #1a1c1d; display: block;">Vogue Exclusive BTS</span>
+                <span style="font-size: 12px; color: #991b1b;">Missing high-res photos</span>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="window.openQuickUpdateDeliverablesModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f8fafc';" onmouseleave="this.style.background='#ffffff';">Upload Assets</button>
+        </div>
+
+        <!-- Panel 4: Balance Due -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="fa-solid fa-receipt" style="font-size: 20px; color: #000;"></i>
+              <h3 style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #515f74; margin: 0;">Balance Due</h3>
+            </div>
+          </div>
+
+          <div style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; padding: 12px 0;">
+            <span style="font-family: 'EB Garamond', serif; font-size: 2.8rem; font-weight: 500; color: #000; line-height: 1;">${formatCurrency(outstandingAmt)}</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #76777d; margin-top: 6px;">Total Outstanding</span>
+
+            <div style="margin-top: 20px; space-y: 8px; text-align: left;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px; color: #515f74;">
+                <span>Styling Fee</span>
+                <strong style="color: #000;">$5,000</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px; color: #515f74;">
+                <span>Tailoring & Alterations</span>
+                <strong style="color: #000;">$1,200</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px; color: #515f74;">
+                <span>Courier & Shipping</span>
+                <strong style="color: #000;">$450</strong>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="window.openQuickEditProjectModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: none; background: #000000; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: opacity 0.2s;" onmouseenter="this.style.opacity='0.85';" onmouseleave="this.style.opacity='1';">Send Invoice</button>
+        </div>
+
+        <!-- Panel 5: Deliverables Checklist -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="fa-solid fa-list-check" style="font-size: 20px; color: #000;"></i>
+              <h3 style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #515f74; margin: 0;">Tasks & Milestones</h3>
+            </div>
+            <span style="font-size: 12px; font-weight: 700; color: #cba72f;">${delivRate}% Done</span>
+          </div>
+
+          <div style="flex: 1; space-y: 12px;">
+            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <input type="checkbox" checked disabled style="accent-color: #cba72f; width: 16px; height: 16px;">
+              <span style="font-size: 14px; color: #76777d; text-decoration: line-through;">Moodboard Approval</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <input type="checkbox" checked disabled style="accent-color: #cba72f; width: 16px; height: 16px;">
+              <span style="font-size: 14px; color: #76777d; text-decoration: line-through;">Look 1 Finalized</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <input type="checkbox" style="accent-color: #cba72f; width: 16px; height: 16px;">
+              <span style="font-size: 14px; color: #1a1c1d; font-weight: 500;">Look 2 Accessories Pull</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <input type="checkbox" style="accent-color: #cba72f; width: 16px; height: 16px;">
+              <span style="font-size: 14px; color: #1a1c1d; font-weight: 500;">Post-Event Seeding Report</span>
+            </label>
+          </div>
+
+          <button onclick="window.openQuickUpdateDeliverablesModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f8fafc';" onmouseleave="this.style.background='#ffffff';">Edit Tasks</button>
+        </div>
+
+        <!-- Panel 6: Activity Feed & Notes -->
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="fa-solid fa-comments" style="font-size: 20px; color: #000;"></i>
+              <h3 style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #515f74; margin: 0;">Activity Feed</h3>
+            </div>
+          </div>
+
+          <div style="flex: 1; space-y: 16px; overflow-y: auto; max-height: 180px; padding-right: 4px;">
+            <div style="display: flex; gap: 12px;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: #e2e2e3; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #000; flex-shrink: 0;">
+                LR
+              </div>
+              <div>
+                <p style="font-size: 13px; margin: 0; color: #1a1c1d;"><strong style="font-weight: 600;">${escapeHtml(stylistName)}</strong> added a note</p>
+                <div style="background: #f3f3f4; padding: 8px 12px; border-radius: 0 8px 8px 8px; margin-top: 4px;">
+                  <p style="font-size: 12.5px; color: #515f74; font-style: italic; margin: 0;">"Let's make sure the veil is steamed properly before the red carpet. Very fragile."</p>
+                </div>
+                <span style="font-size: 10px; color: #76777d; margin-top: 4px; display: block;">2 hours ago</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: #cba72f; display: flex; align-items: center; justify-content: center; color: #ffffff; flex-shrink: 0;">
+                <i class="fa-solid fa-arrows-rotate" style="font-size: 12px;"></i>
+              </div>
+              <div>
+                <p style="font-size: 13px; margin: 0; color: #1a1c1d;">Stage changed to <strong style="color: #735c00;">Fitting</strong></p>
+                <span style="font-size: 10px; color: #76777d; margin-top: 4px; display: block;">Yesterday · 4:30 PM</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px; display: flex; gap: 8px;">
+            <input type="text" placeholder="Add a note..." style="flex: 1; padding: 8px 14px; background: #f3f3f4; border: 1px solid #e2e8f0; border-radius: 9999px; font-size: 13px; outline: none;">
+            <button style="width: 36px; height: 36px; border-radius: 50%; background: #000; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+              <i class="fa-solid fa-paper-plane" style="font-size: 12px;"></i>
+            </button>
           </div>
         </div>
+
+      </div>
+
+    </div>
+  `;
+}
+>
       </div>
     </div>
   `;
