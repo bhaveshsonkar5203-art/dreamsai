@@ -44,17 +44,31 @@ import { API_URL, APP_BUILD_TAG } from './config.js';
 
 function getItemType(item) {
   if (!item) return "";
-  for (const k of ["Type", "type", "Category", "category", "Jewellery Type", "jewellery_type", "Product Type", "product_type", "Item Type", "item_type", "Sub Category", "sub_category"]) {
+  for (const k of [
+    "Type", "type", "Category", "category", "Jewellery Type", "jewellery_type", 
+    "Product Type", "product_type", "Item Type", "item_type", "Sub Category", "sub_category",
+    "Size", "size", "UK Size", "EU Size", "US Size", "Shoe Size", "Size (UK)", "Size (EU)", "Size (US)"
+  ]) {
     if (item[k] !== undefined && item[k] !== null && String(item[k]).trim() !== "") {
-      return String(item[k]).trim();
+      const val = String(item[k]).trim();
+      // If it's a size number/string (e.g., "UK 7", "42"), prefix with "Size " for clarity if pure number
+      if (k.toLowerCase().includes("size") && !val.toLowerCase().includes("size")) {
+        return `Size ${val}`;
+      }
+      return val;
     }
   }
-  // Generic fallback: check any key on item containing "type" or "cat"
+  // Generic fallback: check any key on item containing "type", "cat", or "size"
   for (const k of Object.keys(item)) {
     const lowerKey = k.toLowerCase();
-    if ((lowerKey.includes("type") || lowerKey.includes("cat")) && !lowerKey.includes("url") && !lowerKey.includes("date")) {
+    if ((lowerKey.includes("type") || lowerKey.includes("cat") || lowerKey.includes("size")) && !lowerKey.includes("url") && !lowerKey.includes("date")) {
       const val = String(item[k] || "").trim();
-      if (val) return val;
+      if (val) {
+        if (lowerKey.includes("size") && !val.toLowerCase().includes("size")) {
+          return `Size ${val}`;
+        }
+        return val;
+      }
     }
   }
   return "";
