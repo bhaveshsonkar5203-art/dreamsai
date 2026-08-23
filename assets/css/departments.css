@@ -52,7 +52,7 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 32px 24px;
+  padding: 24px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -60,18 +60,76 @@
   flex-direction: column;
   align-items: center;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
-.department-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent-gold);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+.dept-card-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-left: 28px; /* Center icon relative to card width */
+}
+
+.dept-bell-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #78716c;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.dept-bell-btn:hover {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+  transform: scale(1.08);
+}
+
+.dept-bell-btn.has-reminders {
+  background: #fefce8;
+  border-color: #fde047;
+  color: #ca8a04;
+  animation: bellPulse 2s infinite ease-in-out;
+}
+
+.dept-bell-btn.has-reminders:hover {
+  background: #ca8a04;
+  color: #ffffff;
+  border-color: #ca8a04;
+}
+
+.dept-bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 2px 5px;
+  line-height: 1;
+  border: 1.5px solid #ffffff;
+}
+
+@keyframes bellPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 .department-card .dept-icon {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   color: var(--accent-gold);
-  margin-bottom: 16px;
 }
 
 .department-card h3 {

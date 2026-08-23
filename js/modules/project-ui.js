@@ -1511,15 +1511,17 @@ window.toggleNewCelebrityForm = function () {
 };
 
 function checkAndShowFollowUpReminders() {
-  if (sessionStorage.getItem('hp_followup_reminder_shown') === 'true') {
-    return;
-  }
+  // Automatic modal pop-up disabled; follow-ups are now triggered explicitly via department bell icons.
+}
 
+window.showDepartmentFollowUpModal = function(deptName) {
   const allProjects = ProjectStore.getProjects();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const dueProjects = allProjects.filter(p => {
+    const matchesDept = !deptName || !p.department || p.department.toLowerCase() === String(deptName).toLowerCase();
+    if (!matchesDept) return false;
     if (!p.followUpDate) return false;
     const fDate = new Date(p.followUpDate);
     if (isNaN(fDate.getTime())) return false;
@@ -1527,13 +1529,10 @@ function checkAndShowFollowUpReminders() {
     return today >= fDate;
   });
 
-  if (dueProjects.length === 0) return;
+  showFollowUpReminderModal(dueProjects, deptName);
+};
 
-  sessionStorage.setItem('hp_followup_reminder_shown', 'true');
-  showFollowUpReminderModal(dueProjects);
-}
-
-function showFollowUpReminderModal(dueProjects) {
+function showFollowUpReminderModal(dueProjects, deptName = '') {
   let modal = document.getElementById("followUpReminderModalOverlay");
   if (!modal) {
     modal = document.createElement("div");
@@ -1542,7 +1541,7 @@ function showFollowUpReminderModal(dueProjects) {
     document.body.appendChild(modal);
   }
 
-  const itemsHtml = dueProjects.map(p => {
+  const itemsHtml = dueProjects.length > 0 ? dueProjects.map(p => {
     const celebrity = ProjectStore.getCelebrityById(p.celebrityId);
     const stylist = ProjectStore.getStylistById(p.stylistId);
     const celebrityName = celebrity ? celebrity.name : 'Celebrity';
@@ -1564,28 +1563,31 @@ function showFollowUpReminderModal(dueProjects) {
         </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
           <span class="prod-badge ${badgeClass}" style="margin:0;">${badgeText}</span>
-          <button class="btn-qa btn-qa-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="window.closeFollowUpReminderModal(); window.handleProjectChange('${p.id}');">
+          <button class="btn-qa btn-qa-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="window.closeFollowUpReminderModal(); window.selectDepartment('${escapeHtml(deptName || p.department || '')}'); window.handleProjectChange('${p.id}');">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Project
           </button>
         </div>
       </div>
     `;
-  }).join('');
+  }).join('') : `
+    <div style="text-align: center; padding: 30px 10px; color: #78716c;">
+      <i class="fa-regular fa-bell-slash" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 10px;"></i>
+      <p style="margin: 0; font-weight: 600;">No pending follow-ups for ${escapeHtml(deptName || 'this department')}.</p>
+    </div>
+  `;
 
   modal.innerHTML = `
     <div class="project-modal-card fashion-theme" style="max-width: 540px; box-sizing: border-box;">
       <div class="project-modal-header">
-        <h3><i class="fa-solid fa-bell" style="color: #fb923c;"></i> Follow-up Reminders (${dueProjects.length})</h3>
+        <h3><i class="fa-solid fa-bell" style="color: #cba72f;"></i> ${escapeHtml(deptName ? deptName + ' Follow-ups' : 'Follow-up Reminders')} (${dueProjects.length})</h3>
         <button class="btn-close-modal" onclick="window.closeFollowUpReminderModal()">&times;</button>
       </div>
       <div style="padding: 20px; max-height: 400px; overflow-y: auto;">
-        <p style="margin: 0 0 14px 0; font-size: 0.88rem; color: #78716c;">
-          The following campaign project(s) have reached or passed their 15-day follow-up date:
-        </p>
+        ${dueProjects.length > 0 ? `<p style="margin: 0 0 14px 0; font-size: 0.88rem; color: #78716c;">Campaign project(s) requiring follow-up in <strong>${escapeHtml(deptName || 'Department')}</strong>:</p>` : ''}
         ${itemsHtml}
       </div>
       <div class="project-modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; background: #fafaf9; border-top: 1px solid #e7e5e4;">
-        <button class="btn-qa btn-qa-secondary" onclick="window.closeFollowUpReminderModal()">Dismiss</button>
+        <button class="btn-qa btn-qa-secondary" onclick="window.closeFollowUpReminderModal()">Close</button>
       </div>
     </div>
   `;

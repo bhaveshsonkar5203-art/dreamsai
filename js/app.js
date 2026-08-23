@@ -184,6 +184,23 @@ async function getDepartments() {
   }
 }
 
+function getFollowUpCountForDepartment(deptName) {
+  const allProjects = ProjectStore.getProjects();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return allProjects.filter(p => {
+    // Match department if project has department field or matches current context
+    const matchesDept = !p.department || p.department.toLowerCase() === String(deptName || '').toLowerCase();
+    if (!matchesDept) return false;
+    if (!p.followUpDate) return false;
+    const fDate = new Date(p.followUpDate);
+    if (isNaN(fDate.getTime())) return false;
+    fDate.setHours(0, 0, 0, 0);
+    return today >= fDate;
+  }).length;
+}
+
 function renderDepartmentCards(departments) {
   const container = document.getElementById("departmentCardsContainer");
   if (!container) return;
@@ -193,14 +210,31 @@ function renderDepartmentCards(departments) {
     return;
   }
 
-  container.innerHTML = departments.map(dept => `
-    <div class="department-card" onclick="window.selectDepartment('${escapeHtml(dept.name)}')">
-      <i class="fa-solid ${getIconForDepartment(dept.name)} dept-icon"></i>
-      <h3>${escapeHtml(dept.name)}</h3>
-      <p>Explore inventory</p>
-    </div>
-  `).join("");
+  container.innerHTML = departments.map(dept => {
+    const followUpCount = getFollowUpCountForDepartment(dept.name);
+    return `
+      <div class="department-card" onclick="window.selectDepartment('${escapeHtml(dept.name)}')">
+        <div class="dept-card-header">
+          <i class="fa-solid ${getIconForDepartment(dept.name)} dept-icon"></i>
+          <button class="dept-bell-btn ${followUpCount > 0 ? 'has-reminders' : ''}" 
+                  onclick="event.stopPropagation(); window.openDepartmentFollowUps('${escapeHtml(dept.name)}')" 
+                  title="${followUpCount > 0 ? `${followUpCount} Follow-up Reminders Due` : 'No Follow-up Reminders'}">
+            <i class="fa-solid fa-bell"></i>
+            ${followUpCount > 0 ? `<span class="dept-bell-badge">${followUpCount}</span>` : ''}
+          </button>
+        </div>
+        <h3>${escapeHtml(dept.name)}</h3>
+        <p>Explore inventory</p>
+      </div>
+    `;
+  }).join("");
 }
+
+window.openDepartmentFollowUps = function(deptName) {
+  if (typeof window.showDepartmentFollowUpModal === 'function') {
+    window.showDepartmentFollowUpModal(deptName);
+  }
+};
 
 window.showDepartmentSelection = function() {
   document.body.classList.add('department-selection-active');
