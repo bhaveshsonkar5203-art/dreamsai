@@ -544,7 +544,34 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
           <h2><i class="fa-solid fa-gem" style="color: #d4af37; margin-right: 8px;"></i> ASCEND Communications</h2>
           <p>PR Campaign Dashboard — monitor active pulls, pending returns, client deliverables, and launch new projects.</p>
         </div>
-        <div class="hp-gateway-actions">
+        <div class="hp-gateway-actions" style="display: flex; align-items: center; gap: 12px;">
+          ${(() => {
+            const activeDept = ProjectStore.selectedDepartment || (typeof window.getSelectedDepartment === 'function' ? window.getSelectedDepartment() : '');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const dueProjects = allProjects.filter(p => {
+              const matchesDept = !activeDept || !p.department || p.department.toLowerCase() === String(activeDept).toLowerCase();
+              if (!matchesDept) return false;
+              if (!p.followUpDate) return false;
+              const fDate = new Date(p.followUpDate);
+              if (isNaN(fDate.getTime())) return false;
+              fDate.setHours(0, 0, 0, 0);
+              return today >= fDate;
+            });
+            const count = dueProjects.length;
+
+            return `
+              <button class="btn-create-project-main ${count > 0 ? 'has-reminders-pulse' : ''}" 
+                      onclick="window.showDepartmentFollowUpModal('${escapeHtml(activeDept || '')}')" 
+                      title="${count > 0 ? `${count} Follow-up Reminders Due` : 'Follow-up Reminders'}"
+                      style="background: #ffffff; color: #1a1c1d; border: 1px solid #e2e8f0; position: relative; padding: 10px 16px;">
+                <i class="fa-solid fa-bell" style="color: ${count > 0 ? '#ca8a04' : '#6b7280'};"></i>
+                <span style="font-size: 13px; font-weight: 600;">Reminders</span>
+                ${count > 0 ? `<span style="background: #dc2626; color: #ffffff; font-size: 10px; font-weight: 700; border-radius: 9999px; padding: 2px 6px; margin-left: 4px;">${count}</span>` : ''}
+              </button>
+            `;
+          })()}
           <button class="btn-create-project-main" onclick="openNewProjectDialog()">
             <i class="fa-solid fa-plus"></i> New Project
           </button>
