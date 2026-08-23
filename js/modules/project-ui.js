@@ -2033,12 +2033,7 @@ export function renderProjectDashboard() {
     </div>
   `;
 }
->
-      </div>
-    </div>
-  `;
-}
-
+ 
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
