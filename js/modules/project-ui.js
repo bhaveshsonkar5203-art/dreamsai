@@ -30,6 +30,29 @@ const homepageProjectFilters = {
 };
 
 function getProjectDisplayStatus(project) {
+  // Check if all products have been returned with good condition and no missing items
+  let isCompleted = false;
+  const returnState = (project && Array.isArray(project.returnProductsState) && project.returnProductsState.length > 0)
+    ? project.returnProductsState
+    : [];
+  const productStats = project.productStats || { sent: 0, returned: 0, pending: 0, missing: 0 };
+  
+  const totalProducts = returnState.length || productStats.sent || (productStats.returned + productStats.pending + productStats.missing) || 0;
+  
+  if (totalProducts > 0) {
+    const returnedCount = returnState.length ? returnState.filter(i => i.returnStatus === 'received').length : productStats.returned;
+    const missingReturnCount = returnState.length ? returnState.filter(i => i.returnStatus === 'missing').length : productStats.missing;
+    const damagedCount = returnState.length ? returnState.filter(i => i.condition === 'damaged').length : 0;
+    
+    if (returnedCount === totalProducts && missingReturnCount === 0 && damagedCount === 0) {
+      isCompleted = true;
+    }
+  }
+
+  if (isCompleted) {
+    return 'Completed';
+  }
+
   return project.projectStatus || project.status || 'Active';
 }
 
@@ -635,6 +658,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
             </div>
           </button>
 
+          <!--
           <button class="hp-summary-card card-indicator-emerald ${homepageProjectFilters.paymentStatus === 'Paid' ? 'is-filter-active' : ''}"
                   onclick="window.quickFilterOverview('revenue')"
                   title="Filter Settled Revenue">
@@ -647,6 +671,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
               <span class="summary-lbl">Revenue Received</span>
             </div>
           </button>
+          -->
         </div>
       </div>
 
@@ -690,6 +715,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
             <option value="Social pending" ${homepageProjectFilters.projectStatus === 'Social pending' ? 'selected' : ''}>Social pending</option>
             <option value="Completed" ${homepageProjectFilters.projectStatus === 'Completed' ? 'selected' : ''}>Completed</option>
           </select>
+          <!--
           <select onchange="window.handleHomepageProjectFilterChange('paymentStatus', this.value)">
             <option value="">Payment Status</option>
             <option value="Paid" ${homepageProjectFilters.paymentStatus === 'Paid' ? 'selected' : ''}>Paid</option>
@@ -697,6 +723,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
             <option value="Pending" ${homepageProjectFilters.paymentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
             <option value="Overdue" ${homepageProjectFilters.paymentStatus === 'Overdue' ? 'selected' : ''}>Overdue</option>
           </select>
+          -->
           <select onchange="window.handleHomepageProjectFilterChange('returnStatus', this.value)">
             <option value="">Return Status</option>
             <option value="Returned" ${homepageProjectFilters.returnStatus === 'Returned' ? 'selected' : ''}>Returned</option>
@@ -2076,7 +2103,7 @@ export function renderProjectDashboard() {
           <button onclick="window.openQuickUpdateDeliverablesModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f8fafc';" onmouseleave="this.style.background='#ffffff';">Upload Assets</button>
         </div>
 
-        <!-- Panel 4: Balance Due -->
+        <!-- Panel 4: Balance Due 
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -2107,6 +2134,7 @@ export function renderProjectDashboard() {
 
           <button onclick="window.openQuickEditProjectModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: none; background: #000000; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: opacity 0.2s;" onmouseenter="this.style.opacity='0.85';" onmouseleave="this.style.opacity='1';">Send Invoice</button>
         </div>
+        -->
 
         <!-- Panel 5: Deliverables Checklist -->
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">

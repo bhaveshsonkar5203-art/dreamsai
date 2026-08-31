@@ -415,7 +415,7 @@ export function createProject({ celebrityId, stylistId = null, title, season = "
     season: season || "FW-2026",
     purpose: purpose || "Red Carpet Pull",
     department: selectedDepartment,
-    status: "Curating",
+    status: "Active",
     notes: notes.trim(),
     activeTab: "browse",
     createdAt: now.toISOString(),
