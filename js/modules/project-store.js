@@ -7,7 +7,8 @@
 import { API_URL } from '../config.js';
 export { API_URL };
 
-import { selectedDepartment } from '../state.js';
+import { selectedDepartment, setSelectedDepartment } from '../state.js';
+export { selectedDepartment, setSelectedDepartment };
 import { db, collection, setDoc, getDocs, getDoc, doc, deleteDoc } from './firebase-config.js';
 
 /* --- STORAGE KEYS --- */

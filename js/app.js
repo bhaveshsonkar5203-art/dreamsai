@@ -3,6 +3,8 @@ import { initProjectUI, renderProjectBar } from './modules/project-ui.js';
 import './pdf/pdf.js';
 import './modules/catalog-data.js';
 import './modules/mini-website.js';
+import { fetchJsonWithCache } from './utils/network.js';
+import { sanitizeHtml, normalizeRemoteImageUrl } from './utils/security.js';
 import { formatDateDisplay } from './utils/helpers.js';
 
 let data = [];
@@ -88,14 +90,11 @@ window.getItemType = getItemType;
 window.getItemBrand = getItemBrand;
 
 function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return sanitizeHtml(str);
 }
+
+window.sanitizeHtml = sanitizeHtml;
+window.normalizeRemoteImageUrl = normalizeRemoteImageUrl;
 
 function traceFinalTray(step, details) {
   const stamp = new Date().toISOString();
@@ -164,9 +163,8 @@ function getIconForDepartment(name) {
 
 async function getDepartments() {
   try {
-    const res = await fetch(`${API_URL}?t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
-    const json = await res.json();
-    
+    const json = await fetchJsonWithCache(API_URL, { ttlMs: 5 * 60 * 1000 });
+
     if (json.departments && Array.isArray(json.departments)) {
       setAvailableDepartments(json.departments);
       renderDepartmentCards(json.departments);
@@ -277,15 +275,17 @@ async function loadData() {
   }
 
   try {
-    const res = await fetch(`${API_URL}?department=${encodeURIComponent(selectedDepartment)}&t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
-    const json = await res.json();
+    const requestUrl = new URL(API_URL);
+    requestUrl.searchParams.set("department", selectedDepartment);
+    const json = await fetchJsonWithCache(requestUrl.toString(), { ttlMs: 5 * 60 * 1000 });
     data = Array.isArray(json) ? json : (json.inventory || json.data || []);
   } catch (err) {
     console.warn("Direct fetch failed, attempting CORS proxy fallback...", err);
     try {
-      const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(`${API_URL}?department=${encodeURIComponent(selectedDepartment)}&t=${new Date().getTime()}`);
-      const proxyRes = await fetch(proxyUrl, { cache: "no-store" });
-      const proxyJson = await proxyRes.json();
+      const requestUrl = new URL(API_URL);
+      requestUrl.searchParams.set("department", selectedDepartment);
+      const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(requestUrl.toString());
+      const proxyJson = await fetchJsonWithCache(proxyUrl, { ttlMs: 2 * 60 * 1000, timeoutMs: 20000 });
       data = Array.isArray(proxyJson) ? proxyJson : (proxyJson.inventory || proxyJson.data || []);
       console.log("Successfully loaded latest data via CORS proxy!");
     } catch (proxyErr) {
@@ -323,8 +323,7 @@ async function getInventoryForExport() {
   }
 
   try {
-    const res = await fetch(`${API_URL}?t=${new Date().getTime()}`, { cache: "no-store", redirect: "follow" });
-    const json = await res.json();
+    const json = await fetchJsonWithCache(API_URL, { ttlMs: 5 * 60 * 1000 });
     return Array.isArray(json) ? json : (json.data || []);
   } catch (err) {
     console.error("Failed to fetch inventory for export", err);

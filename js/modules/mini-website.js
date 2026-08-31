@@ -230,7 +230,9 @@
       const type = escapeHtml(item["Type"] || "Bespoke Collection");
 
       let imageUrl = getImgFn ? getImgFn(item) : (item["Image URL"] || item["DisplayURL"] || item["CollageURL"] || item.image || item.Image || "");
-      if (imageUrl && typeof normalizeImageUrl === 'function') {
+      if (typeof normalizeRemoteImageUrl === 'function') {
+        imageUrl = normalizeRemoteImageUrl(imageUrl);
+      } else if (imageUrl && typeof normalizeImageUrl === 'function') {
         imageUrl = normalizeImageUrl(imageUrl);
       }
 

@@ -1,7 +1,22 @@
-import { jsPDF as _jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
-
 let PDF_TRACE_SEQ = 0;
+let pdfLibCache = null;
+
+async function getPdfLib() {
+  if (pdfLibCache) {
+    return pdfLibCache;
+  }
+
+  const [{ jsPDF: jsPDFCtor }] = await Promise.all([
+    import('jspdf')
+  ]);
+
+  pdfLibCache = {
+    jsPDF: jsPDFCtor
+  };
+
+  return pdfLibCache;
+}
+
   function pdfTrace(step, payload) {
     PDF_TRACE_SEQ += 1;
     const id = String(PDF_TRACE_SEQ).padStart(3, "0");
@@ -275,7 +290,7 @@ let PDF_TRACE_SEQ = 0;
       throw new Error("Generate pages first");
     }
 
-    const jsPdfApi = _jsPDF;
+    const { jsPDF: jsPdfApi } = await getPdfLib();
     if (!jsPdfApi) {
       throw new Error("PDF library not loaded");
     }
@@ -345,7 +360,7 @@ let PDF_TRACE_SEQ = 0;
     const totalPages = Number(options?.totalPages || 1);
     const itemCount = items.length || Number(options?.itemCount || 0);
 
-    const jsPdfApi = _jsPDF;
+    const { jsPDF: jsPdfApi } = await getPdfLib();
     if (!jsPdfApi) throw new Error("PDF library not loaded");
 
     const pdf = new jsPdfApi({ orientation: "portrait", unit: "pt", format: "a4" });
