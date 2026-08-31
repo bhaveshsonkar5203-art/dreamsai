@@ -11,19 +11,214 @@ import { selectedDepartment, setSelectedDepartment } from '../state.js';
 export { selectedDepartment, setSelectedDepartment };
 import { db, collection, setDoc, getDocs, getDoc, doc, deleteDoc } from './firebase-config.js';
 
+const fallbackStorage = new Map();
+
 /* --- STORAGE KEYS --- */
 const STORAGE_KEYS = {
   STYLISTS: "dreamsai_celebrity_stylists_v6",
   CELEBRITIES: "dreamsai_celebrities_v6",
   PROJECTS: "dreamsai_celebrity_projects_v6",
-  ACTIVE_CONTEXT: "dreamsai_celebrity_active_context_v6"
+  ACTIVE_CONTEXT: "dreamsai_celebrity_active_context_v6",
+  SHARE_LINKS_INDEX: "dreamsai_share_links_index_v1",
+  SHARE_LINKS_BY_PROJECT: "dreamsai_project_share_links_v1"
 };
+
+export const SHARE_LINK_STATUS = Object.freeze({
+  ACTIVE: "active",
+  LOCKED: "locked",
+  EXPIRED: "expired",
+  SUBMITTED: "submitted",
+  CANCELLED: "cancelled"
+});
+
+function getShareLinkIndexMap() {
+  return safeGetItem(STORAGE_KEYS.SHARE_LINKS_INDEX, {});
+}
+
+function setShareLinkIndexMap(map) {
+  safeSetItem(STORAGE_KEYS.SHARE_LINKS_INDEX, map || {});
+}
+
+export function normalizeShareLinkRecord(record) {
+  if (!record || typeof record !== 'object') return null;
+
+  const projectId = typeof record.projectId === 'string' ? record.projectId.trim() : '';
+  const token = typeof record.token === 'string' ? record.token.trim() : '';
+  const selectedSerials = Array.isArray(record.selectedSerials)
+    ? [...new Set(record.selectedSerials
+        .filter(value => typeof value === 'string')
+        .map(value => value.trim())
+        .filter(Boolean))]
+    : [];
+
+  if (!projectId || !token || selectedSerials.length === 0) {
+    return null;
+  }
+
+  const allowedStatuses = Object.values(SHARE_LINK_STATUS);
+  const linkStatus = allowedStatuses.includes(record.linkStatus)
+    ? record.linkStatus
+    : SHARE_LINK_STATUS.ACTIVE;
+
+  const nowIso = new Date().toISOString();
+  const expiresAt = typeof record.expiresAt === 'string' && record.expiresAt
+    ? record.expiresAt
+    : null;
+
+  const normalized = {
+    id: typeof record.id === 'string' ? record.id : `share_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    projectId,
+    token,
+    title: typeof record.title === 'string' ? record.title.trim() : 'Shared Tray',
+    selectedSerials,
+    linkStatus,
+    submitted: Boolean(record.submitted) || linkStatus === SHARE_LINK_STATUS.SUBMITTED || linkStatus === SHARE_LINK_STATUS.LOCKED,
+    submittedAt: typeof record.submittedAt === 'string' && record.submittedAt ? record.submittedAt : null,
+    expiresAt,
+    createdAt: typeof record.createdAt === 'string' ? record.createdAt : nowIso,
+    updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : nowIso,
+    recipientName: typeof record.recipientName === 'string' ? record.recipientName.trim() : '',
+    recipientEmail: typeof record.recipientEmail === 'string' ? record.recipientEmail.trim() : '',
+    notes: typeof record.notes === 'string' ? record.notes.trim() : ''
+  };
+
+  if (expiresAt && new Date(expiresAt).getTime() <= Date.now() && linkStatus === SHARE_LINK_STATUS.ACTIVE) {
+    normalized.linkStatus = SHARE_LINK_STATUS.EXPIRED;
+    normalized.submitted = false;
+  }
+
+  return normalized;
+}
+
+export function buildShareLinkRecord(projectId, serials = [], options = {}) {
+  const normalizedSerials = Array.isArray(serials)
+    ? [...new Set(serials.filter(value => typeof value === 'string').map(value => value.trim()).filter(Boolean))]
+    : [];
+
+  if (!projectId || !normalizedSerials.length) {
+    return null;
+  }
+
+  const now = new Date();
+  const token = typeof options.token === 'string' && options.token.trim()
+    ? options.token.trim()
+    : `share_${now.getTime()}_${Math.random().toString(36).slice(2, 10)}`;
+
+  return normalizeShareLinkRecord({
+    projectId,
+    token,
+    title: options.title || 'Shared Tray',
+    selectedSerials: normalizedSerials,
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    expiresAt: typeof options.expiresAt === 'string' ? options.expiresAt : new Date(now.getTime() + (options.expiresInDays || 30) * 24 * 60 * 60 * 1000).toISOString(),
+    linkStatus: SHARE_LINK_STATUS.ACTIVE,
+    submitted: false,
+    submittedAt: null,
+    recipientName: options.recipientName || '',
+    recipientEmail: options.recipientEmail || '',
+    notes: options.notes || ''
+  });
+}
+
+export function getProjectShareLinks(projectId) {
+  if (!projectId) return [];
+
+  const projectList = safeGetItem(STORAGE_KEYS.PROJECTS, []);
+  const project = projectList.find(item => item && item.id === projectId);
+  const projectRecords = project && Array.isArray(project.shareLinks) ? project.shareLinks : [];
+  const storageKey = `${STORAGE_KEYS.SHARE_LINKS_BY_PROJECT}:${projectId}`;
+  const persisted = safeGetItem(storageKey, []);
+
+  const source = projectRecords.length > 0 ? projectRecords : persisted;
+  const normalized = (Array.isArray(source) ? source : [])
+    .map(normalizeShareLinkRecord)
+    .filter(Boolean);
+
+  if (project) {
+    project.shareLinks = normalized;
+  }
+
+  return normalized;
+}
+
+export function setProjectShareLinks(projectId, records = []) {
+  if (!projectId) return [];
+
+  const normalized = (Array.isArray(records) ? records : [])
+    .map(normalizeShareLinkRecord)
+    .filter(Boolean);
+
+  const storageKey = `${STORAGE_KEYS.SHARE_LINKS_BY_PROJECT}:${projectId}`;
+  safeSetItem(storageKey, normalized);
+
+  const projects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
+  const projectIndex = projects.findIndex(item => item && item.id === projectId);
+  if (projectIndex !== -1) {
+    projects[projectIndex].shareLinks = normalized;
+    projects[projectIndex].updatedAt = new Date().toISOString();
+    safeSetItem(STORAGE_KEYS.PROJECTS, sortProjectsDescending(projects));
+  }
+
+  const indexMap = getShareLinkIndexMap();
+  normalized.forEach(record => {
+    indexMap[record.token] = record;
+  });
+  setShareLinkIndexMap(indexMap);
+
+  return normalized;
+}
+
+export function saveShareLinkRecord(record) {
+  const normalized = normalizeShareLinkRecord(record);
+  if (!normalized) return null;
+
+  const records = getProjectShareLinks(normalized.projectId);
+  const existingIndex = records.findIndex(item => item.token === normalized.token);
+  const nextRecords = existingIndex >= 0
+    ? records.map(item => item.token === normalized.token ? normalized : item)
+    : [...records, normalized];
+
+  setProjectShareLinks(normalized.projectId, nextRecords);
+
+  const indexMap = getShareLinkIndexMap();
+  indexMap[normalized.token] = normalized;
+  setShareLinkIndexMap(indexMap);
+
+  return normalized;
+}
+
+export function getShareLinkByToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const cleanToken = token.trim();
+  if (!cleanToken) return null;
+
+  const indexMap = getShareLinkIndexMap();
+  const candidate = indexMap[cleanToken];
+  if (candidate) {
+    return normalizeShareLinkRecord(candidate);
+  }
+
+  const projectList = safeGetItem(STORAGE_KEYS.PROJECTS, []);
+  for (const project of projectList) {
+    const matched = getProjectShareLinks(project.id).find(item => item.token === cleanToken);
+    if (matched) {
+      return matched;
+    }
+  }
+
+  return null;
+}
 
 
 // Helper for safe localStorage access
 function safeGetItem(key, fallback) {
   try {
-    const raw = localStorage.getItem(key);
+    const storage = globalThis.localStorage || {
+      getItem: (storageKey) => (fallbackStorage.has(storageKey) ? String(fallbackStorage.get(storageKey)) : null),
+      setItem: (storageKey, value) => fallbackStorage.set(storageKey, value)
+    };
+    const raw = storage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
   } catch (e) {
     console.warn(`[CelebrityStore] Error reading ${key} from localStorage`, e);
@@ -33,7 +228,11 @@ function safeGetItem(key, fallback) {
 
 function safeSetItem(key, data) {
   try {
-    localStorage.setItem(key, JSON.stringify(data));
+    const storage = globalThis.localStorage || {
+      getItem: (storageKey) => (fallbackStorage.has(storageKey) ? String(fallbackStorage.get(storageKey)) : null),
+      setItem: (storageKey, value) => fallbackStorage.set(storageKey, value)
+    };
+    storage.setItem(key, JSON.stringify(data));
   } catch (e) {
     console.warn(`[CelebrityStore] Error saving ${key} to localStorage`, e);
   }
@@ -422,6 +621,7 @@ export function createProject({ celebrityId, stylistId = null, title, season = "
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     selectedSerials: initialSerials,
+    shareLinks: [],
     pdfRecords: [],
     activityLog: [
       {
@@ -451,6 +651,9 @@ export function updateProject(projectId, updates) {
   const updatedProject = {
     ...projects[idx],
     ...updates,
+    shareLinks: Array.isArray(updates?.shareLinks)
+      ? updates.shareLinks.map(normalizeShareLinkRecord).filter(Boolean)
+      : (Array.isArray(projects[idx].shareLinks) ? projects[idx].shareLinks : []),
     updatedAt: new Date().toISOString()
   };
   projects[idx] = updatedProject;

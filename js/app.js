@@ -6,6 +6,7 @@ import './modules/mini-website.js';
 import { fetchJsonWithCache } from './utils/network.js';
 import { sanitizeHtml, normalizeRemoteImageUrl } from './utils/security.js';
 import { formatDateDisplay } from './utils/helpers.js';
+import { deriveDepartmentsFromInventory } from './utils/catalog-structure.js';
 
 let data = [];
 let selected = [];
@@ -164,21 +165,27 @@ function getIconForDepartment(name) {
 async function getDepartments() {
   try {
     const json = await fetchJsonWithCache(API_URL, { ttlMs: 5 * 60 * 1000 });
+    const explicitDepartments = Array.isArray(json?.departments) ? json.departments : [];
+    const fallbackInventory = Array.isArray(json?.inventory) ? json.inventory : Array.isArray(json?.data) ? json.data : [];
+    const departments = explicitDepartments.length ? explicitDepartments : deriveDepartmentsFromInventory(fallbackInventory);
 
-    if (json.departments && Array.isArray(json.departments)) {
-      setAvailableDepartments(json.departments);
-      renderDepartmentCards(json.departments);
-    } else {
-      throw new Error("No departments array in response");
+    if (!Array.isArray(departments) || departments.length === 0) {
+      throw new Error('No departments available in response');
     }
+
+    setAvailableDepartments(departments);
+    renderDepartmentCards(departments);
   } catch (err) {
-    console.error("Failed to fetch departments", err);
-    document.getElementById("departmentCardsContainer").innerHTML = `
-      <div style="color: red;">
-        Unable to load departments. Please check your connection and try again.<br><br>
-        <button class="btn btn-primary" onclick="window.location.reload()">Retry</button>
-      </div>
-    `;
+    console.error('Failed to fetch departments', err);
+    const container = document.getElementById('departmentCardsContainer');
+    if (container) {
+      container.innerHTML = `
+        <div style="color: red;">
+          Unable to load departments. Please check your connection and try again.<br><br>
+          <button class="btn btn-primary" onclick="window.location.reload()">Retry</button>
+        </div>
+      `;
+    }
   }
 }
 
