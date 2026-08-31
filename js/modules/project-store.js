@@ -8,14 +8,16 @@ import { API_URL } from '../config.js';
 export { API_URL };
 
 import { selectedDepartment } from '../state.js';
-import { db, collection, setDoc, getDocs, getDoc, doc } from './firebase-config.js';
+import { db, collection, setDoc, getDocs, getDoc, doc, deleteDoc } from './firebase-config.js';
 
+/* --- STORAGE KEYS --- */
 const STORAGE_KEYS = {
   STYLISTS: "dreamsai_celebrity_stylists_v6",
   CELEBRITIES: "dreamsai_celebrities_v6",
   PROJECTS: "dreamsai_celebrity_projects_v6",
   ACTIVE_CONTEXT: "dreamsai_celebrity_active_context_v6"
 };
+
 
 // Helper for safe localStorage access
 function safeGetItem(key, fallback) {
@@ -245,32 +247,28 @@ export async function fetchDataFromFirebase() {
     const remoteProjects = [];
     projectsSnap.forEach((d) => remoteProjects.push(d.data()));
 
-    if (remoteProjects.length > 0) {
-      const localProjects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
-      const mergedProjects = mergeProjects(localProjects, remoteProjects);
-      safeSetItem(STORAGE_KEYS.PROJECTS, mergedProjects);
-    }
+    // Firestore is authoritative: Replace local cache with Firestore projects, or merge un-synced new local creations if needed
+    const localProjects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
+    const mergedProjects = mergeProjects(localProjects, remoteProjects);
+
+    // Filter out any local projects that were deleted from Firestore (if remote projects collection was fetched successfully)
+    const remoteIds = new Set(remoteProjects.map(p => p.id));
+    const syncedProjects = mergedProjects.filter(p => remoteIds.has(p.id));
+
+    safeSetItem(STORAGE_KEYS.PROJECTS, syncedProjects);
 
     const stylistsSnap = await getDocs(collection(db, "stylists"));
     const remoteStylists = [];
     stylistsSnap.forEach((d) => remoteStylists.push(d.data()));
     if (remoteStylists.length > 0) {
-      const localStylists = safeGetItem(STORAGE_KEYS.STYLISTS, []);
-      const mergedMap = new Map();
-      localStylists.forEach(s => mergedMap.set(s.id, s));
-      remoteStylists.forEach(s => mergedMap.set(s.id, s));
-      safeSetItem(STORAGE_KEYS.STYLISTS, Array.from(mergedMap.values()));
+      safeSetItem(STORAGE_KEYS.STYLISTS, remoteStylists);
     }
 
     const celebsSnap = await getDocs(collection(db, "celebrities"));
     const remoteCelebs = [];
     celebsSnap.forEach((d) => remoteCelebs.push(d.data()));
     if (remoteCelebs.length > 0) {
-      const localCelebs = safeGetItem(STORAGE_KEYS.CELEBRITIES, []);
-      const mergedMap = new Map();
-      localCelebs.forEach(c => mergedMap.set(c.id, c));
-      remoteCelebs.forEach(c => mergedMap.set(c.id, c));
-      safeSetItem(STORAGE_KEYS.CELEBRITIES, Array.from(mergedMap.values()));
+      safeSetItem(STORAGE_KEYS.CELEBRITIES, remoteCelebs);
     }
 
     try {
@@ -288,7 +286,7 @@ export async function fetchDataFromFirebase() {
       console.warn("[FirebaseSync] Note reading active context:", errCtx);
     }
 
-    console.log("[FirebaseSync] Successfully pulled and merged data from Firestore.");
+    console.log("[FirebaseSync] Successfully pulled and synced data from Firestore.");
     if (typeof window !== 'undefined' && typeof window.renderHomepageProjectsGateway === 'function') {
       window.renderHomepageProjectsGateway();
     }
@@ -301,6 +299,7 @@ export async function fetchDataFromFirebase() {
 
 // Automatically sync from Firebase on load
 fetchDataFromFirebase();
+
 
 /* --- STYLIST APIs --- */
 
@@ -571,3 +570,21 @@ export function setActiveContext(celebrityId, projectId) {
 
   return getActiveContext();
 }
+
+export async function deleteProject(projectId) {
+  const projects = safeGetItem(STORAGE_KEYS.PROJECTS, []);
+  const filtered = projects.filter(p => p.id !== projectId);
+  safeSetItem(STORAGE_KEYS.PROJECTS, filtered);
+
+  try {
+    await deleteDoc(doc(db, "projects", projectId));
+    console.log(`[ProjectStore] Deleted project ${projectId} from Firebase.`);
+  } catch (e) {
+    console.warn(`[ProjectStore] Error deleting project ${projectId} from Firebase`, e);
+  }
+
+  if (typeof window !== 'undefined' && typeof window.renderHomepageProjectsGateway === 'function') {
+    window.renderHomepageProjectsGateway();
+  }
+}
+
