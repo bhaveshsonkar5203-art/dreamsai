@@ -1902,28 +1902,6 @@ export function renderProjectDashboard() {
           </div>
         </div>
 
-        <!-- Financials -->
-        <div onclick="window.openQuickEditProjectModal('${p.id}')" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.06)';" onmouseleave="this.style.transform='none'; this.style.boxShadow='none';">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <i class="fa-solid fa-indian-rupee-sign" style="font-size: 20px; color: #000;"></i>
-            <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #76777d;">Financials</span>
-          </div>
-          <div style="display: flex; align-items: baseline; gap: 8px;">
-            <span style="font-family: 'EB Garamond', serif; font-size: 2.2rem; font-weight: 600; color: #000;">${formatCurrency(invoiceAmt)}</span>
-          </div>
-          <div style="margin-top: 10px; display: flex; align-items: center; gap: 12px;">
-            <div style="flex: 1; space-y: 2px;">
-              <div style="display: flex; justify-content: space-between; font-size: 11px; color: #515f74;">
-                <span>Received</span>
-                <strong style="color: #166534;">${formatCurrency(receivedAmt)}</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 11px; color: #515f74;">
-                <span>Due</span>
-                <strong style="color: ${outstandingAmt > 0 ? '#991b1b' : '#166534'};">${formatCurrency(outstandingAmt)}</strong>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- Social & PR -->
         <div onclick="window.quickToggleSocialPosted('${p.id}')" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.06)';" onmouseleave="this.style.transform='none'; this.style.boxShadow='none';">
@@ -2074,37 +2052,6 @@ export function renderProjectDashboard() {
           <button onclick="window.openQuickUpdateDeliverablesModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f8fafc';" onmouseleave="this.style.background='#ffffff';">Upload Assets</button>
         </div>
 
-        <!-- Panel 4: Balance Due -->
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <i class="fa-solid fa-receipt" style="font-size: 20px; color: #000;"></i>
-              <h3 style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #515f74; margin: 0;">Balance Due</h3>
-            </div>
-          </div>
-
-          <div style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; padding: 12px 0;">
-            <span style="font-family: 'EB Garamond', serif; font-size: 2.8rem; font-weight: 500; color: #000; line-height: 1;">${formatCurrency(outstandingAmt)}</span>
-            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #76777d; margin-top: 6px;">Total Outstanding</span>
-
-            <div style="margin-top: 20px; space-y: 8px; text-align: left;">
-              <div style="display: flex; justify-content: space-between; font-size: 13px; color: #515f74;">
-                <span>Styling Fee</span>
-                <strong style="color: #000;">$5,000</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 13px; color: #515f74;">
-                <span>Tailoring & Alterations</span>
-                <strong style="color: #000;">$1,200</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; font-size: 13px; color: #515f74;">
-                <span>Courier & Shipping</span>
-                <strong style="color: #000;">$450</strong>
-              </div>
-            </div>
-          </div>
-
-          <button onclick="window.openQuickEditProjectModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: none; background: #000000; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: opacity 0.2s;" onmouseenter="this.style.opacity='0.85';" onmouseleave="this.style.opacity='1';">Send Invoice</button>
-        </div>
 
         <!-- Panel 5: Deliverables Checklist -->
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
