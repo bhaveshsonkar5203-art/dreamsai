@@ -2174,7 +2174,7 @@ This typically indicates that your device does not have a healthy Internet conne
           <span class="project-pill" onclick="openProjectDrawer()" title="Click to view project details">
             <i class="fa-solid fa-layer-group"></i>
             <span class="project-title-text">${Ct(s)}</span>
-            <span class="project-code">${Ct(a)}</span>
+           
           </span>
           <span class="status-badge ${h}">${Ct(o)}</span>
         </div>

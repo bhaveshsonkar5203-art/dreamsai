@@ -30,29 +30,6 @@ const homepageProjectFilters = {
 };
 
 function getProjectDisplayStatus(project) {
-  // Check if all products have been returned with good condition and no missing items
-  let isCompleted = false;
-  const returnState = (project && Array.isArray(project.returnProductsState) && project.returnProductsState.length > 0)
-    ? project.returnProductsState
-    : [];
-  const productStats = project.productStats || { sent: 0, returned: 0, pending: 0, missing: 0 };
-  
-  const totalProducts = returnState.length || productStats.sent || (productStats.returned + productStats.pending + productStats.missing) || 0;
-  
-  if (totalProducts > 0) {
-    const returnedCount = returnState.length ? returnState.filter(i => i.returnStatus === 'received').length : productStats.returned;
-    const missingReturnCount = returnState.length ? returnState.filter(i => i.returnStatus === 'missing').length : productStats.missing;
-    const damagedCount = returnState.length ? returnState.filter(i => i.condition === 'damaged').length : 0;
-    
-    if (returnedCount === totalProducts && missingReturnCount === 0 && damagedCount === 0) {
-      isCompleted = true;
-    }
-  }
-
-  if (isCompleted) {
-    return 'Completed';
-  }
-
   return project.projectStatus || project.status || 'Active';
 }
 
@@ -381,7 +358,6 @@ export function renderProjectBar() {
           <span class="project-pill" onclick="openProjectDrawer()" title="Click to view project details">
             <i class="fa-solid fa-layer-group"></i>
             <span class="project-title-text">${escapeHtml(projectTitle)}</span>
-            <span class="project-code">${escapeHtml(projectCode)}</span>
           </span>
           <span class="status-badge ${statusBadgeClass}">${escapeHtml(projectStatus)}</span>
         </div>
@@ -415,20 +391,20 @@ export function renderProjectBar() {
         </div>
 
         ${(() => {
-          const activeDept = ProjectStore.selectedDepartment || (typeof window.getSelectedDepartment === 'function' ? window.getSelectedDepartment() : '');
-          const allProjects = ProjectStore.getProjects();
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
+      const activeDept = ProjectStore.selectedDepartment || (typeof window.getSelectedDepartment === 'function' ? window.getSelectedDepartment() : '');
+      const allProjects = ProjectStore.getProjects();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-          const dueCount = allProjects.filter(p => {
-            if (!p.followUpDate) return false;
-            const fDate = new Date(p.followUpDate);
-            if (isNaN(fDate.getTime())) return false;
-            fDate.setHours(0, 0, 0, 0);
-            return today >= fDate;
-          }).length;
+      const dueCount = allProjects.filter(p => {
+        if (!p.followUpDate) return false;
+        const fDate = new Date(p.followUpDate);
+        if (isNaN(fDate.getTime())) return false;
+        fDate.setHours(0, 0, 0, 0);
+        return today >= fDate;
+      }).length;
 
-          return `
+      return `
             <button class="btn-project-manage fashion-btn ${dueCount > 0 ? 'has-reminders-pulse' : ''}" 
                     onclick="window.showDepartmentFollowUpModal('${escapeHtml(activeDept || '')}')" 
                     title="${dueCount > 0 ? `${dueCount} Follow-up Reminders Due` : 'Follow-up Reminders'}"
@@ -437,7 +413,7 @@ export function renderProjectBar() {
               ${dueCount > 0 ? `<span class="project-bar-bell-badge">${dueCount}</span>` : ''}
             </button>
           `;
-        })()}
+    })()}
 
         <button class="btn-project-manage fashion-btn" onclick="openProjectDrawer()" title="Open Project Manager">
           <i class="fa-solid fa-sliders"></i>
@@ -571,22 +547,22 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
         </div>
         <div class="hp-gateway-actions" style="display: flex; align-items: center; gap: 12px;">
           ${(() => {
-            const activeDept = ProjectStore.selectedDepartment || (typeof window.getSelectedDepartment === 'function' ? window.getSelectedDepartment() : '');
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+      const activeDept = ProjectStore.selectedDepartment || (typeof window.getSelectedDepartment === 'function' ? window.getSelectedDepartment() : '');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-            const dueProjects = allProjects.filter(p => {
-              const matchesDept = !activeDept || !p.department || p.department.toLowerCase() === String(activeDept).toLowerCase();
-              if (!matchesDept) return false;
-              if (!p.followUpDate) return false;
-              const fDate = new Date(p.followUpDate);
-              if (isNaN(fDate.getTime())) return false;
-              fDate.setHours(0, 0, 0, 0);
-              return today >= fDate;
-            });
-            const count = dueProjects.length;
+      const dueProjects = allProjects.filter(p => {
+        const matchesDept = !activeDept || !p.department || p.department.toLowerCase() === String(activeDept).toLowerCase();
+        if (!matchesDept) return false;
+        if (!p.followUpDate) return false;
+        const fDate = new Date(p.followUpDate);
+        if (isNaN(fDate.getTime())) return false;
+        fDate.setHours(0, 0, 0, 0);
+        return today >= fDate;
+      });
+      const count = dueProjects.length;
 
-            return `
+      return `
               <button class="btn-create-project-main ${count > 0 ? 'has-reminders-pulse' : ''}" 
                       onclick="window.showDepartmentFollowUpModal('${escapeHtml(activeDept || '')}')" 
                       title="${count > 0 ? `${count} Follow-up Reminders Due` : 'Follow-up Reminders'}"
@@ -596,7 +572,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
                 ${count > 0 ? `<span style="background: #dc2626; color: #ffffff; font-size: 10px; font-weight: 700; border-radius: 9999px; padding: 2px 6px; margin-left: 4px;">${count}</span>` : ''}
               </button>
             `;
-          })()}
+    })()}
           <button class="btn-create-project-main" onclick="openNewProjectDialog()">
             <i class="fa-solid fa-plus"></i> New Project
           </button>
@@ -658,7 +634,6 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
             </div>
           </button>
 
-          <!--
           <button class="hp-summary-card card-indicator-emerald ${homepageProjectFilters.paymentStatus === 'Paid' ? 'is-filter-active' : ''}"
                   onclick="window.quickFilterOverview('revenue')"
                   title="Filter Settled Revenue">
@@ -671,7 +646,6 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
               <span class="summary-lbl">Revenue Received</span>
             </div>
           </button>
-          -->
         </div>
       </div>
 
@@ -715,7 +689,6 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
             <option value="Social pending" ${homepageProjectFilters.projectStatus === 'Social pending' ? 'selected' : ''}>Social pending</option>
             <option value="Completed" ${homepageProjectFilters.projectStatus === 'Completed' ? 'selected' : ''}>Completed</option>
           </select>
-          <!--
           <select onchange="window.handleHomepageProjectFilterChange('paymentStatus', this.value)">
             <option value="">Payment Status</option>
             <option value="Paid" ${homepageProjectFilters.paymentStatus === 'Paid' ? 'selected' : ''}>Paid</option>
@@ -723,7 +696,6 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
             <option value="Pending" ${homepageProjectFilters.paymentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
             <option value="Overdue" ${homepageProjectFilters.paymentStatus === 'Overdue' ? 'selected' : ''}>Overdue</option>
           </select>
-          -->
           <select onchange="window.handleHomepageProjectFilterChange('returnStatus', this.value)">
             <option value="">Return Status</option>
             <option value="Returned" ${homepageProjectFilters.returnStatus === 'Returned' ? 'selected' : ''}>Returned</option>
@@ -743,18 +715,18 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
 
       <div class="hp-projects-cards-grid">
         ${filteredProjects.length === 0 ? '<div class="hp-project-card"><strong>No projects match the selected filters.</strong></div>' : paginatedProjects.map(p => {
-    const isActive = activeProject && p.id === activeProject.id;
-    const celebrity = ProjectStore.getCelebrityById(p.celebrityId);
-    const stylist = ProjectStore.getStylistById(p.stylistId);
-    const celebrityName = celebrity ? celebrity.name : (p.celebrityName || 'Celebrity');
-    const stylistName = p.headStylist || (stylist ? stylist.name : 'Unassigned Stylist');
+      const isActive = activeProject && p.id === activeProject.id;
+      const celebrity = ProjectStore.getCelebrityById(p.celebrityId);
+      const stylist = ProjectStore.getStylistById(p.stylistId);
+      const celebrityName = celebrity ? celebrity.name : (p.celebrityName || 'Celebrity');
+      const stylistName = p.headStylist || (stylist ? stylist.name : 'Unassigned Stylist');
 
-    const sharedDate = p.finalTraySharedDate || '';
-    const followUpDate = p.followUpDate || (sharedDate ? addDaysToDateString(sharedDate, 15) : '');
-    const returnDueDate = p.returnDueDate || '';
-    const hasAnyDates = Boolean(sharedDate || followUpDate || returnDueDate);
+      const sharedDate = p.finalTraySharedDate || '';
+      const followUpDate = p.followUpDate || (sharedDate ? addDaysToDateString(sharedDate, 15) : '');
+      const returnDueDate = p.returnDueDate || '';
+      const hasAnyDates = Boolean(sharedDate || followUpDate || returnDueDate);
 
-    return `
+      return `
             <div class="hp-project-card ${isActive ? 'active-project' : ''}" onclick="window.handleProjectChange('${p.id}', null, null)" role="button" tabindex="0" aria-label="Open ${escapeHtml(p.title)} inventory">
               <div class="hp-card-stylist-block">
                 <span class="hp-meta-label">STYLIST</span>
@@ -805,7 +777,7 @@ export function renderHomepageProjectsGateway(onProjectSwitch) {
               </div>
             </div>
           `;
-  }).join('')}
+    }).join('')}
       </div>
 
       ${paginationHtml}
@@ -985,7 +957,7 @@ export function submitNewProjectDialog(e, callback) {
 export function showHomepageGateway() {
   document.body.classList.add("gateway-active");
   document.body.classList.remove("department-selection-active");
-  
+
   const ds = document.getElementById("departmentSelectionScreen");
   if (ds) ds.classList.add("hidden");
 
@@ -993,7 +965,7 @@ export function showHomepageGateway() {
   if (container) {
     container.style.display = "block";
   }
-  
+
   // Re-render the gateway to ensure it reflects the currently selected department's projects
   if (typeof renderHomepageProjectsGateway === 'function') {
     renderHomepageProjectsGateway(homepageProjectSwitchCallback);
@@ -1495,7 +1467,7 @@ window.handleQuickEditProjectSubmit = function (e) {
     if (s) {
       s.phone = phoneVal;
       s.email = emailVal;
-      try { localStorage.setItem("dreamsai_celebrity_stylists_v6", JSON.stringify(stylists)); } catch(err){}
+      try { localStorage.setItem("dreamsai_celebrity_stylists_v6", JSON.stringify(stylists)); } catch (err) { }
     }
   }
 
@@ -1664,7 +1636,7 @@ function checkAndShowFollowUpReminders() {
   // Automatic modal pop-up disabled; follow-ups are now triggered explicitly via department bell icons.
 }
 
-window.showDepartmentFollowUpModal = function(deptName) {
+window.showDepartmentFollowUpModal = function (deptName) {
   const allProjects = ProjectStore.getProjects();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1753,7 +1725,7 @@ function showFollowUpReminderModal(dueProjects, deptName = '') {
   modal.style.display = "flex";
 }
 
-window.closeFollowUpReminderModal = function() {
+window.closeFollowUpReminderModal = function () {
   const modal = document.getElementById("followUpReminderModalOverlay");
   if (modal) modal.style.display = "none";
 };
@@ -1789,7 +1761,7 @@ export function renderProjectDashboard() {
   const celebrityName = activeCelebrity ? activeCelebrity.name : (p.celebrityName || 'Zendaya');
   const stylistName = p.headStylist || (activeStylist ? activeStylist.name : 'Law Roach');
   const projectCode = p.code || p.id || 'PRJ-2024-MET';
-  const brandName = p.jewelleryBrand || 'Maison Margiela · Couture Spring 2024';
+  const brandName = p.jewelleryBrand;
 
   const projectStatus = getProjectDisplayStatus(p);
   const paymentStatus = getPaymentStatus(p);
@@ -1847,14 +1819,13 @@ export function renderProjectDashboard() {
         <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 24px;">
           <div>
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-              <span style="font-size: 11.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #515f74;">${escapeHtml(projectCode)}</span>
               <span style="background: #cba72f; color: #4e3d00; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 6px;">
                 <span style="width: 6px; height: 6px; border-radius: 50%; background: #4e3d00; display: inline-block;"></span>
                 ${escapeHtml(projectStatus)}
               </span>
             </div>
             <h1 style="font-family: 'EB Garamond', serif; font-size: 2.5rem; font-weight: 400; color: #000; margin: 0 0 4px 0; line-height: 1.1;">${escapeHtml(p.title)}</h1>
-            <p style="font-size: 1.1rem; color: #515f74; margin: 0;">${escapeHtml(celebrityName)} · ${escapeHtml(stylistName)} · ${escapeHtml(brandName)}</p>
+            <p style="font-size: 1.1rem; color: #515f74; margin: 0;">${escapeHtml(celebrityName)} · ${escapeHtml(stylistName)}</p>
           </div>
 
           <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
@@ -1878,9 +1849,9 @@ export function renderProjectDashboard() {
             </div>
 
             ${stages.map((stage, idx) => {
-              const isCompleted = idx < activeStageIdx;
-              const isCurrent = idx === activeStageIdx;
-              return `
+    const isCompleted = idx < activeStageIdx;
+    const isCurrent = idx === activeStageIdx;
+    return `
                 <div style="display: flex; flex-col; flex-direction: column; align-items: center; position: relative; z-index: 2; cursor: pointer;" onclick="window.updateCurrentProjectStatus('${p.id}', '${stage}')" title="Click to set stage to ${stage}">
                   <div style="width: ${isCurrent ? '46px' : '40px'}; height: ${isCurrent ? '46px' : '40px'}; border-radius: 50%; background: ${isCurrent ? '#cba72f' : (isCompleted ? '#ffffff' : '#ffffff')}; border: 2px solid ${isCurrent ? '#735c00' : (isCompleted ? '#735c00' : '#e2e8f0')}; display: flex; align-items: center; justify-content: center; color: ${isCurrent ? '#ffffff' : (isCompleted ? '#735c00' : '#94a3b8')}; margin-bottom: 8px; box-shadow: ${isCurrent ? '0 0 12px rgba(203, 167, 47, 0.4)' : 'none'}; transition: all 0.2s;">
                     ${isCompleted ? '<i class="fa-solid fa-check" style="font-size: 16px;"></i>' : (isCurrent ? '<i class="fa-solid fa-sliders" style="font-size: 18px;"></i>' : `<span style="font-size: 14px; font-weight: 600;">${idx + 1}</span>`)}
@@ -1888,7 +1859,7 @@ export function renderProjectDashboard() {
                   <span style="font-size: 13px; font-weight: ${isCurrent ? '700' : '400'}; color: ${isCurrent ? '#000000' : '#515f74'};">${stage}</span>
                 </div>
               `;
-            }).join('')}
+  }).join('')}
           </div>
         </div>
       </section>
@@ -2022,25 +1993,25 @@ export function renderProjectDashboard() {
 
           <div style="flex: 1; space-y: 12px;">
             ${(() => {
-              const flagged = returnState.filter(i => i.returnStatus === 'pending' || i.returnStatus === 'missing' || i.condition === 'damaged');
-              if (flagged.length === 0) {
-                return `
+      const flagged = returnState.filter(i => i.returnStatus === 'pending' || i.returnStatus === 'missing' || i.condition === 'damaged');
+      if (flagged.length === 0) {
+        return `
                   <div style="text-align: center; padding: 20px 10px; color: #166534; background: #f0fdf4; border-radius: 6px;">
                     <i class="fa-solid fa-circle-check" style="font-size: 1.5rem; margin-bottom: 6px;"></i>
                     <p style="margin: 0; font-size: 0.88rem; font-weight: 600;">All products returned in good condition!</p>
                   </div>
                 `;
-              }
-              return flagged.slice(0, 3).map(item => {
-                const isMissing = item.returnStatus === 'missing';
-                const isDamaged = item.condition === 'damaged';
-                const statusText = isMissing ? 'Missing' : (isDamaged ? 'Damaged' : 'Pending');
-                const statusBg = isMissing ? '#fef2f2' : (isDamaged ? '#fff1f2' : '#fefce8');
-                const statusColor = isMissing ? '#991b1b' : (isDamaged ? '#be123c' : '#854d0e');
-                const filterStatus = isMissing ? 'missing' : 'pending';
-                const filterCond = isDamaged ? 'damaged' : 'all';
+      }
+      return flagged.slice(0, 3).map(item => {
+        const isMissing = item.returnStatus === 'missing';
+        const isDamaged = item.condition === 'damaged';
+        const statusText = isMissing ? 'Missing' : (isDamaged ? 'Damaged' : 'Pending');
+        const statusBg = isMissing ? '#fef2f2' : (isDamaged ? '#fff1f2' : '#fefce8');
+        const statusColor = isMissing ? '#991b1b' : (isDamaged ? '#be123c' : '#854d0e');
+        const filterStatus = isMissing ? 'missing' : 'pending';
+        const filterCond = isDamaged ? 'damaged' : 'all';
 
-                return `
+        return `
                   <div onclick="window.filterReturnProductsBy('${filterStatus}', '${filterCond}')" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 6px; background: #f9f9fa; border: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f1f5f9';" onmouseleave="this.style.background='#f9f9fa';" title="Click to view in Returns Tab">
                     <div style="width: 40px; height: 40px; border-radius: 4px; background: #e2e2e3; display: flex; align-items: center; justify-content: center; color: #515f74; overflow: hidden;">
                       ${item.image ? `<img src="${item.image}" alt="${escapeHtml(item.name)}" style="width:100%; height:100%; object-fit:cover;">` : '<i class="fa-solid fa-gem"></i>'}
@@ -2052,8 +2023,8 @@ export function renderProjectDashboard() {
                     <span style="font-size: 11px; font-weight: 700; color: ${statusColor}; background: ${statusBg}; padding: 4px 8px; border-radius: 4px;">${statusText}</span>
                   </div>
                 `;
-              }).join('');
-            })()}
+      }).join('');
+    })()}
           </div>
 
           <button onclick="window.filterReturnProductsBy('pending', 'all')" style="margin-top: 20px; width: 100%; padding: 10px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f8fafc';" onmouseleave="this.style.background='#ffffff';">Manage Returns Workspace</button>
@@ -2103,7 +2074,7 @@ export function renderProjectDashboard() {
           <button onclick="window.openQuickUpdateDeliverablesModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1c1d; cursor: pointer; transition: background 0.2s;" onmouseenter="this.style.background='#f8fafc';" onmouseleave="this.style.background='#ffffff';">Upload Assets</button>
         </div>
 
-        <!-- Panel 4: Balance Due 
+        <!-- Panel 4: Balance Due -->
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -2134,7 +2105,6 @@ export function renderProjectDashboard() {
 
           <button onclick="window.openQuickEditProjectModal('${p.id}')" style="margin-top: 20px; width: 100%; padding: 10px; border: none; background: #000000; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: opacity 0.2s;" onmouseenter="this.style.opacity='0.85';" onmouseleave="this.style.opacity='1';">Send Invoice</button>
         </div>
-        -->
 
         <!-- Panel 5: Deliverables Checklist -->
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
@@ -2215,7 +2185,7 @@ export function renderProjectDashboard() {
     </div>
   `;
 }
- 
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
