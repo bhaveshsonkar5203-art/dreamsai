@@ -832,7 +832,7 @@ function injectNewProjectModal(onProjectSwitch) {
 
           <div class="form-group" style="margin-bottom: 20px;">
             <label style="font-weight: 700; color: #1c1917; font-size: 0.9rem;">Stylist:</label>
-            <select id="dialogStylistSelect" class="pm-select" onchange="handleStylistSelectChange(this.value)" style="margin-top: 6px; width: 100%;">
+            <select id="dialogStylistSelect" class="pm-select" onchange="window.handleStylistSelectChange ? window.handleStylistSelectChange(this.value) : handleStylistSelectChange(this.value)" style="margin-top: 6px; width: 100%;">
               <!-- Dynamic populated -->
             </select>
 
@@ -853,9 +853,11 @@ function injectNewProjectModal(onProjectSwitch) {
 }
 
 export function openNewProjectDialog() {
+  injectNewProjectModal();
   const modal = document.getElementById("newProjectModalOverlay");
   const stylistSelect = document.getElementById("dialogStylistSelect");
   const newStylistContainer = document.getElementById("newStylistInputContainer");
+  const newStylistInput = document.getElementById("dialogNewStylistName");
 
   if (stylistSelect) {
     const stylists = ProjectStore.getStylists();
@@ -863,9 +865,8 @@ export function openNewProjectDialog() {
       ${stylists.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (${escapeHtml(s.title)})</option>`).join('')}
       <option value="__NEW_STYLIST__">+ Add New Stylist...</option>
     `;
-  }
-
-  if (newStylistContainer) {
+    handleStylistSelectChange(stylistSelect.value);
+  } else if (newStylistContainer) {
     newStylistContainer.style.display = "none";
   }
 
@@ -887,11 +888,24 @@ export function handleStylistSelectChange(val) {
 
   if (val === "__NEW_STYLIST__") {
     if (container) container.style.display = "block";
-    if (input) input.focus();
+    if (input) {
+      input.required = true;
+      input.focus();
+    }
   } else {
     if (container) container.style.display = "none";
+    if (input) {
+      input.required = false;
+      input.value = "";
+    }
   }
 }
+
+// Ensure functions are attached to window for inline HTML handlers
+window.handleStylistSelectChange = handleStylistSelectChange;
+window.openNewProjectDialog = openNewProjectDialog;
+window.closeNewProjectDialog = closeNewProjectDialog;
+window.submitNewProjectDialog = submitNewProjectDialog;
 
 export function submitNewProjectDialog(e, callback) {
   e.preventDefault();
